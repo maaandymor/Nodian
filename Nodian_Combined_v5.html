@@ -102,8 +102,9 @@ html,body{height:100%;font-family:'Poppins',system-ui,sans-serif;background:#f5f
     <button class="sw-tab"        id="tab-week"  onclick="show('week')">Planner</button>
   </div>
   <div id="viewer-badge" style="display:none;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#676767;background:rgba(22,22,22,.06);border-radius:9999px;padding:3px 10px;margin-left:auto">👁 Visualização</div>
-  <button id="logout-btn" onclick="doLogout()" style="display:none;height:26px;padding:0 12px;border-radius:9999px;border:1.5px solid rgba(22,22,22,.12);background:transparent;font-family:'Poppins',sans-serif;font-size:11px;font-weight:600;cursor:pointer;color:#676767;margin-left:8px">Sair</button>
+
 </div>
+<button id="logout-btn" onclick="doLogout()" style="display:none;position:fixed;top:9px;right:16px;z-index:99998;height:26px;padding:0 14px;border-radius:9999px;border:1.5px solid rgba(22,22,22,.12);background:#fff;font-family:'Poppins',sans-serif;font-size:11px;font-weight:600;cursor:pointer;color:#676767;box-shadow:0 1px 4px rgba(22,22,22,.08);transition:all .15s" onmouseover="this.style.background='#161616';this.style.color='#fff';this.style.borderColor='#161616'" onmouseout="this.style.background='#fff';this.style.color='#676767';this.style.borderColor='rgba(22,22,22,.12)'">Sair</button>
 <div id="frames">
   <iframe class="tracker-frame active" id="frame-rwe"   srcdoc="<!DOCTYPE html>
 <html lang=&quot;pt-br&quot;>
@@ -4747,6 +4748,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <iframe class="tracker-frame" id="frame-week" srcdoc="<!DOCTYPE html>
 <html lang=&quot;pt-br&quot;>
 <head>
+<script src=&quot;https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2&quot;></script>
 <meta charset=&quot;utf-8&quot;/>
 <meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;/>
 <link href=&quot;https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;/>
@@ -4880,7 +4882,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--b
 
 <script>
 const ALL_PEOPLE=['AM','AC','ML','BL','FA','DS','GC','HM','VM'];
-const SOURCE_KEYS={rwe:'nodian_tracker_v3',atlas:'atlas_tracker_v1',dp:'dp_tracker_v1'};
+const SOURCE_KEYS={rwe:'main',atlas:'atlas',dp:'dp'};
 const SOURCE_LABELS={rwe:'RWE',atlas:'Atlas',dp:'Data P.'};
 const SOURCE_COLORS={rwe:'#55b583',atlas:'#7295cd',dp:'#f6b359'};
 const SOURCE_TAB={rwe:'rwe',atlas:'atlas',dp:'dp'};
@@ -4938,23 +4940,58 @@ function goToTracker(source, projectId){
   }
 }
 
-function readStore(key){
-  try{const r=localStorage.getItem(key);return r?JSON.parse(r):null}catch{return null}
+// ── Supabase client (shared key from parent if available, else init own) ──
+let _plannerSB = null;
+function getPlannerSB(){
+  if(_plannerSB) return _plannerSB;
+  try{
+    // Try to reuse parent&apos;s client
+    if(window.parent && window.parent._sb) return window.parent._sb;
+  }catch(e){}
+  try{
+    _plannerSB = supabase.createClient('https://ovktfqdcnlakopeiuaec.supabase.co','sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ');
+    return _plannerSB;
+  }catch(e){ return null; }
 }
 
-function load(){
-  document.getElementById('grid').innerHTML='<div class=&quot;loading&quot;>Carregando…</div>';
-  setTimeout(render,80);
+// Cache to avoid re-fetching on every render
+const _storeCache = {};
+
+async function readStore(rowId){
+  if(_storeCache[rowId]) return _storeCache[rowId];
+  try{
+    const sb = getPlannerSB();
+    if(!sb) return null;
+    const {data,error} = await sb.from('projects').select('data').eq('id',rowId).single();
+    if(error || !data) return null;
+    _storeCache[rowId] = data.data;
+    return data.data;
+  }catch(e){ return null; }
 }
 
-function render(){
+function invalidateCache(){
+  Object.keys(_storeCache).forEach(k => delete _storeCache[k]);
+}
+
+async function load(){
+  invalidateCache();
+  document.getElementById('grid').innerHTML='<div class=&quot;loading&quot;>Carregando dados das frentes…</div>';
+  await render();
+}
+
+async function render(){
   const dateFrom=document.getElementById('dateFrom').value||'';
   const dateTo=document.getElementById('dateTo').value||'';
 
   const items=[];
 
-  Object.entries(SOURCE_KEYS).forEach(([src,key])=>{
-    const data=readStore(key);
+  // Fetch all three sources in parallel
+  const entries=Object.entries(SOURCE_KEYS);
+  const results=await Promise.all(entries.map(([src,key])=>readStore(key)));
+  const sourceData=Object.fromEntries(entries.map(([src,key],i)=>[src,results[i]]));
+
+  entries.forEach(([src,key])=>{
+    const data=sourceData[src];
     if(!data||!data.projects)return;
     const srcColor=SOURCE_COLORS[src];
     const srcLabel=SOURCE_LABELS[src];
