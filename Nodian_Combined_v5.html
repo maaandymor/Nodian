@@ -5,49 +5,104 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Nodian Tracker</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23f6b359'/><rect x='19' y='36' width='62' height='51' rx='5' fill='none' stroke='%23161616' stroke-width='5'/><rect x='19' y='36' width='62' height='18' rx='5' fill='%23161616'/><rect x='19' y='46' width='62' height='8' fill='%23161616'/><rect x='34' y='22' width='8' height='22' rx='4' fill='%23161616'/><rect x='58' y='22' width='8' height='22' rx='4' fill='%23161616'/><circle cx='35' cy='66' r='5' fill='%23161616'/><circle cx='50' cy='66' r='5' fill='%23161616'/><circle cx='65' cy='66' r='5' fill='%23161616'/><circle cx='35' cy='78' r='5' fill='%23161616'/><circle cx='50' cy='78' r='5' fill='%23161616'/><circle cx='65' cy='78' r='9' fill='%23161616'/><circle cx='65' cy='78' r='5' fill='%23f6b359'/></svg>"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:'Poppins',system-ui,sans-serif;background:#f5f5f5;overflow:hidden}
-#switcher{
-  position:fixed;top:0;left:0;right:0;z-index:9999;
-  height:44px;background:#fff;border-bottom:1.5px solid rgba(22,22,22,.08);
-  display:flex;align-items:center;padding:0 24px;gap:16px;
-  box-shadow:0 2px 8px rgba(22,22,22,.05);
-}
+#switcher{position:fixed;top:0;left:0;right:0;z-index:9999;height:44px;background:#fff;border-bottom:1.5px solid rgba(22,22,22,.08);display:flex;align-items:center;padding:0 24px;gap:16px;box-shadow:0 2px 8px rgba(22,22,22,.05)}
 #sw-logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;letter-spacing:-.3px;flex-shrink:0;color:#161616}
 #sw-dot{width:22px;height:22px;border-radius:50%;background:#f6b359;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#161616}
 #sw-tabs{display:flex;gap:2px;background:rgba(22,22,22,.06);border-radius:9999px;padding:3px}
-.sw-tab{
-  height:28px;padding:0 16px;border-radius:9999px;
-  font-family:'Poppins',system-ui,sans-serif;font-size:12px;font-weight:600;
-  border:none;cursor:pointer;color:#676767;background:transparent;transition:all .15s;
-}
+.sw-tab{height:28px;padding:0 16px;border-radius:9999px;font-family:'Poppins',system-ui,sans-serif;font-size:12px;font-weight:600;border:none;cursor:pointer;color:#676767;background:transparent;transition:all .15s}
 .sw-tab.active{background:#fff;color:#161616;box-shadow:0 1px 4px rgba(22,22,22,.10)}
 .sw-tab:hover:not(.active){color:#161616}
 #frames{position:fixed;top:44px;left:0;right:0;bottom:0}
-.tracker-frame{
-  position:absolute;inset:0;width:100%;height:100%;
-  border:none;display:none;
-}
+.tracker-frame{position:absolute;inset:0;width:100%;height:100%;border:none;display:none}
 .tracker-frame.active{display:block}
+
+/* ── LOGIN SCREEN ── */
+#login-screen{
+  position:fixed;inset:0;z-index:99999;
+  background:#f5f5f5;
+  display:flex;align-items:center;justify-content:center;
+}
+#login-screen.hidden{display:none}
+.login-card{
+  background:#fff;border-radius:20px;padding:48px 44px 40px;
+  box-shadow:0 8px 40px rgba(22,22,22,.10);
+  width:100%;max-width:400px;
+  display:flex;flex-direction:column;gap:0;
+}
+.login-logo{
+  width:48px;height:48px;border-radius:50%;background:#f6b359;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:700;color:#161616;margin-bottom:24px;
+}
+.login-title{font-size:22px;font-weight:700;letter-spacing:-.5px;color:#161616;margin-bottom:4px}
+.login-sub{font-size:13px;color:#676767;margin-bottom:32px;font-weight:400}
+.login-label{font-size:11px;font-weight:600;color:#676767;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;margin-top:16px}
+.login-label:first-of-type{margin-top:0}
+.login-input{
+  width:100%;height:44px;padding:0 14px;
+  border:1.5px solid rgba(22,22,22,.14);border-radius:10px;
+  font-family:'Poppins',system-ui,sans-serif;font-size:14px;color:#161616;
+  outline:none;transition:border-color .2s;background:#fff;
+}
+.login-input:focus{border-color:#161616}
+.login-btn{
+  margin-top:28px;height:46px;width:100%;
+  background:#161616;color:#fff;border:none;border-radius:10px;
+  font-family:'Poppins',system-ui,sans-serif;font-size:14px;font-weight:600;
+  cursor:pointer;transition:opacity .15s;letter-spacing:-.1px;
+}
+.login-btn:hover{opacity:.85}
+.login-btn:disabled{opacity:.4;cursor:default}
+.login-error{
+  margin-top:12px;padding:10px 14px;border-radius:8px;
+  background:rgba(227,64,74,.08);color:#c0392b;
+  font-size:12px;font-weight:500;display:none;
+}
+.login-error.show{display:block}
+/* viewer badge */
+#viewer-badge{
+  display:none;align-items:center;gap:6px;
+  font-size:11px;font-weight:600;color:#676767;
+  background:rgba(22,22,22,.06);border-radius:9999px;
+  padding:3px 10px;margin-left:auto;
+}
+
 </style>
 </head>
 <body>
 
-<div id="switcher">
-  <div id="sw-logo">
-    <div id="sw-dot">N</div>
-    Nodian
-  </div>
-  <div id="sw-tabs">
-    <button class="sw-tab active" id="tab-rwe"   onclick="show('rwe')">RWE Powerhouse</button>
-    <button class="sw-tab"        id="tab-atlas" onclick="show('atlas')">Atlas</button>
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">N</div>
+    <div class="login-title">Nodian Tracker</div>
+    <div class="login-sub">Acesso restrito. Entre com suas credenciais.</div>
+    <div class="login-label">Email</div>
+    <input class="login-input" type="email" id="login-email" placeholder="seu@nodian.com.br" autocomplete="email"/>
+    <div class="login-label">Senha</div>
+    <input class="login-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"/>
+    <div class="login-error" id="login-error">Email ou senha incorretos.</div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
   </div>
 </div>
 
+<div id="switcher">
+  <div id="sw-logo"><div id="sw-dot">N</div>Nodian</div>
+  <div id="sw-tabs">
+    <button class="sw-tab active" id="tab-rwe"   onclick="show('rwe')">RWE Powerhouse</button>
+    <button class="sw-tab"        id="tab-atlas" onclick="show('atlas')">Atlas</button>
+    <button class="sw-tab"        id="tab-dp"    onclick="show('dp')">Data Products</button>
+    <button class="sw-tab"        id="tab-week"  onclick="show('week')">Planner</button>
+  </div>
+  <div id="viewer-badge" style="display:none;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#676767;background:rgba(22,22,22,.06);border-radius:9999px;padding:3px 10px;margin-left:auto">👁 Visualização</div>
+  <button id="logout-btn" onclick="doLogout()" style="display:none;height:26px;padding:0 12px;border-radius:9999px;border:1.5px solid rgba(22,22,22,.12);background:transparent;font-family:'Poppins',sans-serif;font-size:11px;font-weight:600;cursor:pointer;color:#676767;margin-left:8px">Sair</button>
+</div>
 <div id="frames">
   <iframe class="tracker-frame active" id="frame-rwe"   srcdoc="<!DOCTYPE html>
 <html lang=&quot;pt-br&quot;>
@@ -410,6 +465,41 @@ body{font-family:var(--font);background:var(--color-bg);color:var(--color-black)
 .av-ok{background:var(--color-sand);color:var(--color-black)!important}
 .av-gc{background:#8ab4a0}
 .av-hm{background:#b0a0c8}
+
+body.viewer-mode .btn:not(.btn-ghost):not([onclick*="setView"]):not([onclick*="exportMarkdown"]):not([onclick*="captureCurrentViewPng"]):not([onclick*="exportData"]),
+body.viewer-mode .view-tab,
+body.viewer-mode .team-add-btn,
+body.viewer-mode .milestone-status-btn,
+body.viewer-mode [ondragstart],
+body.viewer-mode .dash-check-box,
+body.viewer-mode .quick-inbox-input,
+body.viewer-mode .modal-project-name[contenteditable],
+body.viewer-mode select.modal-status-select,
+body.viewer-mode .list-status-select,
+body.viewer-mode .card-status-popup
+{ pointer-events:none !important; opacity:.45 !important; }
+body.viewer-mode .topbar-right .btn-primary,
+body.viewer-mode #newProjectBtn,
+body.viewer-mode [onclick*="openNewProjectModal"],
+body.viewer-mode [onclick*="openMilestoneModal"],
+body.viewer-mode [onclick*="openLogModal"],
+body.viewer-mode [onclick*="openTaskModal"],
+body.viewer-mode [onclick*="addLogEntry"],
+body.viewer-mode [onclick*="addTask"],
+body.viewer-mode [onclick*="saveLog"],
+body.viewer-mode [onclick*="saveMilestone"],
+body.viewer-mode [onclick*="saveTask"],
+body.viewer-mode [onclick*="createProject"],
+body.viewer-mode [onclick*="deleteCurrentProject"],
+body.viewer-mode [onclick*="importData"]
+{ display:none !important; }
+body.viewer-mode::after{
+  content:'Modo leitura';
+  position:fixed;bottom:12px;left:50%;transform:translateX(-50%);
+  background:rgba(22,22,22,.7);color:#fff;
+  font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 14px;border-radius:9999px;pointer-events:none;z-index:9999;
+}
 </style>
 </head>
 <body>
@@ -466,7 +556,7 @@ body{font-family:var(--font);background:var(--color-bg);color:var(--color-black)
   <div class=&quot;dash-title&quot; id=&quot;viewTitle&quot;>Planning <span id=&quot;planningDate&quot;></span></div>
   <div style=&quot;display:flex;align-items:center;gap:10px&quot;>
     <div class=&quot;dash-meta&quot; id=&quot;projectCount&quot;></div>
-    <button class=&quot;btn btn-secondary btn-sm&quot; id=&quot;btnCapturePng&quot; onclick=&quot;captureCurrentViewPng()&quot; style=&quot;display:none&quot;>↓ PNG</button>
+    <button class=&quot;btn btn-secondary btn-sm&quot; id=&quot;btnCapturePng&quot; onclick=&quot;captureCurrentViewPng()&quot;>↓ PNG</button>
   </div>
 </div>
 
@@ -529,7 +619,7 @@ body{font-family:var(--font);background:var(--color-bg);color:var(--color-black)
         <select class=&quot;quick-inbox-who&quot; id=&quot;quickTaskWho&quot;>
           <option value=&quot;&quot;>Quem?</option>
           <option>AM</option><option>AC</option><option>ML</option><option>BL</option>
-          <option>FA</option><option>DS</option><option>GC</option><option>HM</option><option>OK</option>
+          <option>FA</option><option>DS</option><option>GC</option><option>HM</option><option>VM</option>
         </select>
         <input class=&quot;quick-inbox-date&quot; id=&quot;quickTaskDate&quot; type=&quot;date&quot;/>
         <button class=&quot;btn btn-sm btn-primary&quot; onclick=&quot;submitQuickTask()&quot;>↵</button>
@@ -662,7 +752,7 @@ body{font-family:var(--font);background:var(--color-bg);color:var(--color-black)
 <script>
 // ══ CONSTANTS ══
 const STORAGE_KEY='nodian_tracker_v3';
-const TEAM_OPTIONS=['AM','AC','ML','BL','FA','DS','GC','HM','OK'];
+const TEAM_OPTIONS=['AM','AC','ML','BL','FA','DS','GC','HM','VM'];
 const STATUS_COLS=[
   {id:'DADOS',        label:'Dados',          cls:'dados'},
   {id:'DADOS+ESCRITA',label:'Dados + Escrita', cls:'dados-escrita'},
@@ -687,19 +777,17 @@ let currentProjectId=null, editingMilestoneIdx=null, editingTaskIdx=null, milest
 let tempModalTeam=[], tempMilestoneWho=[], tempTaskWho=[];
 
 // ══ STORAGE ══
-async function loadData(){try{const resp=await fetch(&quot;https://ovktfqdcnlakopeiuaec.supabase.co/rest/v1/projects?id=eq.main&amp;select=data&quot;,{headers:{&quot;apikey&quot;:&quot;sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ&quot;,&quot;Authorization&quot;:&quot;Bearer sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ&quot;}});if(!resp.ok)throw new Error(&quot;fetch&quot;);const rows=await resp.json();if(rows&amp;&amp;rows.length>0&amp;&amp;rows[0].data){const d=rows[0].data;if(!d.projects||d.projects.length===0)d.projects=JSON.parse(JSON.stringify(_SEED)).projects;return d;}return JSON.parse(JSON.stringify(_SEED));}catch(e){console.warn(&quot;RWE load:&quot;,e);return JSON.parse(JSON.stringify(_SEED));}}
-let _rweSaveT=null;
-async function saveData(d){clearTimeout(_rweSaveT);_rweSaveT=setTimeout(async function(){try{await fetch(&quot;https://ovktfqdcnlakopeiuaec.supabase.co/rest/v1/projects&quot;,{method:&quot;POST&quot;,headers:{&quot;apikey&quot;:&quot;sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ&quot;,&quot;Authorization&quot;:&quot;Bearer sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ&quot;,&quot;Content-Type&quot;:&quot;application/json&quot;,&quot;Prefer&quot;:&quot;resolution=merge-duplicates&quot;},body:JSON.stringify({id:&quot;main&quot;,data:d,updated_at:new Date().toISOString()})});}catch(e){console.error(&quot;RWE save:&quot;,e);}},600);}
+function loadData(){try{const r=localStorage.getItem(STORAGE_KEY);const d=r?JSON.parse(r):null;return(d&amp;&amp;d.projects&amp;&amp;d.projects.length>0)?d:JSON.parse(JSON.stringify(_SEED));}catch{return JSON.parse(JSON.stringify(_SEED));}}
+function saveData(d){localStorage.setItem(STORAGE_KEY,JSON.stringify(d))}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 
 // ══ INIT ══
-document.addEventListener('DOMContentLoaded',async ()=>{
+document.addEventListener('DOMContentLoaded',()=>{
   const now=new Date();
   document.getElementById('planningDate').textContent=now.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
   ['milestoneDate','logDate','taskDate','quickTaskDate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=now.toISOString().slice(0,10)});
   document.getElementById('modalName').addEventListener('input',saveCurrentProject);
   document.addEventListener('click',handleGlobalClick);
-  db=await loadData();
   renderCurrentView();
 });
 
@@ -715,7 +803,7 @@ function setView(v){
   document.getElementById('viewTitle').textContent=titles[v]+' ';
   // show PNG button on board and summary views
   const pngBtn=document.getElementById('btnCapturePng');
-  if(pngBtn)pngBtn.style.display=(v==='board'||v==='summary')?'inline-flex':'none';
+  if(pngBtn)pngBtn.style.display='inline-flex';
   renderCurrentView();
 }
 function renderCurrentView(){
@@ -1426,6 +1514,38 @@ function exportMarkdown(){
 }
 
 
+window.openProjectById=function(id){openProject(id);};
+
+// ═══ VIEWER MODE ═══
+window.setViewerMode = function(on) {
+  document.body.classList.toggle('viewer-mode', on);
+  // Make all inputs and textareas read-only
+  if(on) {
+    document.querySelectorAll('input,textarea,select').forEach(function(el) {
+      el.setAttribute('readonly','');
+      el.setAttribute('disabled','');
+    });
+    // Override saveData to be a no-op for viewers
+    window._originalSaveData = window.saveData;
+    window.saveData = function() {};
+  }
+};
+
+// ═══ SAVE LOGGING via postMessage ═══
+(function() {
+  const _origSave = window.saveData;
+  window.saveData = function(d) {
+    _origSave(d);
+    try {
+      window.parent.postMessage({
+        type: 'nodian_save',
+        tracker: 'rwe',
+        snapshot: d
+      }, '*');
+    } catch(e) {}
+  };
+})();
+
 </script>
 </body>
 </html>
@@ -1495,6 +1615,7 @@ body{font-family:var(--font);background:var(--color-bg);color:var(--color-black)
 .badge-pendente{background:rgba(103,103,103,.12);color:var(--color-gray)}
 .badge-andamento{background:var(--color-blue-25);color:#185FA5}
 .badge-bloqueado{background:rgba(227,64,74,.1);color:var(--color-red)}
+.badge-interrompido{background:rgba(227,64,74,.08);color:#c0392b}
 .badge-finalizado{background:var(--color-green-25);color:#0F6E56}
 .board-view{padding:0 28px 40px;overflow-x:auto}
 .board{display:flex;gap:16px;min-width:max-content;padding-top:4px}
@@ -1503,11 +1624,13 @@ body{font-family:var(--font);background:var(--color-bg);color:var(--color-black)
 .col-header-pendente{background:rgba(103,103,103,.08)}
 .col-header-andamento{background:var(--color-blue-25)}
 .col-header-bloqueado{background:rgba(227,64,74,.08)}
+.col-header-interrompido{background:rgba(227,64,74,.06)}
 .col-header-finalizado{background:var(--color-green-25)}
 .col-title{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
 .col-count{font-size:11px;font-weight:700;padding:2px 8px;border-radius:var(--radius-full)}
 .count-pendente{background:rgba(103,103,103,.15);color:var(--color-gray)}
 .count-andamento{background:#dbe4f3;color:#185FA5}
+.count-interrompido{background:rgba(227,64,74,.12);color:#c0392b}
 .count-bloqueado{background:rgba(227,64,74,.12);color:var(--color-red)}
 .count-finalizado{background:var(--color-green-25);color:#0F6E56}
 .col-empty{text-align:center;padding:20px;color:rgba(103,103,103,.4);font-size:12px;background:rgba(255,255,255,.5);border-radius:var(--radius-lg);border:1px dashed rgba(22,22,22,.08)}
@@ -1780,6 +1903,41 @@ body{font-family:var(--font);background:var(--color-bg);color:var(--color-black)
 .week-task-card{border-left-width:4px!important}
 
 @media print{.topbar,.filter-bar,.dash-header,.btn,.summary-toolbar-actions,#btnCapturePng,.cal-day-add-btn{display:none!important}}
+
+body.viewer-mode .btn:not(.btn-ghost):not([onclick*="setView"]):not([onclick*="exportMarkdown"]):not([onclick*="captureCurrentViewPng"]):not([onclick*="exportData"]),
+body.viewer-mode .view-tab,
+body.viewer-mode .team-add-btn,
+body.viewer-mode .milestone-status-btn,
+body.viewer-mode [ondragstart],
+body.viewer-mode .dash-check-box,
+body.viewer-mode .quick-inbox-input,
+body.viewer-mode .modal-project-name[contenteditable],
+body.viewer-mode select.modal-status-select,
+body.viewer-mode .list-status-select,
+body.viewer-mode .card-status-popup
+{ pointer-events:none !important; opacity:.45 !important; }
+body.viewer-mode .topbar-right .btn-primary,
+body.viewer-mode #newProjectBtn,
+body.viewer-mode [onclick*="openNewProjectModal"],
+body.viewer-mode [onclick*="openMilestoneModal"],
+body.viewer-mode [onclick*="openLogModal"],
+body.viewer-mode [onclick*="openTaskModal"],
+body.viewer-mode [onclick*="addLogEntry"],
+body.viewer-mode [onclick*="addTask"],
+body.viewer-mode [onclick*="saveLog"],
+body.viewer-mode [onclick*="saveMilestone"],
+body.viewer-mode [onclick*="saveTask"],
+body.viewer-mode [onclick*="createProject"],
+body.viewer-mode [onclick*="deleteCurrentProject"],
+body.viewer-mode [onclick*="importData"]
+{ display:none !important; }
+body.viewer-mode::after{
+  content:'Modo leitura';
+  position:fixed;bottom:12px;left:50%;transform:translateX(-50%);
+  background:rgba(22,22,22,.7);color:#fff;
+  font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 14px;border-radius:9999px;pointer-events:none;z-index:9999;
+}
 </style>
 </head>
 <body>
@@ -1802,7 +1960,7 @@ body{font-family:var(--font);background:var(--color-bg);color:var(--color-black)
     <button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;exportData()&quot;>↓ JSON</button>
     <button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;exportMarkdown()&quot;>↓ MD</button>
     <label class=&quot;btn btn-secondary btn-sm&quot; style=&quot;cursor:pointer&quot;>↑ Import<input type=&quot;file&quot; accept=&quot;.json&quot; style=&quot;display:none&quot; onchange=&quot;importData(event)&quot;/></label>
-    <button class=&quot;btn btn-secondary btn-sm&quot; id=&quot;btnCapturePng&quot; onclick=&quot;captureCurrentViewPng()&quot; style=&quot;display:none&quot;>↓ PNG</button>
+    <button class=&quot;btn btn-secondary btn-sm&quot; id=&quot;btnCapturePng&quot; onclick=&quot;captureCurrentViewPng()&quot;>↓ PNG</button>
     <button class=&quot;btn btn-primary&quot; onclick=&quot;openNewProjectModal()&quot;>+ Projeto</button>
   </div>
 </header>
@@ -1906,7 +2064,7 @@ body{font-family:var(--font);background:var(--color-bg);color:var(--color-black)
         <select class=&quot;quick-inbox-who&quot; id=&quot;quickTaskWho&quot;>
           <option value=&quot;&quot;>Quem?</option>
           <option>AM</option><option>FA</option><option>DS</option><option>HM</option>
-          <option>AC</option><option>ML</option><option>BL</option><option>GC</option><option>OK</option>
+          <option>AC</option><option>ML</option><option>BL</option><option>GC</option><option>VM</option>
         </select>
         <input class=&quot;quick-inbox-date&quot; id=&quot;quickTaskDate&quot; type=&quot;date&quot;/>
         <button class=&quot;btn btn-sm btn-primary&quot; onclick=&quot;submitQuickTask()&quot;>↵</button>
@@ -2056,7 +2214,7 @@ body{font-family:var(--font);background:var(--color-bg);color:var(--color-black)
         <select class=&quot;form-select&quot; id=&quot;calEventWho&quot;>
           <option value=&quot;&quot;>—</option>
           <option>AM</option><option>FA</option><option>DS</option><option>HM</option>
-          <option>AC</option><option>ML</option><option>BL</option><option>GC</option><option>OK</option>
+          <option>AC</option><option>ML</option><option>BL</option><option>GC</option><option>VM</option>
         </select></div>
       <div id=&quot;calEventEditActions&quot; style=&quot;display:none&quot;>
         <button class=&quot;btn btn-sm&quot; style=&quot;background:transparent;color:var(--color-red);border:1px solid rgba(227,64,74,.3);font-size:11px;width:100%&quot; onclick=&quot;deleteCalEvent()&quot;>Excluir evento</button>
@@ -2074,12 +2232,13 @@ body{font-family:var(--font);background:var(--color-bg);color:var(--color-black)
 // ══ CONSTANTS ══
 const STORAGE_KEY='atlas_tracker_v1';
 const TEAM_PRIORITY=['AM','FA','DS','HM'];
-const TEAM_OPTIONS=['AM','FA','DS','HM','AC','ML','BL','GC','OK'];
+const TEAM_OPTIONS=['AM','FA','DS','HM','AC','ML','BL','GC','VM'];
 const STATUS_COLS=[
-  {id:'PENDENTE',   label:'Pendente',     cls:'pendente'},
-  {id:'ANDAMENTO',  label:'Em Andamento', cls:'andamento'},
-  {id:'BLOQUEADO',  label:'Bloqueado',    cls:'bloqueado'},
-  {id:'FINALIZADO', label:'Finalizado',   cls:'finalizado'},
+  {id:'PENDENTE',     label:'Pendente',     cls:'pendente'},
+  {id:'ANDAMENTO',   label:'Em Andamento', cls:'andamento'},
+  {id:'BLOQUEADO',   label:'Bloqueado',    cls:'bloqueado'},
+  {id:'INTERROMPIDO',label:'Interrompido', cls:'interrompido'},
+  {id:'FINALIZADO',  label:'Finalizado',   cls:'finalizado'},
 ];
 const MILESTONE_PRESETS=[
   {label:'Kickoff',                        icon:'🚀',  parent:null},
@@ -2131,20 +2290,22 @@ let openQuickRow={};
 let draggingCardId=null, dragSrcIdx=null;
 
 // ══ STORAGE ══
-async function loadData(){try{const resp=await fetch(&quot;https://ovktfqdcnlakopeiuaec.supabase.co/rest/v1/projects?id=eq.atlas&amp;select=data&quot;,{headers:{&quot;apikey&quot;:&quot;sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ&quot;,&quot;Authorization&quot;:&quot;Bearer sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ&quot;}});if(!resp.ok)throw new Error(&quot;fetch&quot;);const rows=await resp.json();if(rows&amp;&amp;rows.length>0&amp;&amp;rows[0].data){const d=rows[0].data;if(!d.calEvents)d.calEvents=[];if(!d.projects||d.projects.length===0){const s=JSON.parse(JSON.stringify(_SEED));d.projects=s.projects;d.calEvents=s.calEvents||[];}return d;}return JSON.parse(JSON.stringify(_SEED));}catch(e){console.warn(&quot;Atlas load:&quot;,e);return JSON.parse(JSON.stringify(_SEED));}}
-let _atSaveT=null;
-async function saveData(d){clearTimeout(_atSaveT);_atSaveT=setTimeout(async function(){try{await fetch(&quot;https://ovktfqdcnlakopeiuaec.supabase.co/rest/v1/projects&quot;,{method:&quot;POST&quot;,headers:{&quot;apikey&quot;:&quot;sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ&quot;,&quot;Authorization&quot;:&quot;Bearer sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ&quot;,&quot;Content-Type&quot;:&quot;application/json&quot;,&quot;Prefer&quot;:&quot;resolution=merge-duplicates&quot;},body:JSON.stringify({id:&quot;atlas&quot;,data:d,updated_at:new Date().toISOString()})});}catch(e){console.error(&quot;Atlas save:&quot;,e);}},600);}
+function loadData(){
+  try{const r=localStorage.getItem(STORAGE_KEY);const d=r?JSON.parse(r):null;
+    if(d&amp;&amp;d.projects&amp;&amp;d.projects.length>0){if(!d.calEvents)d.calEvents=[];return d;}
+    return JSON.parse(JSON.stringify(_SEED));
+  }catch{return JSON.parse(JSON.stringify(_SEED));}
+}
+function saveData(d){localStorage.setItem(STORAGE_KEY,JSON.stringify(d))}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 
 // ══ INIT ══
-document.addEventListener('DOMContentLoaded',async ()=>{
+document.addEventListener('DOMContentLoaded',()=>{
   const now=new Date();
   document.getElementById('planningDate').textContent=now.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
   ['milestoneDate','logDate','taskDate','quickTaskDate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=now.toISOString().slice(0,10)});
   document.getElementById('modalName').addEventListener('input',saveCurrentProject);
   document.addEventListener('click',handleGlobalClick);
-  db=await loadData();
-  if(!db.calEvents)db.calEvents=[];
   renderCurrentView();
 });
 
@@ -2159,7 +2320,7 @@ function setView(v){
   const titles={board:'Kanban',list:'Planning — Lista',week:'Semana',cal:'Calendário',summary:'Resumo da Planning'};
   document.getElementById('viewTitle').textContent=titles[v]+' ';
   const pngBtn=document.getElementById('btnCapturePng');
-  if(pngBtn)pngBtn.style.display=(v==='board'||v==='summary')?'inline-flex':'none';
+  if(pngBtn)pngBtn.style.display='inline-flex';
   renderCurrentView();
 }
 function renderCurrentView(){
@@ -2953,18 +3114,2094 @@ function exportMarkdown(){
 }
 
 
+window.openProjectById=function(id){openProject(id);};
+
+// ═══ VIEWER MODE ═══
+window.setViewerMode = function(on) {
+  document.body.classList.toggle('viewer-mode', on);
+  // Make all inputs and textareas read-only
+  if(on) {
+    document.querySelectorAll('input,textarea,select').forEach(function(el) {
+      el.setAttribute('readonly','');
+      el.setAttribute('disabled','');
+    });
+    // Override saveData to be a no-op for viewers
+    window._originalSaveData = window.saveData;
+    window.saveData = function() {};
+  }
+};
+
+// ═══ SAVE LOGGING via postMessage ═══
+(function() {
+  const _origSave = window.saveData;
+  window.saveData = function(d) {
+    _origSave(d);
+    try {
+      window.parent.postMessage({
+        type: 'nodian_save',
+        tracker: 'atlas',
+        snapshot: d
+      }, '*');
+    } catch(e) {}
+  };
+})();
+
 </script>
 </body>
 </html>
 "></iframe>
+  <iframe class="tracker-frame"        id="frame-dp"    srcdoc="<!DOCTYPE html>
+<html lang=&quot;pt-br&quot;>
+<head>
+<meta charset=&quot;utf-8&quot;/>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;/>
+<title>Atlas Tracker — Nodian</title>
+<link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;/>
+<link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin/>
+<link href=&quot;https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,900;1,400&amp;display=swap&quot; rel=&quot;stylesheet&quot;/>
+<script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js&quot;></script>
+<style>
+:root{
+  --color-bg:#f5f5f5;--color-black:#161616;--color-gray:#676767;--color-white:#ffffff;
+  --color-sand:#c6b198;--color-amber:#f6b359;--color-amber-25:#ffe5c7;--color-amber-50:#ffd8ac;
+  --color-coral:#e07b5a;--color-coral-25:#f8dcd0;--color-red:#e3404a;--color-pink:#e23f4a;
+  --color-lilac:#ab87bd;--color-blue:#7295cd;--color-blue-25:#dbe4f3;
+  --color-green:#55b583;--color-green-25:#d4ecdf;--txt-amb:#8a5a00;
+  --radius-xs:4px;--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:24px;--radius-full:9999px;
+  --font:'Poppins',system-ui,sans-serif;
+  --shadow:0 2px 12px rgba(22,22,22,.07);--shadow-md:0 4px 24px rgba(22,22,22,.10);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--color-bg);color:var(--color-black);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(22,22,22,.15);border-radius:99px}
+#app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{position:sticky;top:0;z-index:100;background:var(--color-white);border-bottom:1px solid rgba(22,22,22,.08);display:flex;align-items:center;gap:12px;padding:0 28px;height:56px}
+.topbar-logo{display:flex;align-items:center;gap:9px;font-weight:700;font-size:14px;letter-spacing:-.3px;flex-shrink:0}
+.topbar-logo-dot{width:26px;height:26px;border-radius:50%;background:var(--color-amber);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--color-black)}
+.topbar-search{height:34px;border:1.5px solid rgba(22,22,22,.12);border-radius:var(--radius-full);padding:0 14px 0 34px;font-family:var(--font);font-size:13px;color:var(--color-black);background:var(--color-bg) url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%23676767' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E&quot;) no-repeat 11px center;outline:none;transition:border-color .2s;width:260px}
+.topbar-search:focus{border-color:var(--color-black)}
+.topbar-sep{width:1px;height:22px;background:rgba(22,22,22,.1)}
+.topbar-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.view-tabs{display:flex;gap:2px;background:rgba(246,179,89,.18);border-radius:var(--radius-full);padding:3px}
+.view-tab{border:none;background:transparent;padding:5px 14px;border-radius:var(--radius-full);font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;color:var(--color-gray);transition:all .2s}
+.view-tab:hover{color:var(--color-black)}
+.view-tab.active{background:var(--color-amber);color:#161616;font-weight:600;box-shadow:none}
+.btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:var(--radius-full);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;padding:0 16px;height:34px;white-space:nowrap}
+.btn-primary{background:var(--color-black);color:var(--color-white)}
+.btn-primary:hover{background:#333}
+.btn-secondary{background:transparent;color:var(--color-black);border:1.5px solid rgba(22,22,22,.18)}
+.btn-secondary:hover{background:var(--color-bg)}
+.btn-ghost{background:transparent;color:var(--color-gray);border:none}
+.btn-ghost:hover{background:var(--color-bg)}
+.btn-sm{font-size:11px;padding:0 10px;height:26px}
+.icon-btn{border:none;background:transparent;cursor:pointer;color:var(--color-gray);padding:4px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;transition:background .15s}
+.icon-btn:hover{background:var(--color-bg);color:var(--color-black)}
+.filter-bar{background:var(--color-white);border-bottom:1px solid rgba(22,22,22,.06);padding:8px 28px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.filter-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--color-gray);margin-right:2px}
+.filter-chip{border:none;background:transparent;padding:4px 12px;border-radius:var(--radius-full);font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;color:var(--color-gray);transition:all .15s;border:1px solid transparent}
+.filter-chip:hover{background:var(--color-bg);color:var(--color-black)}
+.filter-chip.active{background:var(--color-black);color:var(--color-white);border-color:var(--color-black)}
+.filter-chip.priority{} /* prioridade sem destaque visual — apenas posição */
+.filter-chip.priority.active{background:var(--color-black);color:var(--color-white);border-color:var(--color-black)}
+.filter-sep{width:1px;height:18px;background:rgba(22,22,22,.1);margin:0 4px}
+.dash-header{padding:14px 28px 10px;display:flex;align-items:center;justify-content:space-between}
+.dash-title{font-size:18px;font-weight:700;letter-spacing:-.4px}
+.dash-meta{font-size:12px;color:var(--color-gray);font-weight:400}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:var(--radius-full);font-size:11px;font-weight:700;letter-spacing:.02em;cursor:pointer;white-space:nowrap;transition:opacity .15s}
+.status-badge:hover{opacity:.8}
+.badge-pendente{background:rgba(103,103,103,.12);color:var(--color-gray)}
+.badge-andamento{background:var(--color-blue-25);color:#185FA5}
+.badge-bloqueado{background:rgba(227,64,74,.1);color:var(--color-red)}
+.badge-interrompido{background:rgba(227,64,74,.08);color:#c0392b}
+.badge-finalizado{background:var(--color-green-25);color:#0F6E56}
+.board-view{padding:0 28px 40px;overflow-x:auto}
+.board{display:flex;gap:16px;min-width:max-content;padding-top:4px}
+.board-col{width:300px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
+.col-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-radius:var(--radius-lg);margin-bottom:4px}
+.col-header-pendente{background:rgba(103,103,103,.08)}
+.col-header-andamento{background:var(--color-blue-25)}
+.col-header-bloqueado{background:rgba(227,64,74,.08)}
+.col-header-interrompido{background:rgba(227,64,74,.06)}
+.col-header-finalizado{background:var(--color-green-25)}
+.col-title{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.col-count{font-size:11px;font-weight:700;padding:2px 8px;border-radius:var(--radius-full)}
+.count-pendente{background:rgba(103,103,103,.15);color:var(--color-gray)}
+.count-andamento{background:#dbe4f3;color:#185FA5}
+.count-interrompido{background:rgba(227,64,74,.12);color:#c0392b}
+.count-bloqueado{background:rgba(227,64,74,.12);color:var(--color-red)}
+.count-finalizado{background:var(--color-green-25);color:#0F6E56}
+.col-empty{text-align:center;padding:20px;color:rgba(103,103,103,.4);font-size:12px;background:rgba(255,255,255,.5);border-radius:var(--radius-lg);border:1px dashed rgba(22,22,22,.08)}
+.project-card{background:var(--color-white);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .2s,transform .15s;border:1.5px solid transparent;user-select:none}
+.project-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.project-card.dragging{opacity:.5;transform:scale(.98)}
+.project-card.drag-over-card{border-color:var(--color-amber);background:var(--color-amber-25)}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.card-name{font-size:14px;font-weight:700;letter-spacing:-.2px;line-height:1.2}
+.card-stage{font-size:11px;color:var(--color-gray);margin-bottom:6px;line-height:1.4}
+.card-deadline{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.deadline-date{font-size:11px;font-weight:600;padding:2px 7px;background:var(--color-bg);border-radius:var(--radius-full)}
+.deadline-date.overdue{background:rgba(227,64,74,.1);color:var(--color-red)}
+.deadline-date.soon{background:var(--color-amber-25);color:var(--txt-amb)}
+.card-team{display:flex;gap:4px;margin-top:6px}
+.card-log{font-size:11px;color:var(--color-gray);margin-top:8px;padding-top:8px;border-top:1px solid rgba(22,22,22,.06);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.card-log-empty{color:rgba(103,103,103,.4)}
+.card-status-popup{position:absolute;top:calc(100% + 4px);right:0;background:var(--color-white);border-radius:var(--radius-md);box-shadow:var(--shadow-md);border:1px solid rgba(22,22,22,.08);z-index:200;min-width:140px;overflow:hidden;display:none}
+.card-status-popup.open{display:block}
+.status-popup-item{padding:8px 14px;font-size:12px;font-weight:500;cursor:pointer;transition:background .15s}
+.status-popup-item:hover{background:var(--color-bg)}
+.status-popup-item.current{font-weight:700;background:var(--color-bg)}
+.avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0;border:2px solid var(--color-white)}
+.av-am{background:#ffe5c7;color:var(--txt-amb)}
+.av-fa{background:#d4ecdf;color:#0F6E56}
+.av-ds{background:var(--color-blue-25);color:#185FA5}
+.av-hm{background:#e6dcec;color:#5c3d7e}
+.av-ac{background:#fde8e1;color:#a13d20}
+.av-ml{background:rgba(103,103,103,.15);color:var(--color-gray)}
+.av-bl{background:rgba(22,22,22,.08);color:var(--color-black)}
+.av-gk,.av-gc{background:rgba(246,179,89,.2);color:var(--txt-amb)}
+.av-ok{background:rgba(85,181,131,.15);color:#0F6E56}
+.list-view{padding:0 28px 40px}
+.list-group{margin-bottom:16px}
+.list-group-header{display:flex;align-items:center;gap:10px;padding:8px 0 6px;border-bottom:2px solid var(--color-black);margin-bottom:8px;cursor:pointer}
+.list-group-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.list-group-count{font-size:11px;font-weight:600;padding:2px 8px;border-radius:var(--radius-full);background:rgba(22,22,22,.08);color:var(--color-gray)}
+.list-group-toggle{font-size:11px;color:var(--color-gray);margin-left:auto}
+.list-row{display:grid;grid-template-columns:minmax(180px,2fr) 140px minmax(120px,1.5fr) auto;align-items:start;gap:12px;padding:8px 10px;background:var(--color-white);border-radius:var(--radius-md);margin-bottom:4px;border:1px solid transparent;transition:border-color .15s}
+.list-row:hover{border-color:rgba(22,22,22,.08)}
+.list-row-name{font-size:13px;font-weight:600;letter-spacing:-.2px;cursor:pointer;transition:color .15s}
+.list-row-name:hover{color:var(--color-amber)}
+.list-row-avatars{display:flex;gap:2px;flex-wrap:wrap;margin-top:3px}
+.list-status-select{border:none;background:transparent;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:var(--radius-sm);outline:none;-webkit-appearance:none}
+.list-log-cell{min-width:0}
+.list-log-author{font-size:10px;font-weight:600;color:var(--color-gray);text-transform:uppercase;letter-spacing:.06em}
+.list-log-text{font-size:12px;color:var(--color-black);margin-top:2px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.list-log-empty{font-size:12px;color:rgba(103,103,103,.4);font-style:italic}
+.list-actions{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.quick-row{margin-bottom:4px;padding:8px 10px;border-radius:var(--radius-md);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.quick-row-log{background:var(--color-green-25);border:1px solid rgba(85,181,131,.3)}
+.quick-row-task{background:var(--color-amber-25);border:1px solid rgba(246,179,89,.3)}
+.quick-input{border:none;background:transparent;font-family:var(--font);font-size:12px;outline:none;flex:1;min-width:120px;color:var(--color-black)}
+.quick-input::placeholder{color:rgba(103,103,103,.5)}
+.quick-select{border:none;background:transparent;font-family:var(--font);font-size:11px;cursor:pointer;color:var(--color-gray);outline:none}
+.quick-date{border:none;background:transparent;font-family:var(--font);font-size:11px;color:var(--color-gray);outline:none;cursor:pointer}
+.quick-save-btn{border:none;font-family:var(--font);font-size:11px;font-weight:600;padding:3px 10px;border-radius:var(--radius-full);cursor:pointer}
+.quick-save-log{background:var(--color-green);color:#fff}
+.quick-save-task{background:var(--color-amber);color:var(--color-black)}
+.quick-preview{padding:6px 10px;background:rgba(85,181,131,.1);border-radius:var(--radius-sm);margin-bottom:4px;font-size:11px;color:#0F6E56;line-height:1.4}
+.week-view{padding:0 28px 40px}
+.week-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.week-person-col{display:flex;flex-direction:column;gap:8px}
+.week-person-header{display:flex;align-items:center;gap:10px;padding-bottom:10px;border-bottom:2px solid var(--color-black)}
+.week-person-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.week-person-name{font-size:14px;font-weight:700;letter-spacing:-.2px}
+.week-person-count{font-size:11px;color:var(--color-gray)}
+.week-task-card{background:var(--color-white);border-radius:var(--radius-md);padding:10px 12px;box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .15s;border-left:3px solid var(--color-gray)}
+.week-task-card:hover{box-shadow:var(--shadow-md)}
+.week-task-card.wt-andamento{border-left-color:var(--color-blue)}
+.week-task-card.wt-bloqueado{border-left-color:var(--color-red)}
+.week-task-card.wt-finalizado{border-left-color:var(--color-green)}
+.week-task-project{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--color-gray);display:block;margin-bottom:3px}
+.week-task-desc{font-size:12px;font-weight:500;color:var(--color-black);line-height:1.35}
+.week-task-meta{display:flex;align-items:center;gap:6px;margin-top:4px}
+.week-task-date{font-size:10px;color:var(--color-gray)}
+.week-task-date.overdue{color:var(--color-red);font-weight:600}
+.week-task-date.soon{color:var(--color-amber);font-weight:600}
+.week-task-status{height:16px;padding:0 6px;border-radius:var(--radius-full);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.week-empty{padding:20px;text-align:center;font-size:12px;color:rgba(103,103,103,.4);background:var(--color-white);border-radius:var(--radius-md)}
+.cal-view{padding:0 28px 40px}
+.cal-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.cal-month-nav{display:flex;align-items:center;gap:8px}
+.cal-month-title{font-size:16px;font-weight:700;letter-spacing:-.3px;min-width:160px;text-align:center}
+.cal-grid{background:var(--color-white);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow)}
+.cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);background:rgba(22,22,22,.04);border-bottom:1px solid rgba(22,22,22,.07)}
+.cal-dow-cell{padding:10px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--color-gray);text-align:center}
+.cal-dow-cell.weekend{color:var(--color-red);opacity:.7}
+.cal-weeks{display:flex;flex-direction:column}
+.cal-week-row{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-day{min-height:110px;padding:8px 10px;border-right:1px solid rgba(22,22,22,.06);border-bottom:1px solid rgba(22,22,22,.06);position:relative;transition:background .15s;cursor:pointer}
+.cal-day:last-child{border-right:none}
+.cal-week-row:last-child .cal-day{border-bottom:none}
+.cal-day:hover{background:rgba(246,179,89,.06)}
+.cal-day.today{background:rgba(246,179,89,.08)}
+.cal-day.today::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--color-amber)}
+.cal-day.other-month{background:rgba(22,22,22,.015)}
+.cal-day.other-month .cal-day-num{color:rgba(103,103,103,.35)}
+.cal-day.weekend{background:rgba(103,103,103,.02)}
+.cal-day-num{font-size:12px;font-weight:600;color:var(--color-gray);margin-bottom:4px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.cal-day.today .cal-day-num{background:var(--color-black);color:var(--color-white)}
+.cal-events{display:flex;flex-direction:column;gap:2px}
+.cal-event-chip{font-size:10px;font-weight:600;padding:2px 6px;border-radius:var(--radius-xs);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;cursor:pointer;transition:opacity .15s}
+.cal-event-chip:hover{opacity:.8}
+.ce-andamento{background:var(--color-blue-25);color:#185FA5}
+.ce-pendente{background:rgba(103,103,103,.12);color:#444}
+.ce-bloqueado{background:rgba(227,64,74,.1);color:var(--color-red)}
+.ce-finalizado{background:var(--color-green-25);color:#0F6E56}
+.ce-manual{background:var(--color-amber-25);color:var(--txt-amb)}
+.cal-gantt-bar{display:block;font-size:10px;font-weight:600;padding:2px 6px;border-radius:var(--radius-xs);line-height:1.35;max-width:100%;cursor:pointer;transition:opacity .15s;margin-bottom:2px;word-break:break-word}
+.cal-gantt-bar:hover{opacity:.8}
+.cal-gantt-bar.bar-start{border-radius:var(--radius-full) var(--radius-xs) var(--radius-xs) var(--radius-full)}
+.cal-gantt-bar.bar-mid{border-radius:0;opacity:.85}
+.cal-gantt-bar.bar-mid.bar-start-of-week{border-radius:var(--radius-xs) 0 0 var(--radius-xs)}
+.cal-gantt-bar.bar-end{border-radius:var(--radius-xs) var(--radius-full) var(--radius-full) var(--radius-xs)}
+.cal-gantt-bar.bar-start.bar-end{border-radius:var(--radius-full)}
+.cal-gantt-bar.bar-milestone{font-style:italic}
+.cal-gantt-bar.bar-task{}
+.cal-event-chip{font-size:10px;font-weight:600;padding:2px 6px;border-radius:var(--radius-xs);line-height:1.35;max-width:100%;cursor:pointer;transition:opacity .15s;margin-bottom:2px;display:block;word-break:break-word}
+.cal-event-chip:hover{opacity:.8}
+.cal-day-add-btn{position:absolute;bottom:4px;right:6px;font-size:16px;color:rgba(103,103,103,.3);background:none;border:none;cursor:pointer;line-height:1;padding:0;display:none;font-weight:300}
+.cal-day:hover .cal-day-add-btn{display:block}
+.summary-view{padding:0 28px 40px}
+.summary-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+.summary-toolbar-left{display:flex;flex-direction:column}
+.summary-toolbar-title{font-size:13px;font-weight:600;color:var(--color-gray)}
+.summary-toolbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.summary-sort-sel{border:1.5px solid rgba(22,22,22,.12);border-radius:var(--radius-full);padding:4px 10px;font-family:var(--font);font-size:12px;background:var(--color-white);outline:none;cursor:pointer}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.summary-card{background:var(--color-white);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow);cursor:pointer;transition:box-shadow .15s;border:1.5px solid transparent}
+.summary-card:hover{box-shadow:var(--shadow-md);border-color:rgba(22,22,22,.06)}
+.summary-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px}
+.summary-card-name{font-size:14px;font-weight:700;letter-spacing:-.2px}
+.summary-log-block{background:var(--color-amber-25);border-radius:var(--radius-sm);padding:8px 10px;margin-bottom:10px}
+.summary-log-meta{font-size:10px;font-weight:600;color:var(--txt-amb);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.summary-log-text{font-size:12px;color:var(--color-black);line-height:1.5}
+.summary-tasks{display:flex;flex-direction:column;gap:4px}
+.summary-task-item{display:flex;align-items:flex-start;gap:6px;font-size:12px}
+.summary-task-check{width:12px;height:12px;border:1.5px solid rgba(22,22,22,.2);border-radius:3px;flex-shrink:0;margin-top:1px}
+.summary-task-who{font-size:10px;font-weight:600;padding:1px 6px;border-radius:var(--radius-full);background:var(--color-bg);color:var(--color-gray);flex-shrink:0}
+.summary-task-date{font-size:10px;color:var(--color-gray);flex-shrink:0}
+.summary-task-date.overdue{color:var(--color-red);font-weight:600}
+.summary-task-date.soon{color:var(--txt-amb);font-weight:600}
+.overlay{position:fixed;inset:0;background:rgba(22,22,22,.45);z-index:500;display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+.overlay.open{display:flex}
+.project-modal{background:var(--color-white);border-radius:var(--radius-xl);width:100%;max-width:860px;margin:auto;overflow:hidden;box-shadow:0 20px 60px rgba(22,22,22,.2)}
+.modal-header{background:var(--color-bg);padding:20px 24px 16px;border-bottom:1px solid rgba(22,22,22,.08);display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.modal-header-content{flex:1;min-width:0}
+.modal-project-name{font-size:22px;font-weight:700;letter-spacing:-.5px;outline:none;border-bottom:2px solid transparent;padding-bottom:2px;transition:border-color .2s;line-height:1.2;word-break:break-word}
+.modal-project-name:focus{border-color:var(--color-amber)}
+.modal-meta{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+.modal-status-select{border:none;background:transparent;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;border-radius:var(--radius-full);padding:4px 10px;outline:none;-webkit-appearance:none}
+.modal-body{display:grid;grid-template-columns:1fr 1fr;gap:0;min-height:380px}
+.modal-section{padding:20px 24px;border-right:1px solid rgba(22,22,22,.06)}
+.modal-section:last-child{border-right:none}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--color-gray);display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.modal-footer{padding:16px 24px;border-top:1px solid rgba(22,22,22,.08);background:var(--color-bg)}
+.team-field{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.team-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px 3px 10px;border-radius:var(--radius-full);background:rgba(22,22,22,.08);font-size:11px;font-weight:600}
+.team-pill-remove{border:none;background:transparent;cursor:pointer;font-size:10px;color:var(--color-gray);padding:0;line-height:1;display:flex;align-items:center}
+.team-add-btn{border:1.5px dashed rgba(22,22,22,.2);background:transparent;border-radius:var(--radius-full);padding:3px 10px;font-family:var(--font);font-size:11px;font-weight:600;color:var(--color-gray);cursor:pointer;transition:all .15s}
+.team-add-btn:hover{border-color:var(--color-amber);color:var(--color-amber)}
+.person-picker{position:relative;display:inline-block}
+.person-picker-dropdown{position:absolute;top:calc(100% + 4px);left:0;background:var(--color-white);border:1px solid rgba(22,22,22,.1);border-radius:var(--radius-md);box-shadow:var(--shadow-md);z-index:300;min-width:200px;padding:8px;display:none}
+.person-picker-dropdown.open{display:block}
+.person-picker-grid{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.person-picker-btn{border:1.5px solid rgba(22,22,22,.12);background:transparent;border-radius:var(--radius-full);padding:4px 10px;font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;color:var(--color-gray);transition:all .15s}
+.person-picker-btn:hover{background:var(--color-bg)}
+.person-picker-btn.selected{background:var(--color-black);color:var(--color-white);border-color:var(--color-black)}
+.person-picker-btn.priority{} /* prioridade sem destaque visual — aparece antes */
+.person-picker-btn.priority.selected{background:var(--color-black);color:var(--color-white);border-color:var(--color-black)}
+.person-picker-divider{height:1px;background:rgba(22,22,22,.08);margin:4px 0}
+.person-custom-input{width:100%;border:1.5px solid rgba(22,22,22,.1);border-radius:var(--radius-sm);padding:5px 8px;font-family:var(--font);font-size:11px;outline:none;transition:border-color .15s}
+.person-custom-input:focus{border-color:var(--color-amber)}
+.person-picker-actions{display:flex;justify-content:flex-end;margin-top:6px}
+.milestones{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto}
+.milestone-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius-sm);background:var(--color-bg);border:1px solid transparent;transition:border-color .15s;cursor:grab}
+.milestone-item:hover{border-color:rgba(22,22,22,.08)}
+.milestone-item.drag-over{border-color:var(--color-amber);background:var(--color-amber-25)}
+.milestone-item.dragging{opacity:.4}
+.milestone-drag{color:rgba(103,103,103,.4);font-size:12px;cursor:grab;user-select:none}
+.milestone-status-btn{width:18px;height:18px;border-radius:50%;border:2px solid rgba(22,22,22,.2);background:transparent;cursor:pointer;flex-shrink:0;transition:all .2s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:transparent}
+.milestone-status-btn.active{border-color:var(--color-amber);background:var(--color-amber-25);color:var(--txt-amb)}
+.milestone-status-btn.done{border-color:var(--color-green);background:var(--color-green);color:#fff}
+.milestone-status-btn.blocked{border-color:var(--color-red);background:rgba(227,64,74,.1);color:var(--color-red)}
+.milestone-label{flex:1;font-size:12px;font-weight:500;line-height:1.3;min-width:0}
+.milestone-label.done{text-decoration:line-through;color:var(--color-gray)}
+.milestone-type-sprint{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--txt-amb);background:var(--color-amber-25);padding:1px 5px;border-radius:var(--radius-xs);margin-right:4px}
+.milestone-date{font-size:10px;color:var(--color-gray);flex-shrink:0;min-width:52px;text-align:right}
+.milestone-who-pills{display:flex;gap:2px;flex-wrap:wrap}
+.milestone-who-pill{font-size:9px;font-weight:600;padding:1px 5px;border-radius:var(--radius-full);background:rgba(22,22,22,.07);color:var(--color-gray)}
+.milestone-actions{display:flex;gap:2px;flex-shrink:0}
+.sprint-item{background:rgba(246,179,89,.07);border-color:rgba(246,179,89,.2)!important}
+.dash-checklist{display:flex;flex-direction:column;gap:4px}
+.dash-check-item{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--radius-sm);background:var(--color-bg);font-size:12px;cursor:pointer;transition:background .15s}
+.dash-check-item:hover{background:rgba(22,22,22,.05)}
+.dash-check-box{width:14px;height:14px;border:2px solid rgba(22,22,22,.2);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:transparent;transition:all .2s}
+.dash-check-box.checked{background:var(--color-green);border-color:var(--color-green);color:#fff}
+.dash-check-label{flex:1;color:var(--color-black)}
+.dash-check-label.done{text-decoration:line-through;color:var(--color-gray)}
+.dash-check-section{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--color-gray);padding:6px 8px 2px;margin-top:4px}
+.dash-checklist-wrap{max-height:260px;overflow-y:auto}
+.log-list{display:flex;flex-direction:column;gap:0;max-height:380px;overflow-y:auto}
+.log-entry{display:flex;gap:10px}
+.log-timeline{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:14px}
+.log-dot{width:10px;height:10px;border-radius:50%;background:var(--color-amber);flex-shrink:0;margin-top:3px}
+.log-line{flex:1;width:2px;background:rgba(22,22,22,.06);margin:2px 0}
+.log-content{flex:1;padding-bottom:14px;min-width:0}
+.log-meta{font-size:10px;font-weight:600;color:var(--color-gray);margin-bottom:3px;display:flex;align-items:center;gap:4px}
+.log-text{font-size:12px;line-height:1.5;word-break:break-word}
+.tasks-board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.task-col{display:flex;flex-direction:column;gap:6px}
+.task-col-header{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:5px 8px;border-radius:var(--radius-sm)}
+.tcol-todo{background:rgba(103,103,103,.08);color:var(--color-gray)}
+.tcol-doing{background:var(--color-amber-25);color:var(--txt-amb)}
+.tcol-done{background:var(--color-green-25);color:#0F6E56}
+.task-card{background:var(--color-bg);border-radius:var(--radius-sm);padding:8px 10px;border:1px solid rgba(22,22,22,.06)}
+.task-desc{font-size:12px;font-weight:500;line-height:1.3}
+.task-meta{display:flex;align-items:center;gap:5px;margin-top:5px;flex-wrap:wrap}
+.task-who-pill{font-size:9px;font-weight:700;padding:1px 6px;border-radius:var(--radius-full);background:rgba(22,22,22,.08);color:var(--color-gray)}
+.task-date{font-size:10px;color:var(--color-gray)}
+.task-date.overdue{color:var(--color-red);font-weight:600}
+.task-date.soon{color:var(--txt-amb);font-weight:600}
+.task-who-pills{display:flex;gap:2px;flex-wrap:wrap}
+.subtasks{margin-top:5px;display:flex;flex-direction:column;gap:3px}
+.subtask{display:flex;align-items:flex-start;gap:5px;font-size:11px;color:var(--color-gray);line-height:1.3}
+.subtask.done{color:rgba(103,103,103,.5);text-decoration:line-through}
+.subtask-check{width:12px;height:12px;border:1.5px solid rgba(22,22,22,.2);border-radius:3px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;margin-top:1px;color:transparent;transition:all .2s}
+.subtask-check.checked{background:var(--color-green);border-color:var(--color-green);color:#fff}
+.quick-task-inbox{display:flex;align-items:center;gap:8px;background:var(--color-bg);border-radius:var(--radius-md);padding:8px 12px;margin-bottom:12px;flex-wrap:wrap}
+.quick-inbox-input{flex:1;min-width:120px;border:none;background:transparent;font-family:var(--font);font-size:12px;outline:none;color:var(--color-black)}
+.quick-inbox-input::placeholder{color:rgba(103,103,103,.4)}
+.quick-inbox-who{border:none;background:var(--color-white);border-radius:var(--radius-sm);font-family:var(--font);font-size:11px;color:var(--color-gray);padding:3px 6px;cursor:pointer;outline:none}
+.quick-inbox-date{border:none;background:var(--color-white);border-radius:var(--radius-sm);font-family:var(--font);font-size:11px;color:var(--color-gray);padding:3px 6px;cursor:pointer;outline:none}
+.small-modal{background:var(--color-white);border-radius:var(--radius-xl);width:100%;max-width:440px;margin:auto;padding:24px;box-shadow:0 20px 60px rgba(22,22,22,.2)}
+.modal-wide{max-width:560px}
+.small-modal-title{font-size:16px;font-weight:700;margin-bottom:16px;letter-spacing:-.3px}
+.form-row{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--color-gray)}
+.form-input{border:1.5px solid rgba(22,22,22,.12);border-radius:var(--radius-sm);padding:8px 10px;font-family:var(--font);font-size:13px;outline:none;transition:border-color .2s;background:var(--color-bg);width:100%}
+.form-input:focus{border-color:var(--color-amber);background:var(--color-white)}
+.form-select{border:1.5px solid rgba(22,22,22,.12);border-radius:var(--radius-sm);padding:7px 10px;font-family:var(--font);font-size:13px;outline:none;transition:border-color .2s;background:var(--color-bg);width:100%;cursor:pointer}
+.form-select:focus{border-color:var(--color-amber)}
+.form-textarea{border:1.5px solid rgba(22,22,22,.12);border-radius:var(--radius-sm);padding:8px 10px;font-family:var(--font);font-size:13px;outline:none;transition:border-color .2s;background:var(--color-bg);width:100%;resize:vertical;min-height:72px;line-height:1.5}
+.form-textarea:focus{border-color:var(--color-amber);background:var(--color-white)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+.preset-list{display:flex;flex-direction:column;gap:3px;margin-bottom:4px;max-height:200px;overflow-y:auto}
+.preset-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--radius-sm);cursor:pointer;background:var(--color-bg);transition:background .15s;border:1px solid transparent}
+.preset-item:hover{background:var(--color-amber-25);border-color:rgba(246,179,89,.3)}
+.preset-item.selected{background:var(--color-amber-25);border-color:rgba(246,179,89,.4)}
+.preset-item-icon{font-size:14px}
+.preset-item-label{font-size:12px;font-weight:500;flex:1}
+.preset-sub-indicator{font-size:9px;color:var(--txt-amb);font-weight:600;padding:1px 5px;border-radius:3px;background:var(--color-amber-25)}
+.toast-container{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:6px;align-items:center}
+.toast{background:var(--color-black);color:var(--color-white);padding:8px 18px;border-radius:var(--radius-full);font-size:12px;font-weight:600;box-shadow:0 4px 16px rgba(22,22,22,.25);animation:toastIn .25s ease,toastOut .3s ease 2.3s forwards}
+.toast.success{background:var(--color-green)}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateY(4px)}}
+
+/* ── PROJECT COLOR PICKER ── */
+.project-color-row{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}
+.project-color-dot{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:transform .15s,border-color .15s;flex-shrink:0}
+.project-color-dot:hover{transform:scale(1.2)}
+.project-color-dot.selected{border-color:var(--color-black);transform:scale(1.15)}
+.project-color-swatch{width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block}
+/* Cor no card kanban */
+.card-color-bar{height:3px;border-radius:2px;margin-bottom:8px}
+/* Week task — cor do projeto à esquerda */
+.week-task-card{border-left-width:4px!important}
+
+@media print{.topbar,.filter-bar,.dash-header,.btn,.summary-toolbar-actions,#btnCapturePng,.cal-day-add-btn{display:none!important}}
+
+body.viewer-mode .btn:not(.btn-ghost):not([onclick*="setView"]):not([onclick*="exportMarkdown"]):not([onclick*="captureCurrentViewPng"]):not([onclick*="exportData"]),
+body.viewer-mode .view-tab,
+body.viewer-mode .team-add-btn,
+body.viewer-mode .milestone-status-btn,
+body.viewer-mode [ondragstart],
+body.viewer-mode .dash-check-box,
+body.viewer-mode .quick-inbox-input,
+body.viewer-mode .modal-project-name[contenteditable],
+body.viewer-mode select.modal-status-select,
+body.viewer-mode .list-status-select,
+body.viewer-mode .card-status-popup
+{ pointer-events:none !important; opacity:.45 !important; }
+body.viewer-mode .topbar-right .btn-primary,
+body.viewer-mode #newProjectBtn,
+body.viewer-mode [onclick*="openNewProjectModal"],
+body.viewer-mode [onclick*="openMilestoneModal"],
+body.viewer-mode [onclick*="openLogModal"],
+body.viewer-mode [onclick*="openTaskModal"],
+body.viewer-mode [onclick*="addLogEntry"],
+body.viewer-mode [onclick*="addTask"],
+body.viewer-mode [onclick*="saveLog"],
+body.viewer-mode [onclick*="saveMilestone"],
+body.viewer-mode [onclick*="saveTask"],
+body.viewer-mode [onclick*="createProject"],
+body.viewer-mode [onclick*="deleteCurrentProject"],
+body.viewer-mode [onclick*="importData"]
+{ display:none !important; }
+body.viewer-mode::after{
+  content:'Modo leitura';
+  position:fixed;bottom:12px;left:50%;transform:translateX(-50%);
+  background:rgba(22,22,22,.7);color:#fff;
+  font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 14px;border-radius:9999px;pointer-events:none;z-index:9999;
+}
+</style>
+</head>
+<body>
+<div id=&quot;app&quot;>
+<header class=&quot;topbar&quot;>
+  <div class=&quot;topbar-logo&quot;>
+    <div class=&quot;topbar-logo-dot&quot;>D</div>
+    Atlas Tracker
+  </div>
+  <div class=&quot;view-tabs&quot;>
+    <button class=&quot;view-tab active&quot; id=&quot;tabBoard&quot; onclick=&quot;setView('board')&quot;>Kanban</button>
+    <button class=&quot;view-tab&quot; id=&quot;tabList&quot; onclick=&quot;setView('list')&quot;>Planning</button>
+    <button class=&quot;view-tab&quot; id=&quot;tabWeek&quot; onclick=&quot;setView('week')&quot;>Semana</button>
+    <button class=&quot;view-tab&quot; id=&quot;tabCal&quot; onclick=&quot;setView('cal')&quot;>Calendário</button>
+    <button class=&quot;view-tab&quot; id=&quot;tabSummary&quot; onclick=&quot;setView('summary')&quot;>Resumo</button>
+  </div>
+  <input class=&quot;topbar-search&quot; type=&quot;text&quot; placeholder=&quot;Buscar projeto...&quot; id=&quot;searchInput&quot; oninput=&quot;renderCurrentView()&quot;/>
+  <div class=&quot;topbar-sep&quot;></div>
+  <div class=&quot;topbar-right&quot;>
+    <button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;exportData()&quot;>↓ JSON</button>
+    <button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;exportMarkdown()&quot;>↓ MD</button>
+    <label class=&quot;btn btn-secondary btn-sm&quot; style=&quot;cursor:pointer&quot;>↑ Import<input type=&quot;file&quot; accept=&quot;.json&quot; style=&quot;display:none&quot; onchange=&quot;importData(event)&quot;/></label>
+    <button class=&quot;btn btn-secondary btn-sm&quot; id=&quot;btnCapturePng&quot; onclick=&quot;captureCurrentViewPng()&quot;>↓ PNG</button>
+    <button class=&quot;btn btn-primary&quot; onclick=&quot;openNewProjectModal()&quot;>+ Projeto</button>
+  </div>
+</header>
+<div class=&quot;filter-bar&quot; id=&quot;filterBar&quot;>
+  <span class=&quot;filter-label&quot;>Time</span>
+  <button class=&quot;filter-chip active&quot; data-filter=&quot;all&quot; onclick=&quot;setPersonFilter('all',this)&quot;>Todos</button>
+  <button class=&quot;filter-chip priority&quot; data-filter=&quot;AM&quot; onclick=&quot;setPersonFilter('AM',this)&quot;>AM</button>
+  <button class=&quot;filter-chip priority&quot; data-filter=&quot;FA&quot; onclick=&quot;setPersonFilter('FA',this)&quot;>FA</button>
+  <button class=&quot;filter-chip priority&quot; data-filter=&quot;DS&quot; onclick=&quot;setPersonFilter('DS',this)&quot;>DS</button>
+  <button class=&quot;filter-chip priority&quot; data-filter=&quot;HM&quot; onclick=&quot;setPersonFilter('HM',this)&quot;>HM</button>
+  <div class=&quot;filter-sep&quot;></div>
+  <button class=&quot;filter-chip&quot; data-filter=&quot;AC&quot; onclick=&quot;setPersonFilter('AC',this)&quot;>AC</button>
+  <button class=&quot;filter-chip&quot; data-filter=&quot;ML&quot; onclick=&quot;setPersonFilter('ML',this)&quot;>ML</button>
+  <button class=&quot;filter-chip&quot; data-filter=&quot;BL&quot; onclick=&quot;setPersonFilter('BL',this)&quot;>BL</button>
+  <button class=&quot;filter-chip&quot; data-filter=&quot;GC&quot; onclick=&quot;setPersonFilter('GC',this)&quot;>GC</button>
+  <button class=&quot;filter-chip&quot; data-filter=&quot;OK&quot; onclick=&quot;setPersonFilter('OK',this)&quot;>OK</button>
+  <div class=&quot;filter-sep&quot;></div>
+  <span class=&quot;filter-label&quot;>Status</span>
+  <button class=&quot;filter-chip active&quot; data-status=&quot;all&quot; onclick=&quot;setStatusFilter('all',this)&quot;>Todos</button>
+  <button class=&quot;filter-chip&quot; data-status=&quot;PENDENTE&quot; onclick=&quot;setStatusFilter('PENDENTE',this)&quot;>Pendente</button>
+  <button class=&quot;filter-chip&quot; data-status=&quot;ANDAMENTO&quot; onclick=&quot;setStatusFilter('ANDAMENTO',this)&quot;>Em Andamento</button>
+  <button class=&quot;filter-chip&quot; data-status=&quot;BLOQUEADO&quot; onclick=&quot;setStatusFilter('BLOQUEADO',this)&quot;>Bloqueado</button>
+  <button class=&quot;filter-chip&quot; data-status=&quot;FINALIZADO&quot; onclick=&quot;setStatusFilter('FINALIZADO',this)&quot;>Finalizado</button>
+</div>
+<div class=&quot;dash-header&quot;>
+  <div class=&quot;dash-title&quot; id=&quot;viewTitle&quot;>Kanban <span id=&quot;planningDate&quot;></span></div>
+  <div style=&quot;display:flex;align-items:center;gap:10px&quot;>
+    <div class=&quot;dash-meta&quot; id=&quot;projectCount&quot;></div>
+  </div>
+</div>
+<div id=&quot;boardView&quot; class=&quot;board-view&quot;><div class=&quot;board&quot; id=&quot;board&quot;></div></div>
+<div id=&quot;listView&quot; class=&quot;list-view&quot; style=&quot;display:none&quot;><div id=&quot;planningList&quot;></div></div>
+<div id=&quot;weekView&quot; class=&quot;week-view&quot; style=&quot;display:none&quot;><div class=&quot;week-grid&quot; id=&quot;weekGrid&quot;></div></div>
+<div id=&quot;calView&quot; class=&quot;cal-view&quot; style=&quot;display:none&quot;>
+  <div class=&quot;cal-toolbar&quot;>
+    <div class=&quot;cal-month-nav&quot;>
+      <button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;calPrev()&quot;>←</button>
+      <div class=&quot;cal-month-title&quot; id=&quot;calMonthTitle&quot;></div>
+      <button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;calNext()&quot;>→</button>
+    </div>
+    <button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;calGoToday()&quot;>Hoje</button>
+    <button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;captureCurrentViewPng()&quot;>↓ PNG</button>
+    <div style=&quot;margin-left:auto;font-size:11px;color:var(--color-gray)&quot;>Clique num dia para adicionar evento</div>
+  </div>
+  <div id=&quot;calGrid&quot; class=&quot;cal-grid&quot;></div>
+</div>
+<div id=&quot;summaryView&quot; class=&quot;summary-view&quot; style=&quot;display:none&quot;><div id=&quot;summaryContent&quot;></div></div>
 </div>
 
+<!-- PROJECT MODAL -->
+<div class=&quot;overlay&quot; id=&quot;projectOverlay&quot; onclick=&quot;closeProjectModal(event)&quot;>
+  <div class=&quot;project-modal&quot;>
+    <div class=&quot;modal-header&quot;>
+      <div class=&quot;modal-header-content&quot;>
+        <div class=&quot;modal-project-name&quot; id=&quot;modalName&quot; contenteditable=&quot;true&quot;></div>
+        <div class=&quot;modal-meta&quot;>
+          <select class=&quot;modal-status-select&quot; id=&quot;modalStatus&quot; onchange=&quot;saveCurrentProject()&quot;></select>
+          <div class=&quot;project-color-row&quot; id=&quot;projectColorPicker&quot;></div>
+          <div class=&quot;team-field&quot; id=&quot;modalTeamField&quot;>
+            <div class=&quot;person-picker&quot; id=&quot;modalTeamPicker&quot;>
+              <button class=&quot;team-add-btn&quot; onclick=&quot;togglePersonPicker('modalTeamPickerDropdown',event)&quot;>+ Responsável</button>
+              <div class=&quot;person-picker-dropdown&quot; id=&quot;modalTeamPickerDropdown&quot;>
+                <div class=&quot;person-picker-grid&quot; id=&quot;modalPickerGrid&quot;></div>
+                <div class=&quot;person-picker-divider&quot;></div>
+                <input class=&quot;person-custom-input&quot; placeholder=&quot;Outro (Enter)...&quot; id=&quot;modalCustomPerson&quot; onkeydown=&quot;handleCustomPersonKey(event,'modal')&quot;/>
+                <div class=&quot;person-picker-actions&quot;><button class=&quot;btn btn-sm btn-secondary&quot; onclick=&quot;closePersonPicker('modalTeamPickerDropdown')&quot;>OK</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style=&quot;display:flex;gap:7px;flex-shrink:0&quot;>
+        <button class=&quot;btn btn-ghost btn-sm&quot; onclick=&quot;closeProjectModal()&quot;>✕</button>
+      </div>
+    </div>
+    <div class=&quot;modal-body&quot;>
+      <!-- Coluna 1: Marcos + Dashboard Checklist -->
+      <div class=&quot;modal-section&quot; style=&quot;overflow-y:auto;max-height:520px&quot;>
+        <div class=&quot;section-title&quot;>Marcos
+          <div style=&quot;display:flex;gap:5px&quot;>
+            <button class=&quot;btn btn-sm btn-secondary&quot; onclick=&quot;openMilestoneModal(null,'sprint')&quot;>+ Sprint</button>
+            <button class=&quot;btn btn-sm btn-primary&quot; onclick=&quot;openMilestoneModal(null,'milestone')&quot;>+ Marco</button>
+          </div>
+        </div>
+        <div class=&quot;milestones&quot; id=&quot;milestonesList&quot;></div>
+
+      </div>
+      <!-- Coluna 2: Log -->
+      <div class=&quot;modal-section&quot; style=&quot;overflow-y:auto;max-height:520px&quot;>
+        <div class=&quot;section-title&quot;>Log <button class=&quot;btn btn-sm btn-primary&quot; onclick=&quot;addLogEntry()&quot;>+ Registro</button></div>
+        <div class=&quot;log-list&quot; id=&quot;logList&quot;></div>
+      </div>
+    </div>
+    <div class=&quot;modal-footer&quot;>
+      <div style=&quot;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px&quot;>
+        <button class=&quot;btn btn-sm&quot; style=&quot;background:transparent;color:var(--color-red);border:1px solid rgba(227,64,74,.3);font-size:11px&quot; onclick=&quot;deleteCurrentProject()&quot;>Excluir projeto</button>
+        <div class=&quot;section-title&quot; style=&quot;margin:0&quot;>Tasks <button class=&quot;btn btn-sm btn-primary&quot; onclick=&quot;addTask()&quot;>+ Task</button></div>
+      </div>
+      <div class=&quot;quick-task-inbox&quot; id=&quot;quickTaskInbox&quot;>
+        <input class=&quot;quick-inbox-input&quot; id=&quot;quickTaskDesc&quot; placeholder=&quot;Task rápida — pressione Enter para adicionar...&quot; onkeydown=&quot;handleQuickTaskKey(event)&quot;/>
+        <select class=&quot;quick-inbox-who&quot; id=&quot;quickTaskWho&quot;>
+          <option value=&quot;&quot;>Quem?</option>
+          <option>AM</option><option>FA</option><option>DS</option><option>HM</option>
+          <option>AC</option><option>ML</option><option>BL</option><option>GC</option><option>VM</option>
+        </select>
+        <input class=&quot;quick-inbox-date&quot; id=&quot;quickTaskDate&quot; type=&quot;date&quot;/>
+        <button class=&quot;btn btn-sm btn-primary&quot; onclick=&quot;submitQuickTask()&quot;>↵</button>
+      </div>
+      <div class=&quot;tasks-board&quot; id=&quot;taskBoard&quot;></div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW PROJECT -->
+<div class=&quot;overlay&quot; id=&quot;newProjectOverlay&quot; onclick=&quot;closeNewProjectModal(event)&quot;>
+  <div class=&quot;small-modal&quot;>
+    <div class=&quot;small-modal-title&quot;>Novo Projeto Atlas</div>
+    <div style=&quot;display:flex;flex-direction:column;gap:10px&quot;>
+      <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Nome</label><input class=&quot;form-input&quot; id=&quot;newProjectName&quot; placeholder=&quot;Ex: PULMAO-BR&quot;/></div>
+      <div class=&quot;form-grid&quot;>
+        <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Status</label>
+          <select class=&quot;form-select&quot; id=&quot;newProjectStatus&quot;>
+            <option value=&quot;PENDENTE&quot;>Pendente</option>
+            <option value=&quot;ANDAMENTO&quot;>Em Andamento</option>
+            <option value=&quot;BLOQUEADO&quot;>Bloqueado</option>
+            <option value=&quot;FINALIZADO&quot;>Finalizado</option>
+          </select></div>
+        <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Time</label><input class=&quot;form-input&quot; id=&quot;newProjectTeam&quot; placeholder=&quot;AM, FA, DS&quot;/></div>
+      </div>
+      <div class=&quot;form-actions&quot;>
+        <button class=&quot;btn btn-secondary&quot; onclick=&quot;closeNewProjectModal()&quot;>Cancelar</button>
+        <button class=&quot;btn btn-primary&quot; onclick=&quot;createProject()&quot;>Criar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MILESTONE MODAL -->
+<div class=&quot;overlay&quot; id=&quot;milestoneOverlay&quot; onclick=&quot;closeMilestoneModal(event)&quot;>
+  <div class=&quot;small-modal modal-wide&quot;>
+    <div class=&quot;small-modal-title&quot; id=&quot;milestoneModalTitle&quot;>Novo Marco</div>
+    <div style=&quot;display:flex;flex-direction:column;gap:10px&quot;>
+      <div id=&quot;presetSection&quot;>
+        <div class=&quot;preset-list&quot; id=&quot;presetList&quot;></div>
+        <div style=&quot;height:1px;background:rgba(22,22,22,.08);margin:4px 0&quot;></div>
+        <div style=&quot;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--color-gray);margin-bottom:4px&quot;>Ou personalizado</div>
+      </div>
+      <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Descrição</label><input class=&quot;form-input&quot; id=&quot;milestoneLabel&quot; placeholder=&quot;Ex: Pipeline de dados&quot;/></div>
+      <div class=&quot;form-grid&quot;>
+        <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Data</label><input class=&quot;form-input&quot; id=&quot;milestoneDate&quot; type=&quot;date&quot;/></div>
+        <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Status</label>
+          <select class=&quot;form-select&quot; id=&quot;milestoneStatus&quot;>
+            <option value=&quot;pending&quot;>Pendente</option><option value=&quot;active&quot;>Em andamento</option>
+            <option value=&quot;done&quot;>Concluído</option><option value=&quot;blocked&quot;>Bloqueado</option>
+          </select></div>
+      </div>
+      <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Responsáveis</label>
+        <div style=&quot;display:flex;flex-direction:column;gap:6px&quot;>
+          <div style=&quot;display:flex;gap:4px;flex-wrap:wrap&quot; id=&quot;milestoneWhoField&quot;></div>
+          <div class=&quot;person-picker&quot;>
+            <button class=&quot;team-add-btn&quot; onclick=&quot;togglePersonPicker('milestoneWhoDropdown',event)&quot;>+ Adicionar</button>
+            <div class=&quot;person-picker-dropdown&quot; id=&quot;milestoneWhoDropdown&quot;>
+              <div class=&quot;person-picker-grid&quot; id=&quot;milestonePickerGrid&quot;></div>
+              <div class=&quot;person-picker-divider&quot;></div>
+              <input class=&quot;person-custom-input&quot; placeholder=&quot;Outro...&quot; id=&quot;milestoneCustomPerson&quot; onkeydown=&quot;handleCustomPersonKey(event,'milestone')&quot;/>
+              <div class=&quot;person-picker-actions&quot;><button class=&quot;btn btn-sm btn-secondary&quot; onclick=&quot;closePersonPicker('milestoneWhoDropdown')&quot;>OK</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class=&quot;form-actions&quot;>
+        <button class=&quot;btn btn-secondary&quot; onclick=&quot;closeMilestoneModal()&quot;>Cancelar</button>
+        <button class=&quot;btn btn-primary&quot; onclick=&quot;saveMilestone()&quot;>Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOG MODAL -->
+<div class=&quot;overlay&quot; id=&quot;logOverlay&quot; onclick=&quot;closeLogModal(event)&quot;>
+  <div class=&quot;small-modal&quot;>
+    <div class=&quot;small-modal-title&quot;>Novo Registro</div>
+    <div style=&quot;display:flex;flex-direction:column;gap:10px&quot;>
+      <div class=&quot;form-grid&quot;>
+        <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Data</label><input class=&quot;form-input&quot; id=&quot;logDate&quot; type=&quot;date&quot;/></div>
+        <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Autor</label><input class=&quot;form-input&quot; id=&quot;logAuthor&quot; placeholder=&quot;Seu nome&quot;/></div>
+      </div>
+      <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Registro</label><textarea class=&quot;form-textarea&quot; id=&quot;logText&quot; placeholder=&quot;Resumo de reunião, decisão, status...&quot;></textarea></div>
+      <div class=&quot;form-actions&quot;>
+        <button class=&quot;btn btn-secondary&quot; onclick=&quot;closeLogModal()&quot;>Cancelar</button>
+        <button class=&quot;btn btn-primary&quot; onclick=&quot;saveLog()&quot;>Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div class=&quot;overlay&quot; id=&quot;taskOverlay&quot; onclick=&quot;closeTaskModal(event)&quot;>
+  <div class=&quot;small-modal modal-wide&quot;>
+    <div class=&quot;small-modal-title&quot; id=&quot;taskModalTitle&quot;>Nova Task</div>
+    <div style=&quot;display:flex;flex-direction:column;gap:10px&quot;>
+      <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Descrição</label><textarea class=&quot;form-textarea&quot; id=&quot;taskDesc&quot; placeholder=&quot;O que precisa ser feito?&quot; style=&quot;min-height:50px&quot;></textarea></div>
+      <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Responsáveis</label>
+        <div style=&quot;display:flex;flex-direction:column;gap:6px&quot;>
+          <div style=&quot;display:flex;gap:4px;flex-wrap:wrap&quot; id=&quot;taskWhoField&quot;></div>
+          <div class=&quot;person-picker&quot;>
+            <button class=&quot;team-add-btn&quot; onclick=&quot;togglePersonPicker('taskWhoDropdown',event)&quot;>+ Adicionar</button>
+            <div class=&quot;person-picker-dropdown&quot; id=&quot;taskWhoDropdown&quot;>
+              <div class=&quot;person-picker-grid&quot; id=&quot;taskPickerGrid&quot;></div>
+              <div class=&quot;person-picker-divider&quot;></div>
+              <input class=&quot;person-custom-input&quot; placeholder=&quot;Outro...&quot; id=&quot;taskCustomPerson&quot; onkeydown=&quot;handleCustomPersonKey(event,'task')&quot;/>
+              <div class=&quot;person-picker-actions&quot;><button class=&quot;btn btn-sm btn-secondary&quot; onclick=&quot;closePersonPicker('taskWhoDropdown')&quot;>OK</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class=&quot;form-grid&quot;>
+        <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Prazo</label><input class=&quot;form-input&quot; id=&quot;taskDate&quot; type=&quot;date&quot;/></div>
+        <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Coluna</label>
+          <select class=&quot;form-select&quot; id=&quot;taskStatus&quot;><option value=&quot;todo&quot;>A Fazer</option><option value=&quot;doing&quot;>Em Andamento</option><option value=&quot;done&quot;>Concluído</option></select>
+        </div>
+      </div>
+      <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Subtasks (uma por linha)</label><textarea class=&quot;form-textarea&quot; id=&quot;taskSubtasks&quot; placeholder=&quot;Preparar queries&amp;#10;Validar dataset&quot; style=&quot;min-height:56px&quot;></textarea></div>
+      <div class=&quot;form-actions&quot;>
+        <button class=&quot;btn btn-secondary&quot; onclick=&quot;closeTaskModal()&quot;>Cancelar</button>
+        <button class=&quot;btn btn-primary&quot; onclick=&quot;saveTask()&quot;>Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CALENDAR EVENT MODAL -->
+<div class=&quot;overlay&quot; id=&quot;calEventOverlay&quot; onclick=&quot;closeCalEventModal(event)&quot;>
+  <div class=&quot;small-modal&quot; style=&quot;max-width:440px&quot;>
+    <div class=&quot;small-modal-title&quot; id=&quot;calEventModalTitle&quot;>Novo evento</div>
+    <div style=&quot;display:flex;flex-direction:column;gap:10px&quot;>
+      <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Descrição</label><input class=&quot;form-input&quot; id=&quot;calEventDesc&quot; placeholder=&quot;Ex: Dashboard ambulatorial — Lúpus&quot;/></div>
+      <div class=&quot;form-grid&quot;>
+        <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Data início</label><input class=&quot;form-input&quot; id=&quot;calEventDateStart&quot; type=&quot;date&quot;/></div>
+        <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Data fim <span style=&quot;font-size:10px;color:var(--color-gray)&quot;>(opcional)</span></label><input class=&quot;form-input&quot; id=&quot;calEventDateEnd&quot; type=&quot;date&quot;/></div>
+      </div>
+      <div class=&quot;form-grid&quot;>
+        <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Projeto</label>
+          <select class=&quot;form-select&quot; id=&quot;calEventProject&quot; onchange=&quot;populateCalEventMilestone()&quot;>
+            <option value=&quot;&quot;>— Manual —</option>
+          </select></div>
+        <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Etapa</label>
+          <select class=&quot;form-select&quot; id=&quot;calEventMilestone&quot;><option value=&quot;&quot;>—</option></select></div>
+      </div>
+      <div class=&quot;form-row&quot;><label class=&quot;form-label&quot;>Responsável</label>
+        <select class=&quot;form-select&quot; id=&quot;calEventWho&quot;>
+          <option value=&quot;&quot;>—</option>
+          <option>AM</option><option>FA</option><option>DS</option><option>HM</option>
+          <option>AC</option><option>ML</option><option>BL</option><option>GC</option><option>VM</option>
+        </select></div>
+      <div id=&quot;calEventEditActions&quot; style=&quot;display:none&quot;>
+        <button class=&quot;btn btn-sm&quot; style=&quot;background:transparent;color:var(--color-red);border:1px solid rgba(227,64,74,.3);font-size:11px;width:100%&quot; onclick=&quot;deleteCalEvent()&quot;>Excluir evento</button>
+      </div>
+      <div class=&quot;form-actions&quot;>
+        <button class=&quot;btn btn-secondary&quot; onclick=&quot;closeCalEventModal()&quot;>Cancelar</button>
+        <button class=&quot;btn btn-primary&quot; onclick=&quot;saveCalEvent()&quot;>Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class=&quot;toast-container&quot; id=&quot;toastContainer&quot;></div>
 <script>
-function show(which) {
-  ['rwe','atlas'].forEach(function(id) {
-    document.getElementById('frame-' + id).classList.toggle('active', id === which);
-    document.getElementById('tab-'   + id).classList.toggle('active', id === which);
+// ══ CONSTANTS ══
+const STORAGE_KEY='dp_tracker_v1';
+const TEAM_PRIORITY=['AM','FA','DS','HM'];
+const TEAM_OPTIONS=['AM','FA','DS','HM','AC','ML','BL','GC','VM'];
+const STATUS_COLS=[
+  {id:'PENDENTE',     label:'Pendente',     cls:'pendente'},
+  {id:'ANDAMENTO',   label:'Em Andamento', cls:'andamento'},
+  {id:'BLOQUEADO',   label:'Bloqueado',    cls:'bloqueado'},
+  {id:'INTERROMPIDO',label:'Interrompido', cls:'interrompido'},
+  {id:'FINALIZADO',  label:'Finalizado',   cls:'finalizado'},
+];
+const MILESTONE_PRESETS=[
+  {label:'Kickoff',                icon:'🚀',parent:null},
+  {label:'Definição de métricas',  icon:'📐',parent:null},
+  {label:'Pipeline de dados',      icon:'🔧',parent:null},
+  {label:'Criação dos dashboards', icon:'🖥️',parent:null},
+  {label:'Publicação',             icon:'🚢',parent:null},
+  {label:'Validação',              icon:'✅',parent:null},
+  {label:'Go-live',                icon:'🎯',parent:null},
+];
+const DASH_ITEMS_DEFAULT=[];
+const PROJECT_COLORS=[
+  {id:'amber',  hex:'#f6b359', label:'Âmbar'},
+  {id:'blue',   hex:'#7295cd', label:'Azul'},
+  {id:'green',  hex:'#55b583', label:'Verde'},
+  {id:'lilac',  hex:'#ab87bd', label:'Lilás'},
+  {id:'coral',  hex:'#e07b5a', label:'Coral'},
+  {id:'pink',   hex:'#e23f4a', label:'Vermelho'},
+  {id:'sand',   hex:'#c6b198', label:'Areia'},
+];
+function getProjectColor(p){
+  const col=PROJECT_COLORS.find(c=>c.id===(p.color||'blue'));
+  return col?col.hex:'#7295cd';
+}
+const MONTH_NAMES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+// ══ STATE ══
+const _SEED={&quot;projects&quot;: [], &quot;calEvents&quot;: []};
+let db=loadData();
+let filterPerson='all', filterStatus='all', currentView='board';
+let currentProjectId=null, editingMilestoneIdx=null, editingTaskIdx=null, milestoneType='milestone';
+let tempModalTeam=[], tempMilestoneWho=[], tempTaskWho=[];
+let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
+let calEditingDate=null, calEditingEventId=null;
+let openQuickRow={};
+let draggingCardId=null, dragSrcIdx=null;
+
+// ══ STORAGE ══
+function loadData(){
+  try{const r=localStorage.getItem(STORAGE_KEY);const d=r?JSON.parse(r):null;
+    if(d&amp;&amp;d.projects&amp;&amp;d.projects.length>0){if(!d.calEvents)d.calEvents=[];return d;}
+    return JSON.parse(JSON.stringify(_SEED));
+  }catch{return JSON.parse(JSON.stringify(_SEED));}
+}
+function saveData(d){localStorage.setItem(STORAGE_KEY,JSON.stringify(d))}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+// ══ INIT ══
+document.addEventListener('DOMContentLoaded',()=>{
+  const now=new Date();
+  document.getElementById('planningDate').textContent=now.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+  ['milestoneDate','logDate','taskDate','quickTaskDate'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=now.toISOString().slice(0,10)});
+  document.getElementById('modalName').addEventListener('input',saveCurrentProject);
+  document.addEventListener('click',handleGlobalClick);
+  renderCurrentView();
+});
+
+// ══ VIEW SWITCHING ══
+function setView(v){
+  currentView=v;
+  ['board','list','week','cal','summary'].forEach(name=>{
+    document.getElementById(name+'View').style.display=name===v?'block':'none';
+    const tab=document.getElementById('tab'+name.charAt(0).toUpperCase()+name.slice(1));
+    if(tab)tab.classList.toggle('active',name===v);
   });
+  const titles={board:'Kanban',list:'Planning — Lista',week:'Semana',cal:'Calendário',summary:'Resumo da Planning'};
+  document.getElementById('viewTitle').textContent=titles[v]+' ';
+  const pngBtn=document.getElementById('btnCapturePng');
+  if(pngBtn)pngBtn.style.display='inline-flex';
+  renderCurrentView();
+}
+function renderCurrentView(){
+  if(currentView==='board')renderBoard();
+  else if(currentView==='list')renderPlanningList();
+  else if(currentView==='week')renderWeekView();
+  else if(currentView==='cal')renderCalendar();
+  else renderSummaryView();
+  const p=getFilteredProjects();
+  document.getElementById('projectCount').textContent=`${db.projects.length} projetos · ${p.length} exibidos`;
+}
+
+// ══ FILTERS ══
+function setPersonFilter(val,btn){filterPerson=val;document.querySelectorAll('[data-filter]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderCurrentView()}
+function setStatusFilter(val,btn){filterStatus=val;document.querySelectorAll('[data-status]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderCurrentView()}
+function getFilteredProjects(){
+  const search=document.getElementById('searchInput').value.toLowerCase();
+  return db.projects.filter(p=>{
+    if(filterStatus!=='all'&amp;&amp;p.status!==filterStatus)return false;
+    if(filterPerson!=='all'&amp;&amp;!(p.team||[]).includes(filterPerson))return false;
+    if(search&amp;&amp;!p.name.toLowerCase().includes(search))return false;
+    return true;
+  });
+}
+
+// ══ UTILS ══
+function escHtml(s){if(!s)return'';return String(s).replace(/&amp;/g,'&amp;amp;').replace(/</g,'&amp;lt;').replace(/>/g,'&amp;gt;').replace(/&quot;/g,'&amp;quot;')}
+function formatDate(d){if(!d)return'';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`}
+function deadlineClass(d){if(!d)return'';const diff=(new Date(d)-new Date())/86400000;if(diff<0)return'overdue';if(diff<=5)return'soon';return''}
+function statusBadgeCls(s){return{'PENDENTE':'badge-pendente','ANDAMENTO':'badge-andamento','BLOQUEADO':'badge-bloqueado','FINALIZADO':'badge-finalizado'}[s]||'badge-pendente'}
+function avatarCls(t){return'av-'+t.toLowerCase()}
+function toast(msg,type){const el=document.createElement('div');el.className='toast'+(type?' '+type:'');el.textContent=msg;document.getElementById('toastContainer').appendChild(el);setTimeout(()=>el.remove(),2600)}
+function handleGlobalClick(e){
+  if(!e.target.closest('.person-picker'))document.querySelectorAll('.person-picker-dropdown.open').forEach(d=>d.classList.remove('open'));
+  if(!e.target.closest('.status-badge')&amp;&amp;!e.target.closest('.card-status-popup'))document.querySelectorAll('.card-status-popup.open').forEach(d=>d.classList.remove('open'));
+}
+
+// ══════════════════════════════
+//  VIEW 1: KANBAN BOARD
+// ══════════════════════════════
+function renderBoard(){
+  const board=document.getElementById('board');
+  const projects=getFilteredProjects();
+  board.innerHTML=STATUS_COLS.map(col=>{
+    const cp=projects.filter(p=>p.status===col.id);
+    return`<div class=&quot;board-col&quot;
+      ondragover=&quot;boardColDragOver(event,'${col.id}')&quot;
+      ondrop=&quot;boardColDrop(event,'${col.id}')&quot;
+      ondragleave=&quot;this.querySelectorAll('.project-card').forEach(c=>c.classList.remove('drag-over-card'))&quot;>
+      <div class=&quot;col-header col-header-${col.cls}&quot;>
+        <span class=&quot;col-title&quot;>${col.label}</span>
+        <span class=&quot;col-count count-${col.cls}&quot;>${cp.length}</span>
+      </div>
+      ${cp.length===0?`<div class=&quot;col-empty&quot;>Nenhum projeto</div>`:cp.map(p=>renderCard(p)).join('')}
+    </div>`;
+  }).join('');
+}
+
+function renderCard(p){
+  const lastLog=p.log&amp;&amp;p.log.length>0?p.log[p.log.length-1]:null;
+  const logHtml=lastLog?`<div class=&quot;card-log&quot;>${escHtml(lastLog.text)}</div>`:`<div class=&quot;card-log card-log-empty&quot;>Sem registros</div>`;
+  const next=[...(p.milestones||[]).filter(m=>m.date&amp;&amp;m.status!=='done').map(m=>({date:m.date,who:m.who})),...(p.tasks||[]).filter(t=>t.date&amp;&amp;t.status!=='done').map(t=>({date:t.date,who:t.who}))].sort((a,b)=>a.date.localeCompare(b.date))[0];
+  const active=(p.milestones||[]).find(m=>m.status==='active')||(p.milestones||[]).find(m=>m.status!=='done');
+  const stage=active?active.label:'Sem marcos';
+  const team=(p.team||[]).slice(0,5).map(t=>`<div class=&quot;avatar ${avatarCls(t)}&quot;>${t.slice(0,2)}</div>`).join('');
+  const badgeCls=statusBadgeCls(p.status);
+  const statusLabel=STATUS_COLS.find(c=>c.id===p.status)?.label||p.status;
+  const whoStr=next&amp;&amp;next.who?(Array.isArray(next.who)?next.who.join(', '):next.who):'';
+  const dcls=next?deadlineClass(next.date):'';
+  // Dash progress badge
+  // contagem de tasks para o card
+  const allTasks=(p.tasks||[]);
+  const totalTasks=allTasks.length;
+  const doneTasks=allTasks.filter(t=>t.status==='done').length;
+  const dashProgress=totalTasks>0?`<div style=&quot;font-size:10px;color:var(--color-gray);margin-bottom:4px&quot;>${doneTasks}/${totalTasks} tasks</div>`:'';
+  const statusOpts=STATUS_COLS.map(c=>`<div class=&quot;status-popup-item${p.status===c.id?' current':''}&quot; onclick=&quot;quickSetStatus('${p.id}','${c.id}',event)&quot;>${c.label}</div>`).join('');
+  const pColorHex=getProjectColor(p);
+  return`<div class=&quot;project-card&quot; draggable=&quot;true&quot;
+      onclick=&quot;openProject('${p.id}')&quot;
+      ondragstart=&quot;cardDragStart(event,'${p.id}')&quot;>
+    <div class=&quot;card-color-bar&quot; style=&quot;background:${pColorHex}&quot;></div>
+    <div class=&quot;card-top&quot;>
+      <div class=&quot;card-name&quot;>${escHtml(p.name)}</div>
+      <div style=&quot;position:relative&quot;>
+        <span class=&quot;status-badge ${badgeCls}&quot; onclick=&quot;toggleStatusPopup('popup-${p.id}',event)&quot;>${escHtml(statusLabel)} ▾</span>
+        <div class=&quot;card-status-popup&quot; id=&quot;popup-${p.id}&quot;>${statusOpts}</div>
+      </div>
+    </div>
+    <div class=&quot;card-stage&quot;>${escHtml(stage)}</div>
+    ${next?`<div class=&quot;card-deadline&quot;><span class=&quot;deadline-date ${dcls}&quot;>${formatDate(next.date)}</span>${whoStr?`<span style=&quot;font-size:9px;font-weight:600;background:var(--color-bg);border-radius:99px;padding:2px 7px&quot;>${escHtml(whoStr)}</span>`:''}</div>`:''}
+    ${dashProgress}
+    ${team?`<div class=&quot;card-team&quot;>${team}</div>`:''}
+    ${logHtml}
+  </div>`;
+}
+
+function toggleStatusPopup(popupId,e){e.stopPropagation();document.querySelectorAll('.card-status-popup.open').forEach(d=>{if(d.id!==popupId)d.classList.remove('open')});document.getElementById(popupId).classList.toggle('open')}
+function quickSetStatus(pid,status,e){e.stopPropagation();const p=db.projects.find(p=>p.id===pid);if(!p)return;p.status=status;saveData(db);renderCurrentView();toast('Status atualizado')}
+
+function cardDragStart(e,id){draggingCardId=id;e.dataTransfer.effectAllowed='move';setTimeout(()=>{const card=document.querySelector(`[ondragstart*=&quot;${id}&quot;]`);if(card)card.classList.add('dragging')},0)}
+function boardColDragOver(e,colId){e.preventDefault();e.dataTransfer.dropEffect='move'}
+function boardColDrop(e,colId){
+  e.preventDefault();if(!draggingCardId)return;
+  const p=db.projects.find(p=>p.id===draggingCardId);
+  if(p&amp;&amp;p.status!==colId){p.status=colId;saveData(db);renderCurrentView();toast(`Movido para ${STATUS_COLS.find(c=>c.id===colId)?.label||colId}`)}
+  draggingCardId=null;
+}
+
+// ══════════════════════════════
+//  VIEW 2: PLANNING LIST
+// ══════════════════════════════
+function renderPlanningList(){
+  const container=document.getElementById('planningList');
+  const allProjects=getFilteredProjects();
+  let html='';
+  STATUS_COLS.forEach(col=>{
+    const group=allProjects.filter(p=>p.status===col.id);
+    if(group.length===0)return;
+    const titleColor={BLOQUEADO:'var(--color-red)',ANDAMENTO:'var(--color-blue)',FINALIZADO:'var(--color-green)',PENDENTE:'var(--color-gray)'}[col.id]||'var(--color-gray)';
+    html+=`<div class=&quot;list-group&quot;>
+      <div class=&quot;list-group-header&quot; onclick=&quot;toggleListGroup('grp-${col.id}')&quot;>
+        <span class=&quot;list-group-title&quot; style=&quot;color:${titleColor}&quot;>${col.label}</span>
+        <span class=&quot;list-group-count&quot;>${group.length}</span>
+        <span class=&quot;list-group-toggle&quot; id=&quot;toggle-${col.id}&quot;>▾</span>
+      </div>
+      <div id=&quot;grp-${col.id}&quot;>`;
+    group.forEach(p=>{
+      const lastLog=p.log&amp;&amp;p.log.length>0?p.log[p.log.length-1]:null;
+      const team=(p.team||[]).slice(0,5).map(t=>`<div class=&quot;avatar ${avatarCls(t)}&quot; style=&quot;width:18px;height:18px;font-size:7px&quot;>${t.slice(0,2)}</div>`).join('');
+      const statusOpts=STATUS_COLS.map(c=>`<option value=&quot;${c.id}&quot;${p.status===c.id?' selected':''}>${c.label}</option>`).join('');
+      const selCls={PENDENTE:'color:var(--color-gray)',ANDAMENTO:'color:#185FA5;background:var(--color-blue-25)',BLOQUEADO:'color:var(--color-red);background:rgba(227,64,74,.1)',FINALIZADO:'color:#0F6E56;background:var(--color-green-25)'}[p.status]||'';
+      html+=`<div class=&quot;list-row&quot; id=&quot;row-${p.id}&quot;>
+        <div>
+          <div class=&quot;list-row-name&quot; onclick=&quot;openProject('${p.id}')&quot;><span class=&quot;project-color-swatch&quot; style=&quot;background:${getProjectColor(p)};margin-right:5px&quot;></span>${escHtml(p.name)}</div>
+          <div class=&quot;list-row-avatars&quot;>${team}</div>
+        </div>
+        <div>
+          <select class=&quot;list-status-select&quot; style=&quot;${selCls}&quot; onchange=&quot;changeProjectStatus('${p.id}',this.value)&quot;>${statusOpts}</select>
+        </div>
+        <div class=&quot;list-log-cell&quot;>
+          ${lastLog?`<div class=&quot;list-log-author&quot;>${escHtml(lastLog.author||'Equipe')} · ${formatDate(lastLog.date)}</div><div class=&quot;list-log-text&quot;>${escHtml(lastLog.text)}</div>`:`<div class=&quot;list-log-empty&quot;>Sem registros</div>`}
+        </div>
+        <div class=&quot;list-actions&quot;>
+          <button class=&quot;btn btn-sm btn-secondary&quot; onclick=&quot;toggleQuickRow('${p.id}','log',event)&quot;>+ Log</button>
+          <button class=&quot;btn btn-sm&quot; style=&quot;background:var(--color-amber-25);color:var(--txt-amb);border:1px solid rgba(246,179,89,.4)&quot; onclick=&quot;toggleQuickRow('${p.id}','task',event)&quot;>+ Task</button>
+          <button class=&quot;btn btn-ghost btn-sm&quot; onclick=&quot;openProject('${p.id}')&quot;>▸</button>
+        </div>
+      </div>`;
+      const qr=openQuickRow[p.id];
+      if(qr==='log'){
+        html+=`<div class=&quot;quick-row quick-row-log&quot;>
+          <input class=&quot;quick-input&quot; placeholder=&quot;Registro rápido...&quot; id=&quot;qi-log-${p.id}&quot; onkeydown=&quot;if(event.key==='Enter')submitQuickLog('${p.id}')&quot;/>
+          <input class=&quot;quick-input&quot; placeholder=&quot;Autor&quot; id=&quot;qi-auth-${p.id}&quot; style=&quot;max-width:80px&quot;/>
+          <button class=&quot;quick-save-btn quick-save-log&quot; onclick=&quot;submitQuickLog('${p.id}')&quot;>Salvar ↵</button>
+          <button class=&quot;btn btn-ghost btn-sm&quot; onclick=&quot;closeQuickRow('${p.id}')&quot;>✕</button>
+        </div>`;
+      } else if(qr==='task'){
+        html+=`<div class=&quot;quick-row quick-row-task&quot;>
+          <input class=&quot;quick-input&quot; placeholder=&quot;Task...&quot; id=&quot;qi-task-${p.id}&quot; style=&quot;flex:2&quot; onkeydown=&quot;if(event.key==='Enter')submitQuickTask2('${p.id}')&quot;/>
+          <select class=&quot;quick-select&quot; id=&quot;qi-who-${p.id}&quot;>
+            <option value=&quot;&quot;>Quem?</option>
+            ${TEAM_OPTIONS.map(t=>`<option>${t}</option>`).join('')}
+          </select>
+          <input class=&quot;quick-date&quot; type=&quot;date&quot; id=&quot;qi-date-${p.id}&quot; value=&quot;${new Date().toISOString().slice(0,10)}&quot;/>
+          <button class=&quot;quick-save-btn quick-save-task&quot; onclick=&quot;submitQuickTask2('${p.id}')&quot;>Salvar ↵</button>
+          <button class=&quot;btn btn-ghost btn-sm&quot; onclick=&quot;closeQuickRow('${p.id}')&quot;>✕</button>
+        </div>`;
+      }
+      if(openQuickRow['preview-'+p.id]){
+        html+=`<div class=&quot;quick-preview&quot;>${escHtml(openQuickRow['preview-'+p.id])}</div>`;
+      }
+    });
+    html+='</div></div>';
+  });
+  container.innerHTML=html||'<div style=&quot;text-align:center;padding:40px;color:var(--color-gray)&quot;>Nenhum projeto encontrado</div>';
+  // Auto-focus quick inputs
+  Object.keys(openQuickRow).forEach(pid=>{
+    if(openQuickRow[pid]==='log'){const el=document.getElementById('qi-log-'+pid);if(el)setTimeout(()=>el.focus(),30)}
+    if(openQuickRow[pid]==='task'){const el=document.getElementById('qi-task-'+pid);if(el)setTimeout(()=>el.focus(),30)}
+  });
+}
+
+function toggleListGroup(id){const el=document.getElementById(id);if(el){const vis=el.style.display!=='none';el.style.display=vis?'none':'block';const tog=document.getElementById('toggle-'+id.replace('grp-',''));if(tog)tog.textContent=vis?'▸':'▾'}}
+function changeProjectStatus(id,val){const p=db.projects.find(p=>p.id===id);if(!p)return;p.status=val;saveData(db);renderCurrentView();toast('Status atualizado')}
+function toggleQuickRow(pid,type,e){e.stopPropagation();if(openQuickRow[pid]===type){delete openQuickRow[pid]}else{openQuickRow[pid]=type}delete openQuickRow['preview-'+pid];renderPlanningList()}
+function closeQuickRow(pid){delete openQuickRow[pid];delete openQuickRow['preview-'+pid];renderPlanningList()}
+function submitQuickLog(pid){
+  const text=document.getElementById('qi-log-'+pid)?.value.trim();if(!text)return;
+  const auth=document.getElementById('qi-auth-'+pid)?.value.trim()||'Equipe';
+  const p=db.projects.find(p=>p.id===pid);if(!p)return;
+  p.log.push({id:uid(),date:new Date().toISOString().slice(0,10),author:auth,text});
+  saveData(db);openQuickRow['preview-'+pid]=`✓ ${auth}: ${text}`;delete openQuickRow[pid];
+  renderPlanningList();toast('Registro salvo','success');
+}
+function submitQuickTask2(pid){
+  const desc=document.getElementById('qi-task-'+pid)?.value.trim();if(!desc)return;
+  const who=document.getElementById('qi-who-'+pid)?.value;
+  const date=document.getElementById('qi-date-'+pid)?.value;
+  const p=db.projects.find(p=>p.id===pid);if(!p)return;
+  if(!p.tasks)p.tasks=[];
+  p.tasks.push({id:uid(),desc,who:who?[who]:[],date,status:'todo',subtasks:[]});
+  saveData(db);openQuickRow['preview-'+pid]=`✓ Task: ${desc}${who?' → '+who:''}`;delete openQuickRow[pid];
+  renderPlanningList();toast('Task adicionada','success');
+}
+
+// ══════════════════════════════
+//  VIEW 3: SEMANA
+// ══════════════════════════════
+function renderWeekView(){
+  const grid=document.getElementById('weekGrid');
+  const projects=getFilteredProjects();
+  const allTasks=[];
+  projects.forEach(p=>{
+    (p.tasks||[]).filter(t=>t.status!=='done').forEach(t=>{
+      const whoArr=Array.isArray(t.who)?t.who:(t.who?[t.who]:[]);
+      whoArr.forEach(w=>{allTasks.push({...t,person:w,projectId:p.id,projectName:p.name,projectStatus:p.status})});
+      if(whoArr.length===0)allTasks.push({...t,person:'—',projectId:p.id,projectName:p.name,projectStatus:p.status});
+    });
+  });
+  let people=filterPerson!=='all'?[filterPerson]:[...new Set(allTasks.map(t=>t.person))].sort((a,b)=>{
+    const ia=TEAM_OPTIONS.indexOf(a),ib=TEAM_OPTIONS.indexOf(b);
+    return(ia<0?99:ia)-(ib<0?99:ib);
+  });
+  if(people.length===0){grid.innerHTML='<div class=&quot;week-empty&quot; style=&quot;grid-column:1/-1&quot;>Nenhuma task aberta encontrada.</div>';return}
+  grid.innerHTML=people.map(person=>{
+    const tasks=allTasks.filter(t=>t.person===person).sort((a,b)=>(a.date||'9').localeCompare(b.date||'9'));
+    const doingCount=tasks.filter(t=>t.status==='doing').length;
+    const isPriority=TEAM_PRIORITY.includes(person);
+    const av=`<div class=&quot;week-person-avatar ${avatarCls(person)}&quot; style=&quot;width:32px;height:32px;font-size:10px;font-weight:700&quot;>${person.slice(0,2)}</div>`;
+    return`<div class=&quot;week-person-col&quot;>
+      <div class=&quot;week-person-header&quot;>
+        ${av}
+        <div>
+          <div class=&quot;week-person-name&quot;>${escHtml(person)}</div>
+          <div class=&quot;week-person-count&quot;>${tasks.length} task${tasks.length!==1?'s':''} · ${doingCount} em andamento</div>
+        </div>
+      </div>
+      ${tasks.length===0?`<div class=&quot;week-empty&quot;>Sem tasks abertas</div>`:tasks.map(t=>renderWeekTask(t)).join('')}
+    </div>`;
+  }).join('');
+}
+
+function renderWeekTask(t){
+  const dcls=t.date?deadlineClass(t.date):'';
+  const proj=db.projects.find(p=>p.id===t.projectId);
+  const pColorHex=proj?getProjectColor(proj):'#7295cd';
+  const pColor=pColorHex;
+  const colCls='wt-'+(t.projectStatus||'pendente').toLowerCase();
+  const statusLbl={'todo':'A Fazer','doing':'Fazendo','done':'Feito'}[t.status]||t.status;
+  return`<div class=&quot;week-task-card ${colCls}&quot; style=&quot;border-left-color:${pColorHex}&quot; onclick=&quot;openProject('${t.projectId}')&quot;>
+    <span class=&quot;week-task-project&quot; style=&quot;color:${pColor}&quot;>${escHtml(t.projectName)}</span>
+    <div class=&quot;week-task-desc&quot;>${escHtml(t.desc)}</div>
+    <div class=&quot;week-task-meta&quot;>
+      ${t.date?`<span class=&quot;week-task-date ${dcls}&quot;>${formatDate(t.date)}</span>`:'<span class=&quot;week-task-date&quot;>Sem prazo</span>'}
+      <span class=&quot;week-task-status badge-${(t.projectStatus||'pendente').toLowerCase()}&quot; style=&quot;font-size:9px;padding:1px 6px&quot;>${statusLbl}</span>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════
+//  VIEW 4: CALENDÁRIO
+// ══════════════════════════════
+function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--}renderCalendar()}
+function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++}renderCalendar()}
+function calGoToday(){const n=new Date();calYear=n.getFullYear();calMonth=n.getMonth();renderCalendar()}
+
+function renderCalendar(){
+  document.getElementById('calMonthTitle').textContent=`${MONTH_NAMES[calMonth]} ${calYear}`;
+  const grid=document.getElementById('calGrid');
+  const today=new Date();
+  const firstDay=new Date(calYear,calMonth,1);
+  const lastDay=new Date(calYear,calMonth+1,0);
+  const startDow=firstDay.getDay();
+  const calEventsMonth=getCalEventsForMonth(calYear,calMonth);
+
+  let html=`<div class=&quot;cal-dow-row&quot;>`;
+  ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].forEach((d,i)=>{
+    html+=`<div class=&quot;cal-dow-cell${i===0||i===6?' weekend':''}&quot;>${d}</div>`;
+  });
+  html+=`</div><div class=&quot;cal-weeks&quot;>`;
+
+  // Build days array (always start on Sunday)
+  const days=[];
+  for(let i=0;i<startDow;i++){days.push({date:new Date(calYear,calMonth,1-startDow+i),current:false})}
+  for(let d=1;d<=lastDay.getDate();d++){days.push({date:new Date(calYear,calMonth,d),current:true})}
+  while(days.length%7!==0){days.push({date:new Date(calYear,calMonth+1,days.length-startDow-lastDay.getDate()+1),current:false})}
+
+  for(let w=0;w<days.length/7;w++){
+    html+='<div class=&quot;cal-week-row&quot;>';
+    for(let d=0;d<7;d++){
+      const day=days[w*7+d];
+      const isToday=day.date.toDateString()===today.toDateString();
+      const isWeekend=d===0||d===6;
+      const dateStr=day.date.toISOString().slice(0,10);
+      const dayManualEvents=calEventsMonth.filter(e=>{
+        const s=new Date(e.date);const end=e.dateEnd?new Date(e.dateEnd):s;
+        const d=new Date(dateStr);return d>=s&amp;&amp;d<=end;
+      });
+      const msTaskEvents=getMilestoneEventsForDate(dateStr);
+      const cls=['cal-day',!day.current?'other-month':'',isToday?'today':'',isWeekend?'weekend':''].filter(Boolean).join(' ');
+      const MAX_VISIBLE=4;
+      const allEvts=[...msTaskEvents,...dayManualEvents.map(e=>({...e,isManual:true}))];
+      const visible=allEvts.slice(0,MAX_VISIBLE);
+      const overflow=allEvts.length-visible.length;
+      html+=`<div class=&quot;${cls}&quot; onclick=&quot;openCalDayEditor('${dateStr}')&quot;>
+        <div class=&quot;cal-day-num&quot;>${day.date.getDate()}</div>
+        <div class=&quot;cal-events&quot;>
+          ${visible.map(ev=>{
+            if(ev.isManual){
+              // Evento manual — barra Gantt se multi-dia
+              const evProj=ev.projectId?db.projects.find(p=>p.id===ev.projectId):null;
+              const evColor=evProj?getProjectColor(evProj):'#f6b359';
+              const pos=getEventBarPos(ev,dateStr);
+              const isMulti=ev.dateEnd&amp;&amp;ev.date!==ev.dateEnd;
+              const showLabel=pos==='start'||pos==='single'||isStartOfWeek(dateStr);
+              const label=showLabel?escHtml(ev.desc):'';
+              return`<div class=&quot;cal-gantt-bar bar-${pos}${isStartOfWeek(dateStr)&amp;&amp;pos==='mid'?' bar-start-of-week':''}&quot; style=&quot;background:${evColor}${isMulti?'33':'22'};color:${evColor};border:1px solid ${evColor}${isMulti?'77':'44'}&quot; onclick=&quot;event.stopPropagation();openCalEventEditor('${ev.id}','${dateStr}')&quot; title=&quot;${escHtml(ev.desc)}&quot;>${label}&amp;nbsp;</div>`;
+            } else if(ev.isTask){
+              // Task com prazo
+              const tProj=db.projects.find(p=>p.id===ev.projectId);
+              const tColor=tProj?getProjectColor(tProj):'#7295cd';
+              return`<div class=&quot;cal-event-chip bar-task&quot; style=&quot;background:${tColor}22;color:${tColor};border:1px solid ${tColor}44&quot; onclick=&quot;event.stopPropagation();openProject('${ev.projectId}')&quot; title=&quot;${escHtml(ev.label)}&quot;>▸ ${escHtml(ev.label)}</div>`;
+            } else {
+              // Marco
+              const msProj=db.projects.find(p=>p.id===ev.projectId);
+              const msColor=msProj?getProjectColor(msProj):'#7295cd';
+              return`<div class=&quot;cal-event-chip bar-milestone&quot; style=&quot;background:${msColor}22;color:${msColor};border:1px solid ${msColor}44;font-style:italic&quot; onclick=&quot;event.stopPropagation();openProject('${ev.projectId}')&quot; title=&quot;${escHtml(ev.label)}&quot;>◆ ${escHtml(ev.label)}</div>`;
+            }
+          }).join('')}
+          ${overflow>0?`<div style=&quot;font-size:9px;color:var(--color-gray);padding:1px 4px&quot;>+${overflow}</div>`:''}
+        </div>
+        <button class=&quot;cal-day-add-btn&quot; onclick=&quot;event.stopPropagation();openCalDayEditor('${dateStr}')&quot;>+</button>
+      </div>`;
+    }
+    html+='</div>';
+  }
+  html+='</div>';
+  grid.innerHTML=html;
+}
+
+function getProjectStatus(pid){const p=db.projects.find(p=>p.id===pid);return p?p.status:'PENDENTE'}
+function getMilestoneEventsForDate(dateStr){
+  const result=[];
+  db.projects.forEach(p=>{
+    // Marcos com data exata
+    (p.milestones||[]).forEach(m=>{
+      if(m.date===dateStr){
+        result.push({label:p.name+' · '+m.label,status:p.status,projectId:p.id,isMilestone:true});
+      }
+    });
+    // Tasks com prazo neste dia
+    (p.tasks||[]).filter(t=>t.date===dateStr&amp;&amp;t.status!=='done').forEach(t=>{
+      result.push({label:p.name+' · '+t.desc,status:p.status,projectId:p.id,isMilestone:false,isTask:true});
+    });
+  });
+  return result;
+}
+function getCalEventsForMonth(y,m){
+  // Inclui eventos cujo intervalo (date..dateEnd) cruza o mês
+  const monthStart=new Date(y,m,1);
+  const monthEnd=new Date(y,m+1,0);
+  return(db.calEvents||[]).filter(e=>{
+    if(!e.date)return false;
+    const start=new Date(e.date);
+    const end=e.dateEnd?new Date(e.dateEnd):start;
+    return start<=monthEnd&amp;&amp;end>=monthStart;
+  });
+}
+
+// Retorna posição do evento num dia: 'start','mid','end','single'
+function getEventBarPos(ev,dateStr){
+  if(!ev.dateEnd||ev.date===ev.dateEnd)return'single';
+  if(ev.date===dateStr)return'start';
+  if(ev.dateEnd===dateStr)return'end';
+  return'mid';
+}
+function isStartOfWeek(dateStr){return new Date(dateStr).getDay()===0}
+function isEndOfWeek(dateStr){return new Date(dateStr).getDay()===6}
+
+function openCalDayEditor(dateStr){
+  calEditingDate=dateStr;calEditingEventId=null;
+  document.getElementById('calEventModalTitle').textContent='Novo evento';
+  document.getElementById('calEventDesc').value='';
+  document.getElementById('calEventDateStart').value=dateStr;
+  document.getElementById('calEventDateEnd').value='';
+  document.getElementById('calEventWho').value='';
+  document.getElementById('calEventEditActions').style.display='none';
+  const sel=document.getElementById('calEventProject');
+  sel.innerHTML=`<option value=&quot;&quot;>— Manual —</option>`+db.projects.map(p=>`<option value=&quot;${p.id}&quot;>${escHtml(p.name)}</option>`).join('');
+  document.getElementById('calEventMilestone').innerHTML='<option value=&quot;&quot;>—</option>';
+  document.getElementById('calEventOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('calEventDesc').focus(),50);
+}
+function openCalEventEditor(evId,dateStr){
+  calEditingDate=dateStr;calEditingEventId=evId;
+  const ev=(db.calEvents||[]).find(e=>e.id===evId);if(!ev)return;
+  document.getElementById('calEventModalTitle').textContent='Editar evento — '+formatDate(dateStr);
+  document.getElementById('calEventDesc').value=ev.desc||'';
+  document.getElementById('calEventWho').value=ev.who||'';
+  document.getElementById('calEventEditActions').style.display='block';
+  const sel=document.getElementById('calEventProject');
+  sel.innerHTML=`<option value=&quot;&quot;>— Manual —</option>`+db.projects.map(p=>`<option value=&quot;${p.id}&quot;${ev.projectId===p.id?' selected':''}>${escHtml(p.name)}</option>`).join('');
+  populateCalEventMilestone();
+  if(ev.milestoneId){document.getElementById('calEventMilestone').value=ev.milestoneId}
+  document.getElementById('calEventOverlay').classList.add('open');
+}
+function populateCalEventMilestone(){
+  const pid=document.getElementById('calEventProject').value;
+  const sel=document.getElementById('calEventMilestone');
+  if(!pid){sel.innerHTML='<option value=&quot;&quot;>—</option>';return}
+  const p=db.projects.find(p=>p.id===pid);
+  if(!p){sel.innerHTML='<option value=&quot;&quot;>—</option>';return}
+  sel.innerHTML='<option value=&quot;&quot;>— Nenhuma etapa —</option>'+(p.milestones||[]).map(m=>`<option value=&quot;${m.id}&quot;>${escHtml(m.label)}</option>`).join('');
+}
+function saveCalEvent(){
+  const desc=document.getElementById('calEventDesc').value.trim();if(!desc){toast('Digite a descrição');return}
+  const dateStart=document.getElementById('calEventDateStart').value||calEditingDate;
+  const dateEnd=document.getElementById('calEventDateEnd').value||null;
+  const pid=document.getElementById('calEventProject').value;
+  const mid=document.getElementById('calEventMilestone').value;
+  const who=document.getElementById('calEventWho').value;
+  if(!db.calEvents)db.calEvents=[];
+  const evData={desc,date:dateStart,dateEnd:dateEnd||null,projectId:pid||null,milestoneId:mid||null,who};
+  if(calEditingEventId){
+    const idx=db.calEvents.findIndex(e=>e.id===calEditingEventId);
+    if(idx>=0)db.calEvents[idx]={...db.calEvents[idx],...evData};
+  } else {
+    db.calEvents.push({id:uid(),...evData});
+  }
+  saveData(db);closeCalEventModal();renderCalendar();toast('Evento salvo','success');
+}
+function deleteCalEvent(){
+  if(!calEditingEventId||!confirm('Excluir este evento?'))return;
+  db.calEvents=(db.calEvents||[]).filter(e=>e.id!==calEditingEventId);
+  saveData(db);closeCalEventModal();renderCalendar();toast('Evento excluído');
+}
+function closeCalEventModal(e){if(!e||e.target===document.getElementById('calEventOverlay')){document.getElementById('calEventOverlay').classList.remove('open');calEditingDate=null;calEditingEventId=null}}
+
+// ══════════════════════════════
+//  VIEW 5: RESUMO
+// ══════════════════════════════
+function renderSummaryView(){
+  const content=document.getElementById('summaryContent');
+  const projects=getFilteredProjects().filter(p=>p.status!=='FINALIZADO');
+  const now=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  const sortSel=document.getElementById('summarySort');
+  const sortVal=sortSel?sortSel.value:'status';
+  const sorted=[...projects].sort((a,b)=>{
+    if(sortVal==='name')return a.name.localeCompare(b.name,'pt-BR');
+    if(sortVal==='status'){const si=id=>STATUS_COLS.findIndex(c=>c.id===id);return si(a.status)-si(b.status)}
+    if(sortVal==='team')return(a.team||[])[0]?.localeCompare((b.team||[])[0]||'')||0;
+    if(sortVal==='log'){const ld=p=>p.log&amp;&amp;p.log.length>0?p.log[p.log.length-1].date:'';return ld(b).localeCompare(ld(a))}
+    return 0;
+  });
+  content.innerHTML=`
+    <div class=&quot;summary-toolbar&quot;>
+      <div class=&quot;summary-toolbar-left&quot;>
+        <div class=&quot;summary-toolbar-title&quot;>Planning · ${now} · ${projects.length} projetos ativos</div>
+      </div>
+      <div class=&quot;summary-toolbar-actions&quot;>
+        <div style=&quot;display:flex;align-items:center;gap:6px&quot;>
+          <span style=&quot;font-size:11px;font-weight:500;color:var(--color-gray)&quot;>Ordenar</span>
+          <select id=&quot;summarySort&quot; class=&quot;summary-sort-sel&quot; onchange=&quot;renderSummaryView()&quot;>
+            <option value=&quot;status&quot; ${sortVal==='status'?'selected':''}>Grupo Kanban</option>
+            <option value=&quot;name&quot; ${sortVal==='name'?'selected':''}>Nome A–Z</option>
+            <option value=&quot;team&quot; ${sortVal==='team'?'selected':''}>Time</option>
+            <option value=&quot;log&quot; ${sortVal==='log'?'selected':''}>Último registro</option>
+          </select>
+        </div>
+        <button class=&quot;btn btn-sm btn-secondary&quot; onclick=&quot;exportMarkdown()&quot;>↓ .md</button>
+        <button class=&quot;btn btn-sm btn-secondary&quot; onclick=&quot;window.print()&quot;>↓ PDF</button>
+      </div>
+    </div>
+    <div class=&quot;summary-grid&quot;>${sorted.map(p=>renderSummaryCard(p)).join('')}</div>`;
+}
+
+function renderSummaryCard(p){
+  const lastLog=p.log&amp;&amp;p.log.length>0?p.log[p.log.length-1]:null;
+  const openTasks=(p.tasks||[]).filter(t=>t.status!=='done');
+  const badgeCls=statusBadgeCls(p.status);
+  const statusLabel=STATUS_COLS.find(c=>c.id===p.status)?.label||p.status;
+  const teamAvatars=(p.team||[]).slice(0,5).map(t=>`<div class=&quot;avatar av-${t.toLowerCase()}&quot; style=&quot;width:18px;height:18px;font-size:7px&quot;>${t.slice(0,2)}</div>`).join('');
+  const logBlock=lastLog?`<div class=&quot;summary-log-block&quot;><div class=&quot;summary-log-meta&quot;>${escHtml(lastLog.author||'Equipe')} · ${formatDate(lastLog.date)}</div><div class=&quot;summary-log-text&quot;>${escHtml(lastLog.text)}</div></div>`:'';
+  const tasksBlock=openTasks.length>0?`<div class=&quot;summary-tasks&quot;>${openTasks.slice(0,4).map(t=>{
+    const whoArr=Array.isArray(t.who)?t.who:(t.who?[t.who]:[]);
+    const dcls=t.date?deadlineClass(t.date):'';
+    return`<div class=&quot;summary-task-item&quot;><div class=&quot;summary-task-check&quot;></div><span style=&quot;flex:1;font-size:12px&quot;>${escHtml(t.desc)}</span>${whoArr.map(w=>`<span class=&quot;summary-task-who&quot;>${escHtml(w)}</span>`).join('')}${t.date?`<span class=&quot;summary-task-date ${dcls}&quot;>${formatDate(t.date)}</span>`:''}</div>`;
+  }).join('')}${openTasks.length>4?`<div style=&quot;font-size:11px;color:var(--color-gray);padding-left:18px&quot;>+${openTasks.length-4} mais</div>`:''}</div>`:'';
+  return`<div class=&quot;summary-card&quot; onclick=&quot;openProject('${p.id}')&quot;>
+    <div class=&quot;summary-card-top&quot;>
+      <div>
+        <div style=&quot;display:flex;align-items:center;gap:4px;margin-bottom:4px&quot;>${teamAvatars}</div>
+        <div style=&quot;display:flex;align-items:center;gap:7px&quot;><span class=&quot;project-color-swatch&quot; style=&quot;background:${getProjectColor(p)}&quot;></span><div class=&quot;summary-card-name&quot;>${escHtml(p.name)}</div></div>
+      </div>
+      <span class=&quot;status-badge ${badgeCls}&quot;>${escHtml(statusLabel)}</span>
+    </div>
+    ${logBlock}
+    ${tasksBlock}
+  </div>`;
+}
+
+// ══ PERSON PICKER ══
+function renderColorPicker(currentColor){
+  const wrap=document.getElementById('projectColorPicker');if(!wrap)return;
+  wrap.innerHTML=PROJECT_COLORS.map(col=>`
+    <div class=&quot;project-color-dot${(currentColor||'blue')===col.id?' selected':''}&quot;
+      style=&quot;background:${col.hex}&quot;
+      title=&quot;${col.label}&quot;
+      onclick=&quot;setProjectColor('${col.id}')&quot;></div>`).join('');
+}
+function setProjectColor(colorId){
+  const p=db.projects.find(p=>p.id===currentProjectId);if(!p)return;
+  p.color=colorId;saveData(db);renderColorPicker(colorId);
+}
+function renderPickerGrid(gridId,selected){
+  const grid=document.getElementById(gridId);if(!grid)return;
+  // Priority group first, then divider, then rest
+  const priorityHtml=TEAM_PRIORITY.map(t=>{
+    const isSel=selected.includes(t);
+    return`<button class=&quot;person-picker-btn priority${isSel?' selected':''}&quot; onclick=&quot;togglePerson('${t}','${gridId}',event)&quot;>${t}</button>`;
+  }).join('');
+  const restHtml=TEAM_OPTIONS.filter(t=>!TEAM_PRIORITY.includes(t)).map(t=>{
+    const isSel=selected.includes(t);
+    return`<button class=&quot;person-picker-btn${isSel?' selected':''}&quot; onclick=&quot;togglePerson('${t}','${gridId}',event)&quot;>${t}</button>`;
+  }).join('');
+  grid.innerHTML=priorityHtml+`<div style=&quot;width:100%;height:1px;background:rgba(22,22,22,.08);margin:4px 0&quot;></div>`+restHtml;
+}
+function togglePersonPicker(dropId,e){e.stopPropagation();document.querySelectorAll('.person-picker-dropdown.open').forEach(d=>{if(d.id!==dropId)d.classList.remove('open')});document.getElementById(dropId).classList.toggle('open')}
+function closePersonPicker(dropId){document.getElementById(dropId).classList.remove('open')}
+function togglePerson(person,gridId,e){
+  e.stopPropagation();
+  const ctx=gridId.includes('modal')?'modal':gridId.includes('milestone')?'milestone':'task';
+  if(ctx==='modal'){const i=tempModalTeam.indexOf(person);if(i>=0)tempModalTeam.splice(i,1);else tempModalTeam.push(person);renderModalTeamPills();renderPickerGrid('modalPickerGrid',tempModalTeam)}
+  else if(ctx==='milestone'){const i=tempMilestoneWho.indexOf(person);if(i>=0)tempMilestoneWho.splice(i,1);else tempMilestoneWho.push(person);renderMilestoneWhoPills();renderPickerGrid('milestonePickerGrid',tempMilestoneWho)}
+  else if(ctx==='task'){const i=tempTaskWho.indexOf(person);if(i>=0)tempTaskWho.splice(i,1);else tempTaskWho.push(person);renderTaskWhoPills();renderPickerGrid('taskPickerGrid',tempTaskWho)}
+}
+function handleCustomPersonKey(e,ctx){
+  if(e.key!=='Enter')return;const val=e.target.value.trim().toUpperCase();if(!val)return;
+  if(ctx==='modal'&amp;&amp;!tempModalTeam.includes(val)){tempModalTeam.push(val);renderModalTeamPills();renderPickerGrid('modalPickerGrid',tempModalTeam)}
+  if(ctx==='milestone'&amp;&amp;!tempMilestoneWho.includes(val)){tempMilestoneWho.push(val);renderMilestoneWhoPills();renderPickerGrid('milestonePickerGrid',tempMilestoneWho)}
+  if(ctx==='task'&amp;&amp;!tempTaskWho.includes(val)){tempTaskWho.push(val);renderTaskWhoPills();renderPickerGrid('taskPickerGrid',tempTaskWho)}
+  e.target.value='';
+}
+function removePerson(p,ctx){
+  if(ctx==='modal'){tempModalTeam=tempModalTeam.filter(x=>x!==p);renderModalTeamPills();renderPickerGrid('modalPickerGrid',tempModalTeam)}
+  if(ctx==='milestone'){tempMilestoneWho=tempMilestoneWho.filter(x=>x!==p);renderMilestoneWhoPills();renderPickerGrid('milestonePickerGrid',tempMilestoneWho)}
+  if(ctx==='task'){tempTaskWho=tempTaskWho.filter(x=>x!==p);renderTaskWhoPills();renderPickerGrid('taskPickerGrid',tempTaskWho)}
+}
+function pillsHtml(arr,ctx){return arr.map(p=>`<div class=&quot;team-pill&quot;>${escHtml(p)}<button class=&quot;team-pill-remove&quot; onclick=&quot;removePerson('${p}','${ctx}')&quot;>✕</button></div>`).join('')}
+function renderModalTeamPills(){const f=document.getElementById('modalTeamField');const pk=document.getElementById('modalTeamPicker');f.innerHTML='';f.insertAdjacentHTML('beforeend',pillsHtml(tempModalTeam,'modal'));f.appendChild(pk);saveCurrentProject()}
+function renderMilestoneWhoPills(){document.getElementById('milestoneWhoField').innerHTML=pillsHtml(tempMilestoneWho,'milestone')}
+function renderTaskWhoPills(){document.getElementById('taskWhoField').innerHTML=pillsHtml(tempTaskWho,'task')}
+
+// ══ PROJECT CRUD ══
+function openNewProjectModal(){document.getElementById('newProjectName').value='';document.getElementById('newProjectTeam').value='';document.getElementById('newProjectOverlay').classList.add('open');setTimeout(()=>document.getElementById('newProjectName').focus(),50)}
+function closeNewProjectModal(e){if(!e||e.target===document.getElementById('newProjectOverlay'))document.getElementById('newProjectOverlay').classList.remove('open')}
+function createProject(){
+  const name=document.getElementById('newProjectName').value.trim();if(!name){toast('Digite o nome');return}
+  const teamRaw=document.getElementById('newProjectTeam').value;
+  const team=teamRaw.split(/[\s,\/+]+/).filter(Boolean).map(t=>t.toUpperCase());
+  const defaultMilestones=MILESTONE_PRESETS.filter(pr=>!pr.parent).map(pr=>({id:uid(),label:pr.label,date:'',who:[],status:'pending',type:'milestone'}));
+  const defaultDashTasks=DASH_ITEMS_DEFAULT.map(label=>({id:uid(),desc:label,who:[],date:'',status:'todo',subtasks:[]}));
+  const p={id:uid(),name,status:document.getElementById('newProjectStatus').value,team,
+    color:'blue',
+    milestones:defaultMilestones,
+    log:[],tasks:defaultDashTasks};
+  db.projects.push(p);saveData(db);renderCurrentView();closeNewProjectModal();toast('Projeto criado');openProject(p.id);
+}
+function deleteCurrentProject(){
+  if(!currentProjectId||!confirm('Excluir este projeto? Esta ação não pode ser desfeita.'))return;
+  db.projects=db.projects.filter(p=>p.id!==currentProjectId);
+  db.calEvents=(db.calEvents||[]).filter(e=>e.projectId!==currentProjectId);
+  saveData(db);renderCurrentView();closeProjectModal();toast('Excluído');
+}
+function saveCurrentProject(){
+  if(!currentProjectId)return;
+  const p=db.projects.find(p=>p.id===currentProjectId);if(!p)return;
+  p.name=document.getElementById('modalName').textContent.trim();
+  p.status=document.getElementById('modalStatus').value;
+  p.team=[...tempModalTeam];
+  saveData(db);
+}
+
+// ══ PROJECT MODAL ══
+function openProject(id){
+  currentProjectId=id;
+  const p=db.projects.find(p=>p.id===id);if(!p)return;
+  document.getElementById('modalName').textContent=p.name;
+  document.getElementById('modalStatus').innerHTML=STATUS_COLS.map(c=>`<option value=&quot;${c.id}&quot;${p.status===c.id?' selected':''}>${c.label}</option>`).join('');
+  tempModalTeam=[...(p.team||[])];
+  renderPickerGrid('modalPickerGrid',tempModalTeam);
+  const f=document.getElementById('modalTeamField');const pk=document.getElementById('modalTeamPicker');
+  f.innerHTML='';f.insertAdjacentHTML('beforeend',pillsHtml(tempModalTeam,'modal'));f.appendChild(pk);
+  document.getElementById('quickTaskDate').value=new Date().toISOString().slice(0,10);
+  renderColorPicker(p.color);
+  renderMilestones(p);renderLog(p);renderTasks(p);
+  document.getElementById('projectOverlay').classList.add('open');
+}
+function closeProjectModal(e){
+  if(!e||e.target===document.getElementById('projectOverlay')){
+    document.getElementById('projectOverlay').classList.remove('open');
+    currentProjectId=null;renderCurrentView();
+  }
+}
+
+// ══ DASHBOARD CHECKLIST ══
+
+// ══ QUICK TASK (modal) ══
+function handleQuickTaskKey(e){if(e.key==='Enter')submitQuickTask()}
+function submitQuickTask(){
+  const desc=document.getElementById('quickTaskDesc').value.trim();if(!desc)return;
+  const who=document.getElementById('quickTaskWho').value;
+  const date=document.getElementById('quickTaskDate').value;
+  const p=db.projects.find(p=>p.id===currentProjectId);if(!p)return;
+  if(!p.tasks)p.tasks=[];
+  p.tasks.push({id:uid(),desc,who:who?[who]:[],date,status:'todo',subtasks:[]});
+  saveData(db);renderTasks(p);
+  document.getElementById('quickTaskDesc').value='';document.getElementById('quickTaskWho').value='';
+  toast('Task adicionada','success');
+}
+
+// ══ MILESTONES ══
+function renderMilestones(p){
+  const list=document.getElementById('milestonesList');
+  if(!p.milestones||p.milestones.length===0){list.innerHTML='<div style=&quot;color:var(--color-gray);font-size:12px;text-align:center;padding:12px 0&quot;>Nenhum marco. Clique em + Marco para adicionar.</div>';return}
+  list.innerHTML=p.milestones.map((m,i)=>{
+    const isSprint=m.type==='sprint';
+    const whoArr=Array.isArray(m.who)?m.who:(m.who?[m.who]:[]);
+    const whoPills=whoArr.map(w=>`<span class=&quot;milestone-who-pill&quot;>${escHtml(w)}</span>`).join('');
+    return`<div class=&quot;milestone-item ${isSprint?'sprint-item':''}&quot; draggable=&quot;true&quot; data-idx=&quot;${i}&quot;
+      ondragstart=&quot;dragMilestone(event,${i})&quot; ondragover=&quot;dragOverMilestone(event,${i})&quot;
+      ondrop=&quot;dropMilestone(event,${i})&quot; ondragleave=&quot;this.classList.remove('drag-over')&quot;>
+      <span class=&quot;milestone-drag&quot;>⠿</span>
+      <button class=&quot;milestone-status-btn ${m.status}&quot; onclick=&quot;cycleMilestoneStatus(${i})&quot; title=&quot;Ciclar status&quot;>${m.status==='done'?'✓':m.status==='active'?'●':''}</button>
+      <div class=&quot;milestone-label ${m.status==='done'?'done':''}&quot;>
+        ${isSprint?`<span class=&quot;milestone-type-sprint&quot;>Sprint</span>`:''}${escHtml(m.label)}
+      </div>
+      <span class=&quot;milestone-date&quot;>${m.date?formatDate(m.date):'—'}</span>
+      <div class=&quot;milestone-who-pills&quot;>${whoPills||'<span class=&quot;milestone-who-pill&quot;>—</span>'}</div>
+      <div class=&quot;milestone-actions&quot;>
+        <button class=&quot;icon-btn&quot; style=&quot;font-size:10px&quot; onclick=&quot;openMilestoneModal(${i},'${m.type||'milestone'}')&quot;>✎</button>
+        <button class=&quot;icon-btn&quot; style=&quot;font-size:10px;color:var(--color-red)&quot; onclick=&quot;removeMilestone(${i})&quot;>✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function cycleMilestoneStatus(idx){const p=db.projects.find(p=>p.id===currentProjectId);const order=['pending','active','done','blocked'];p.milestones[idx].status=order[(order.indexOf(p.milestones[idx].status)+1)%order.length];saveData(db);renderMilestones(p)}
+function dragMilestone(e,i){dragSrcIdx=i;e.target.closest('.milestone-item').classList.add('dragging')}
+function dragOverMilestone(e,i){e.preventDefault();document.querySelectorAll('.milestone-item').forEach(el=>el.classList.remove('drag-over'));e.currentTarget.classList.add('drag-over')}
+function dropMilestone(e,i){e.preventDefault();if(dragSrcIdx===null||dragSrcIdx===i)return;const p=db.projects.find(p=>p.id===currentProjectId);const m=p.milestones.splice(dragSrcIdx,1)[0];p.milestones.splice(i,0,m);saveData(db);renderMilestones(p);dragSrcIdx=null}
+function removeMilestone(idx){const p=db.projects.find(p=>p.id===currentProjectId);p.milestones.splice(idx,1);saveData(db);renderMilestones(p)}
+
+function openMilestoneModal(idx,type){
+  milestoneType=type||'milestone';editingMilestoneIdx=idx;
+  const isSprint=milestoneType==='sprint';
+  document.getElementById('milestoneModalTitle').textContent=idx===null?(isSprint?'Nova Sprint':'Novo Marco'):(isSprint?'Editar Sprint':'Editar Marco');
+  document.getElementById('presetSection').style.display=isSprint?'none':'block';
+  if(!isSprint){
+    const p=db.projects.find(p=>p.id===currentProjectId);
+    const used=(p.milestones||[]).map(m=>m.label);
+    document.getElementById('presetList').innerHTML=MILESTONE_PRESETS.map(pr=>`
+      <div class=&quot;preset-item ${used.includes(pr.label)?'selected':''}&quot; onclick=&quot;selectPreset('${pr.label.replace(/'/g,&quot;\\'&quot;)}')&quot;>
+        <span class=&quot;preset-item-icon&quot;>${pr.icon}</span>
+        <span class=&quot;preset-item-label&quot;>${pr.label}</span>
+        ${pr.parent?`<span class=&quot;preset-sub-indicator&quot;>↳ ${pr.parent}</span>`:''}
+        ${used.includes(pr.label)?'<span style=&quot;margin-left:auto;font-size:9px;color:var(--color-gray)&quot;>já adicionado</span>':''}
+      </div>`).join('');
+  }
+  if(idx!==null){const p=db.projects.find(p=>p.id===currentProjectId);const m=p.milestones[idx];document.getElementById('milestoneLabel').value=m.label;document.getElementById('milestoneDate').value=m.date||'';document.getElementById('milestoneStatus').value=m.status||'pending';tempMilestoneWho=Array.isArray(m.who)?[...m.who]:(m.who?[m.who]:[]);}
+  else{document.getElementById('milestoneLabel').value='';document.getElementById('milestoneDate').value=new Date().toISOString().slice(0,10);document.getElementById('milestoneStatus').value='pending';tempMilestoneWho=[];}
+  renderMilestoneWhoPills();renderPickerGrid('milestonePickerGrid',tempMilestoneWho);
+  document.getElementById('milestoneOverlay').classList.add('open');
+}
+function selectPreset(label){document.getElementById('milestoneLabel').value=label;document.querySelectorAll('.preset-item').forEach(el=>el.classList.toggle('selected',el.querySelector('.preset-item-label').textContent===label))}
+function saveMilestone(){
+  const label=document.getElementById('milestoneLabel').value.trim();if(!label){toast('Digite a descrição');return}
+  const p=db.projects.find(p=>p.id===currentProjectId);
+  const m={id:uid(),label,date:document.getElementById('milestoneDate').value,who:[...tempMilestoneWho],status:document.getElementById('milestoneStatus').value,type:milestoneType};
+  if(editingMilestoneIdx===null)p.milestones.push(m);
+  else{m.id=p.milestones[editingMilestoneIdx].id;p.milestones[editingMilestoneIdx]=m}
+  saveData(db);renderMilestones(p);closeMilestoneModal();toast('Marco salvo');
+}
+function closeMilestoneModal(e){if(!e||e.target===document.getElementById('milestoneOverlay'))document.getElementById('milestoneOverlay').classList.remove('open')}
+
+// ══ LOG ══
+function renderLog(p){
+  const list=document.getElementById('logList');
+  if(!p.log||p.log.length===0){list.innerHTML='<div style=&quot;color:var(--color-gray);font-size:12px;text-align:center;padding:12px 0&quot;>Sem registros.</div>';return}
+  list.innerHTML=[...p.log].reverse().map((entry,ri)=>{
+    const i=p.log.length-1-ri;
+    return`<div class=&quot;log-entry&quot;>
+      <div class=&quot;log-timeline&quot;><div class=&quot;log-dot&quot;></div><div class=&quot;log-line&quot;></div></div>
+      <div class=&quot;log-content&quot;>
+        <div class=&quot;log-meta&quot;><strong>${escHtml(entry.author||'Equipe')}</strong> · ${formatDate(entry.date)}
+          <button class=&quot;icon-btn&quot; style=&quot;width:14px;height:14px;font-size:8px;color:var(--color-red);margin-left:2px&quot; onclick=&quot;removeLog(${i})&quot;>✕</button>
+        </div>
+        <div class=&quot;log-text&quot;>${escHtml(entry.text)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function addLogEntry(){document.getElementById('logText').value='';document.getElementById('logAuthor').value='';document.getElementById('logDate').value=new Date().toISOString().slice(0,10);document.getElementById('logOverlay').classList.add('open');setTimeout(()=>document.getElementById('logAuthor').focus(),50)}
+function saveLog(){const text=document.getElementById('logText').value.trim();if(!text){toast('Digite o conteúdo');return}const p=db.projects.find(p=>p.id===currentProjectId);p.log.push({id:uid(),date:document.getElementById('logDate').value,author:document.getElementById('logAuthor').value.trim()||'Equipe',text});saveData(db);renderLog(p);closeLogModal();toast('Registro salvo')}
+function removeLog(idx){const p=db.projects.find(p=>p.id===currentProjectId);p.log.splice(idx,1);saveData(db);renderLog(p)}
+function closeLogModal(e){if(!e||e.target===document.getElementById('logOverlay'))document.getElementById('logOverlay').classList.remove('open')}
+
+// ══ TASKS ══
+function renderTasks(p){
+  const board=document.getElementById('taskBoard');
+  const cols=[{id:'todo',label:'A Fazer',cls:'tcol-todo'},{id:'doing',label:'Em Andamento',cls:'tcol-doing'},{id:'done',label:'Concluído',cls:'tcol-done'}];
+  board.innerHTML=cols.map(col=>{
+    const tasks=(p.tasks||[]).filter(t=>t.status===col.id);
+    return`<div class=&quot;task-col&quot;>
+      <div class=&quot;task-col-header ${col.cls}&quot;>${col.label} · ${tasks.length}</div>
+      ${tasks.map(t=>{const gi=(p.tasks||[]).indexOf(t);return renderTaskCard(t,gi)}).join('')}
+      <button class=&quot;btn btn-ghost btn-sm&quot; style=&quot;justify-content:flex-start;color:var(--color-gray);font-size:10px&quot; onclick=&quot;addTask('${col.id}')&quot;>+ Task</button>
+    </div>`;
+  }).join('');
+}
+function renderTaskCard(t,idx){
+  const whoArr=Array.isArray(t.who)?t.who:(t.who?[t.who]:[]);
+  const dcls=t.date?deadlineClass(t.date):'';
+  const subs=t.subtasks&amp;&amp;t.subtasks.length>0?`<div class=&quot;subtasks&quot;>${t.subtasks.map((s,si)=>`<div class=&quot;subtask ${s.done?'done':''}&quot;><div class=&quot;subtask-check ${s.done?'checked':''}&quot; onclick=&quot;toggleSubtask(${idx},${si})&quot;>✓</div><span>${escHtml(s.text)}</span></div>`).join('')}</div>`:'';
+  return`<div class=&quot;task-card&quot;>
+    <div style=&quot;display:flex;align-items:flex-start;justify-content:space-between;gap:4px&quot;>
+      <div class=&quot;task-desc&quot;>${escHtml(t.desc)}</div>
+      <div style=&quot;display:flex;gap:1px;flex-shrink:0&quot;>
+        <button class=&quot;icon-btn&quot; style=&quot;font-size:10px&quot; onclick=&quot;editTask(${idx})&quot;>✎</button>
+        <button class=&quot;icon-btn&quot; style=&quot;font-size:10px;color:var(--color-red)&quot; onclick=&quot;removeTask(${idx})&quot;>✕</button>
+      </div>
+    </div>
+    <div class=&quot;task-meta&quot;>
+      <div class=&quot;task-who-pills&quot;>${whoArr.map(w=>`<span class=&quot;task-who-pill&quot;>${escHtml(w)}</span>`).join('')}</div>
+      ${t.date?`<span class=&quot;task-date ${dcls}&quot;>${formatDate(t.date)}</span>`:''}
+    </div>
+    ${subs}
+  </div>`;
+}
+function addTask(defaultStatus){editingTaskIdx=null;tempTaskWho=[];document.getElementById('taskModalTitle').textContent='Nova Task';document.getElementById('taskDesc').value='';document.getElementById('taskDate').value=new Date().toISOString().slice(0,10);document.getElementById('taskStatus').value=defaultStatus||'todo';document.getElementById('taskSubtasks').value='';renderTaskWhoPills();renderPickerGrid('taskPickerGrid',tempTaskWho);document.getElementById('taskOverlay').classList.add('open');setTimeout(()=>document.getElementById('taskDesc').focus(),50)}
+function editTask(idx){editingTaskIdx=idx;const p=db.projects.find(p=>p.id===currentProjectId);const t=p.tasks[idx];tempTaskWho=Array.isArray(t.who)?[...t.who]:(t.who?[t.who]:[]);document.getElementById('taskModalTitle').textContent='Editar Task';document.getElementById('taskDesc').value=t.desc;document.getElementById('taskDate').value=t.date||'';document.getElementById('taskStatus').value=t.status||'todo';document.getElementById('taskSubtasks').value=(t.subtasks||[]).map(s=>s.text).join('\n');renderTaskWhoPills();renderPickerGrid('taskPickerGrid',tempTaskWho);document.getElementById('taskOverlay').classList.add('open')}
+function saveTask(){
+  const desc=document.getElementById('taskDesc').value.trim();if(!desc){toast('Digite a descrição');return}
+  const p=db.projects.find(p=>p.id===currentProjectId);
+  const subtasks=document.getElementById('taskSubtasks').value.trim().split('\n').filter(l=>l.trim()).map((text,i)=>({id:uid(),text:text.trim(),done:editingTaskIdx!==null&amp;&amp;(p.tasks[editingTaskIdx].subtasks||[])[i]?.done||false}));
+  const task={id:uid(),desc,who:[...tempTaskWho],date:document.getElementById('taskDate').value,status:document.getElementById('taskStatus').value,subtasks};
+  if(!p.tasks)p.tasks=[];
+  if(editingTaskIdx!==null)p.tasks[editingTaskIdx]=task;else p.tasks.push(task);
+  saveData(db);renderTasks(p);closeTaskModal();toast('Task salva');
+}
+function removeTask(idx){const p=db.projects.find(p=>p.id===currentProjectId);p.tasks.splice(idx,1);saveData(db);renderTasks(p)}
+function toggleSubtask(ti,si){const p=db.projects.find(p=>p.id===currentProjectId);p.tasks[ti].subtasks[si].done=!p.tasks[ti].subtasks[si].done;saveData(db);renderTasks(p)}
+function closeTaskModal(e){if(!e||e.target===document.getElementById('taskOverlay'))document.getElementById('taskOverlay').classList.remove('open')}
+
+// ══ IMPORT / EXPORT ══
+function exportData(){const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`atlas-tracker-${new Date().toISOString().slice(0,10)}.json`;a.click();toast('Exportado')}
+function importData(e){const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!d.projects)throw 0;db=d;if(!db.calEvents)db.calEvents=[];saveData(db);renderCurrentView();toast('Importado','success')}catch{toast('Erro ao importar')}};r.readAsText(file);e.target.value=''}
+function captureCurrentViewPng(){
+  const el=document.getElementById(currentView==='cal'?'calGrid':currentView==='board'?'boardView':'summaryView');
+  if(!el||typeof html2canvas==='undefined'){toast('Gerando PNG...');return}
+  html2canvas(el,{scale:2,backgroundColor:'#f5f5f5',useCORS:true,logging:false,scrollX:0,scrollY:-window.scrollY,windowWidth:el.scrollWidth,windowHeight:el.scrollHeight}).then(canvas=>{const a=document.createElement('a');a.download=`atlas-${currentView}-${new Date().toISOString().slice(0,10)}.png`;a.href=canvas.toDataURL();a.click();toast('PNG exportado','success')});
+}
+function exportMarkdown(){
+  const now=new Date();
+  let md=`# Atlas Planning — ${now.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}\n\n`;
+  STATUS_COLS.forEach(col=>{
+    const grp=db.projects.filter(p=>p.status===col.id&amp;&amp;p.status!=='FINALIZADO');
+    if(grp.length===0)return;
+    md+=`## ${col.label}\n\n`;
+    grp.forEach(p=>{
+      const active=(p.milestones||[]).find(m=>m.status==='active')||(p.milestones||[]).find(m=>m.status!=='done');
+      const team=(p.team||[]).join(', ');
+      md+=`### ${p.name}${team?` — *${team}*`:''}\n`;
+      if(active)md+=`Marco atual: **${active.label}**${active.date?' · '+formatDate(active.date):''}\n`;
+      const lastLog=p.log&amp;&amp;p.log.length>0?p.log[p.log.length-1]:null;
+      if(lastLog)md+=`> ${lastLog.author||'Equipe'} · ${formatDate(lastLog.date)}: ${lastLog.text}\n`;
+      const openTasks=(p.tasks||[]).filter(t=>t.status!=='done');
+      if(openTasks.length>0){
+        md+=`\n**Tasks:**\n`;
+        openTasks.forEach(t=>{
+          const whoArr=Array.isArray(t.who)?t.who:(t.who?[t.who]:[]);
+          md+=`- [ ] ${t.desc}${whoArr.length?` — *${whoArr.join(', ')}*`:''}${t.date?' · '+formatDate(t.date):''}\n`;
+          (t.subtasks||[]).filter(s=>!s.done).forEach(s=>{md+=`  - [ ] ${s.text}\n`});
+        });
+      }
+      md+='\n';
+    });
+  });
+  md+=`---\n*Exportado em ${now.toLocaleString('pt-BR')}*\n`;
+  const blob=new Blob([md],{type:'text/markdown;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`atlas-planning-${now.toISOString().slice(0,10)}.md`;a.click();URL.revokeObjectURL(a.href);toast('Exportado como .md','success');
+}
+
+
+window.openProjectById=function(id){openProject(id);};
+
+// ═══ VIEWER MODE ═══
+window.setViewerMode = function(on) {
+  document.body.classList.toggle('viewer-mode', on);
+  // Make all inputs and textareas read-only
+  if(on) {
+    document.querySelectorAll('input,textarea,select').forEach(function(el) {
+      el.setAttribute('readonly','');
+      el.setAttribute('disabled','');
+    });
+    // Override saveData to be a no-op for viewers
+    window._originalSaveData = window.saveData;
+    window.saveData = function() {};
+  }
+};
+
+// ═══ SAVE LOGGING via postMessage ═══
+(function() {
+  const _origSave = window.saveData;
+  window.saveData = function(d) {
+    _origSave(d);
+    try {
+      window.parent.postMessage({
+        type: 'nodian_save',
+        tracker: 'dp',
+        snapshot: d
+      }, '*');
+    } catch(e) {}
+  };
+})();
+
+</script>
+</body>
+</html>
+"></iframe>
+  <iframe class="tracker-frame" id="frame-week" srcdoc="<!DOCTYPE html>
+<html lang=&quot;pt-br&quot;>
+<head>
+<meta charset=&quot;utf-8&quot;/>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;/>
+<link href=&quot;https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f5;--white:#ffffff;--black:#161616;--gray:#676767;
+  --amber:#f6b359;--amber-25:#ffe5c7;--txt-amb:#8a5a00;
+  --blue:#7295cd;--blue-25:#dbe4f3;
+  --green:#55b583;--green-25:#d4ecdf;
+  --red:#e3404a;
+  --shadow:0 1px 4px rgba(22,22,22,.08);
+  --shadow-md:0 4px 12px rgba(22,22,22,.10);
+  --radius-md:12px;--radius-full:9999px;
+  --font:'Poppins',system-ui,sans-serif;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--black);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+/* TOPBAR */
+.topbar{background:var(--white);border-bottom:1.5px solid rgba(22,22,22,.08);padding:0 24px;display:flex;align-items:center;gap:12px;height:52px;flex-shrink:0;position:sticky;top:0;z-index:100;flex-wrap:wrap}
+.topbar-logo-dot{width:26px;height:26px;border-radius:50%;background:var(--black);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--white);flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:700;letter-spacing:-.3px;flex-shrink:0}
+.filter-row{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+.filter-chip{height:26px;padding:0 12px;border-radius:var(--radius-full);border:1.5px solid rgba(22,22,22,.12);background:transparent;font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;color:var(--gray);transition:all .15s;white-space:nowrap}
+.filter-chip.active{background:var(--black);color:var(--white);border-color:var(--black)}
+.filter-chip:hover:not(.active){border-color:rgba(22,22,22,.3);color:var(--black)}
+.filter-sep{width:1px;height:16px;background:rgba(22,22,22,.12);flex-shrink:0}
+.filter-label{font-size:10px;font-weight:600;color:var(--gray);letter-spacing:.05em;white-space:nowrap}
+.refresh-btn{height:26px;padding:0 12px;border-radius:var(--radius-full);border:1.5px solid rgba(22,22,22,.12);background:transparent;font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;color:var(--gray);transition:all .15s}
+.refresh-btn:hover{background:var(--black);color:var(--white);border-color:var(--black)}
+
+/* DATE FILTER */
+.date-filter{display:flex;align-items:center;gap:6px}
+.date-input{height:26px;padding:0 8px;border-radius:var(--radius-full);border:1.5px solid rgba(22,22,22,.12);background:transparent;font-family:var(--font);font-size:11px;font-weight:500;color:var(--black);outline:none;cursor:pointer;transition:border-color .15s;width:108px}
+.date-input:focus{border-color:var(--black)}
+.date-clear{height:20px;width:20px;border-radius:50%;border:none;background:rgba(22,22,22,.07);font-size:10px;cursor:pointer;color:var(--gray);display:flex;align-items:center;justify-content:center;transition:background .15s}
+.date-clear:hover{background:rgba(22,22,22,.15);color:var(--black)}
+
+/* SOURCE BADGES */
+.src-rwe  {background:rgba(85,181,131,.15);color:#1a6b47}
+.src-atlas{background:var(--blue-25);color:#1a3f6b}
+.src-dp   {background:var(--amber-25);color:var(--txt-amb)}
+
+/* MAIN */
+.main{padding:20px 0 40px;overflow-x:auto;overflow-y:auto;height:calc(100vh - 52px)}
+.week-grid{display:flex;flex-direction:row;gap:16px;min-width:max-content;padding:0 24px 24px}
+
+/* PERSON COL */
+.week-person-col{display:flex;flex-direction:column;gap:8px;width:280px;flex-shrink:0}
+.week-person-header{display:flex;align-items:center;gap:10px;padding-bottom:10px;border-bottom:2px solid var(--black)}
+.week-person-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0}
+.week-person-name{font-size:14px;font-weight:700;letter-spacing:-.2px}
+.week-person-count{font-size:11px;color:var(--gray)}
+
+/* TASK CARD */
+.week-task-card{background:var(--white);border-radius:var(--radius-md);padding:10px 12px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:5px;border-left:3px solid transparent;cursor:pointer;transition:box-shadow .15s,transform .1s}
+.week-task-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.week-task-card:active{transform:translateY(0)}
+.week-task-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.week-task-source{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:2px 7px;border-radius:var(--radius-full);flex-shrink:0}
+.week-task-project{font-size:10px;font-weight:600;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.week-task-desc{font-size:12px;font-weight:500;color:var(--black);line-height:1.35}
+.week-task-meta{display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap}
+.week-task-date{font-size:10px;color:var(--gray)}
+.week-task-date.overdue{color:var(--red);font-weight:600}
+.week-task-date.soon{color:var(--amber);font-weight:600}
+.week-task-status{height:16px;padding:0 6px;border-radius:var(--radius-full);font-size:9px;font-weight:700;text-transform:uppercase;display:flex;align-items:center;white-space:nowrap}
+.wts-todo{background:rgba(22,22,22,.07);color:var(--gray)}
+.wts-doing{background:var(--amber-25);color:var(--txt-amb)}
+.wts-done{background:var(--green-25);color:#2d7a52}
+
+/* EMPTY / LOADING */
+.week-empty{padding:20px;text-align:center;font-size:12px;color:rgba(103,103,103,.5);background:var(--white);border-radius:var(--radius-md);border:1.5px dashed rgba(22,22,22,.1)}
+.loading{padding:60px;text-align:center;color:var(--gray);font-size:13px;grid-column:1/-1}
+
+/* AVATAR COLORS */
+.av-am{background:#7295cd}.av-ac{background:#e07b5a}.av-ml{background:#ab87bd}
+.av-bl{background:#55b583}.av-fa{background:#f6b359;color:#161616 !important}
+.av-ds{background:#e23f4a}.av-gc{background:#c6b198;color:#161616 !important}
+.av-hm{background:#161616}.av-vm{background:#5a8a6a}
+.av---{background:#ccc;color:#666 !important}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--black);color:var(--white);padding:8px 18px;border-radius:var(--radius-full);font-size:12px;font-weight:500;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class=&quot;topbar&quot;>
+  <div class=&quot;topbar-logo-dot&quot;>P</div>
+  <span class=&quot;topbar-title&quot;>Planner</span>
+
+  <div class=&quot;filter-row&quot;>
+    <!-- Person filter -->
+    <span class=&quot;filter-label&quot;>PESSOA</span>
+    <button class=&quot;filter-chip active&quot; data-person=&quot;all&quot; onclick=&quot;setFilter('all',this)&quot;>Todos</button>
+    <span id=&quot;personFilters&quot; style=&quot;display:flex;gap:4px;flex-wrap:wrap&quot;></span>
+
+    <div class=&quot;filter-sep&quot;></div>
+
+    <!-- Type filter -->
+    <span class=&quot;filter-label&quot;>TIPO</span>
+    <button class=&quot;filter-chip active&quot; data-type=&quot;tasks&quot;      onclick=&quot;toggleType('tasks',this)&quot;>Tasks</button>
+    <button class=&quot;filter-chip active&quot; data-type=&quot;milestones&quot; onclick=&quot;toggleType('milestones',this)&quot;>Marcos</button>
+    <button class=&quot;filter-chip active&quot; data-type=&quot;events&quot;     onclick=&quot;toggleType('events',this)&quot;>Eventos</button>
+
+    <div class=&quot;filter-sep&quot;></div>
+
+    <!-- Date filter -->
+    <span class=&quot;filter-label&quot;>PERÍODO</span>
+    <div class=&quot;date-filter&quot;>
+      <input class=&quot;date-input&quot; type=&quot;date&quot; id=&quot;dateFrom&quot; onchange=&quot;render()&quot; title=&quot;Data início&quot;/>
+      <span style=&quot;font-size:10px;color:var(--gray)&quot;>até</span>
+      <input class=&quot;date-input&quot; type=&quot;date&quot; id=&quot;dateTo&quot; onchange=&quot;render()&quot; title=&quot;Data fim&quot;/>
+      <button class=&quot;date-clear&quot; onclick=&quot;clearDates()&quot; title=&quot;Limpar datas&quot;>✕</button>
+    </div>
+
+    <div class=&quot;filter-sep&quot;></div>
+    <button class=&quot;refresh-btn&quot; onclick=&quot;load()&quot;>↺</button>
+  </div>
+</div>
+
+<div class=&quot;main&quot;>
+  <div class=&quot;week-grid&quot; id=&quot;grid&quot;>
+    <div class=&quot;loading&quot;>Carregando dados das frentes…</div>
+  </div>
+</div>
+
+<div class=&quot;toast&quot; id=&quot;toast&quot;></div>
+
+<script>
+const ALL_PEOPLE=['AM','AC','ML','BL','FA','DS','GC','HM','VM'];
+const SOURCE_KEYS={rwe:'nodian_tracker_v3',atlas:'atlas_tracker_v1',dp:'dp_tracker_v1'};
+const SOURCE_LABELS={rwe:'RWE',atlas:'Atlas',dp:'Data P.'};
+const SOURCE_COLORS={rwe:'#55b583',atlas:'#7295cd',dp:'#f6b359'};
+const SOURCE_TAB={rwe:'rwe',atlas:'atlas',dp:'dp'};
+
+let filterPerson='all';
+let typeFilters={tasks:true,milestones:true,events:true};
+
+function esc(s){if(!s)return'';return String(s).replace(/&amp;/g,'&amp;amp;').replace(/</g,'&amp;lt;').replace(/>/g,'&amp;gt;').replace(/&quot;/g,'&amp;quot;')}
+function fmt(d){if(!d)return'';const[y,m,dd]=d.split('-');return dd+'/'+m+'/'+y.slice(2)}
+function dcls(d){if(!d)return'';const diff=(new Date(d)-new Date())/86400000;if(diff<0)return'overdue';if(diff<=5)return'soon';return''}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+function setFilter(person,btn){
+  filterPerson=person;
+  document.querySelectorAll('[data-person]').forEach(b=>b.classList.toggle('active',b.dataset.person===person));
+  render();
+}
+function toggleType(type,btn){
+  typeFilters[type]=!typeFilters[type];
+  btn.classList.toggle('active',typeFilters[type]);
+  render();
+}
+function clearDates(){
+  document.getElementById('dateFrom').value='';
+  document.getElementById('dateTo').value='';
+  render();
+}
+
+// Navigate to the correct tracker tab in the parent switcher
+function goToTracker(source, projectId){
+  try{
+    if(window.parent&amp;&amp;window.parent.show){
+      window.parent.show(SOURCE_TAB[source]);
+      // After switching, open the project modal in the target iframe
+      if(projectId){
+        setTimeout(function(){
+          try{
+            const frameId='frame-'+SOURCE_TAB[source];
+            const frame=window.parent.document.getElementById(frameId);
+            if(frame&amp;&amp;frame.contentWindow&amp;&amp;frame.contentWindow.openProjectById){
+              frame.contentWindow.openProjectById(projectId);
+            }
+          }catch(e2){console.warn('openProjectById failed:',e2);}
+        },150);
+      }
+      toast('Abrindo '+SOURCE_LABELS[source]+'…');
+    }
+  }catch(e){
+    toast('Abrindo '+SOURCE_LABELS[source]+'…');
+  }
+}
+
+function readStore(key){
+  try{const r=localStorage.getItem(key);return r?JSON.parse(r):null}catch{return null}
+}
+
+function load(){
+  document.getElementById('grid').innerHTML='<div class=&quot;loading&quot;>Carregando…</div>';
+  setTimeout(render,80);
+}
+
+function render(){
+  const dateFrom=document.getElementById('dateFrom').value||'';
+  const dateTo=document.getElementById('dateTo').value||'';
+
+  const items=[];
+
+  Object.entries(SOURCE_KEYS).forEach(([src,key])=>{
+    const data=readStore(key);
+    if(!data||!data.projects)return;
+    const srcColor=SOURCE_COLORS[src];
+    const srcLabel=SOURCE_LABELS[src];
+
+    data.projects.forEach(p=>{
+      // Tasks
+      if(typeFilters.tasks){
+        (p.tasks||[]).filter(t=>t.status!=='done').forEach(t=>{
+          if(dateFrom&amp;&amp;t.date&amp;&amp;t.date<dateFrom)return;
+          if(dateTo&amp;&amp;t.date&amp;&amp;t.date>dateTo)return;
+          const who=Array.isArray(t.who)?t.who:(t.who?[t.who]:[]);
+          const persons=who.length>0?who:['—'];
+          persons.forEach(person=>{
+            items.push({person,type:'task',source:src,srcLabel,srcColor,
+              desc:t.desc||'',date:t.date||'',projectName:p.name,projectId:p.id,
+              status:t.status||'todo',accentColor:srcColor});
+          });
+        });
+      }
+
+      // Milestones
+      if(typeFilters.milestones){
+        (p.milestones||[]).filter(m=>m.status!=='done'&amp;&amp;m.date).forEach(m=>{
+          if(dateFrom&amp;&amp;m.date&amp;&amp;m.date<dateFrom)return;
+          if(dateTo&amp;&amp;m.date&amp;&amp;m.date>dateTo)return;
+          const who=Array.isArray(m.who)?m.who:(m.who?[m.who]:[]);
+          const persons=who.length>0?who:['—'];
+          persons.forEach(person=>{
+            items.push({person,type:'milestone',source:src,srcLabel,srcColor,
+              desc:m.label||'',date:m.date||'',projectName:p.name,projectId:p.id,
+              status:m.status||'pending',accentColor:'#161616'});
+          });
+        });
+      }
+    });
+
+    // Calendar events
+    if(typeFilters.events&amp;&amp;data.calEvents){
+      data.calEvents.forEach(ev=>{
+        const evDate=ev.date||ev.dateStart||'';
+        if(dateFrom&amp;&amp;evDate&amp;&amp;evDate<dateFrom)return;
+        if(dateTo&amp;&amp;evDate&amp;&amp;evDate>dateTo)return;
+        const who=Array.isArray(ev.who)?ev.who:(ev.who?[ev.who]:[]);
+        const proj=data.projects.find(p=>p.id===ev.projectId);
+        const persons=who.length>0?who:['—'];
+        persons.forEach(person=>{
+          items.push({person,type:'event',source:src,srcLabel,srcColor,
+            desc:ev.title||ev.desc||'',date:evDate,
+            projectName:proj?proj.name:'',projectId:ev.projectId||'',
+            status:'event',accentColor:SOURCE_COLORS[src]});
+        });
+      });
+    }
+  });
+
+  // Build person chips
+  const presentPeople=ALL_PEOPLE.filter(p=>items.some(i=>i.person===p));
+  const extraPeople=[...new Set(items.map(i=>i.person))].filter(p=>!ALL_PEOPLE.includes(p)&amp;&amp;p!=='—');
+  document.getElementById('personFilters').innerHTML=
+    [...presentPeople,...extraPeople].map(p=>
+      `<button class=&quot;filter-chip${filterPerson===p?' active':''}&quot; data-person=&quot;${p}&quot; onclick=&quot;setFilter('${p}',this)&quot;>${p}</button>`
+    ).join('');
+
+  const displayPeople=filterPerson==='all'
+    ?[...presentPeople,...extraPeople]
+    :[filterPerson];
+
+  const grid=document.getElementById('grid');
+
+  if(displayPeople.length===0){
+    grid.innerHTML='<div class=&quot;week-empty&quot; style=&quot;grid-column:1/-1&quot;>Nenhum item encontrado'+(dateFrom||dateTo?' no período selecionado':' nas frentes')+'.</div>';
+    return;
+  }
+
+  grid.innerHTML=displayPeople.map(person=>{
+    const myItems=items.filter(i=>i.person===person)
+      .sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999'));
+
+    const taskCount=myItems.filter(i=>i.type==='task').length;
+    const msCount=myItems.filter(i=>i.type==='milestone').length;
+    const evCount=myItems.filter(i=>i.type==='event').length;
+    const total=myItems.length;
+    const avCls='av-'+person.toLowerCase().replace(/[^a-z]/g,'-');
+
+    const cards=myItems.map(item=>{
+      const d=dcls(item.date);
+      const typeIcon=item.type==='milestone'?'◆ ':item.type==='event'?'◇ ':'';
+      const statusBadge=
+        item.type==='event'
+          ?`<span class=&quot;week-task-status&quot; style=&quot;background:rgba(114,149,205,.15);color:#185FA5&quot;>Evento</span>`
+        :item.type==='milestone'
+          ?`<span class=&quot;week-task-status&quot; style=&quot;background:rgba(22,22,22,.07);color:var(--gray)&quot;>Marco</span>`
+        :({todo:'<span class=&quot;week-task-status wts-todo&quot;>A fazer</span>',
+           doing:'<span class=&quot;week-task-status wts-doing&quot;>Fazendo</span>',
+           done:'<span class=&quot;week-task-status wts-done&quot;>Feito</span>'}[item.status]
+           ||`<span class=&quot;week-task-status wts-todo&quot;>${esc(item.status)}</span>`);
+
+      return`<div class=&quot;week-task-card&quot; style=&quot;border-left-color:${item.accentColor}&quot; onclick=&quot;goToTracker('${item.source}','${item.projectId}')&quot;>
+        <div class=&quot;week-task-top&quot;>
+          <span class=&quot;week-task-project&quot;>${esc(item.projectName)}</span>
+          <span class=&quot;week-task-source src-${item.source}&quot;>${esc(item.srcLabel)}</span>
+        </div>
+        <div class=&quot;week-task-desc&quot;>${typeIcon}${esc(item.desc)}</div>
+        <div class=&quot;week-task-meta&quot;>
+          ${item.date?`<span class=&quot;week-task-date ${d}&quot;>${fmt(item.date)}</span>`:'<span class=&quot;week-task-date&quot;>Sem prazo</span>'}
+          ${statusBadge}
+        </div>
+      </div>`;
+    }).join('');
+
+    const countParts=[];
+    if(taskCount)countParts.push(taskCount+' task'+(taskCount!==1?'s':''));
+    if(msCount)countParts.push(msCount+' marco'+(msCount!==1?'s':''));
+    if(evCount)countParts.push(evCount+' evento'+(evCount!==1?'s':''));
+
+    return`<div class=&quot;week-person-col&quot;>
+      <div class=&quot;week-person-header&quot;>
+        <div class=&quot;week-person-avatar ${avCls}&quot;>${esc(person.slice(0,2))}</div>
+        <div>
+          <div class=&quot;week-person-name&quot;>${esc(person)}</div>
+          <div class=&quot;week-person-count&quot;>${total} item${total!==1?'s':''} · ${countParts.join(', ')}</div>
+        </div>
+      </div>
+      ${total===0?'<div class=&quot;week-empty&quot;>Nada no período</div>':cards}
+    </div>`;
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded',load);
+</script>
+</body>
+</html>"></iframe>
+</div>
+<script>
+// ═══ SUPABASE AUTH ═══
+const _sb = supabase.createClient('https://ovktfqdcnlakopeiuaec.supabase.co','sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ');
+let _currentUser = null;
+let _userRole = 'viewer';
+
+// ═══ SWITCHER ═══
+function show(which){
+  ['rwe','atlas','dp','week'].forEach(function(id){
+    document.getElementById('frame-'+id).classList.toggle('active',id===which);
+    document.getElementById('tab-'+id).classList.toggle('active',id===which);
+  });
+}
+
+// ═══ LOGIN ═══
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  err.classList.remove('show');
+  btn.disabled = true;
+  btn.textContent = 'Entrando…';
+  try{
+    const {data, error} = await _sb.auth.signInWithPassword({email, password});
+    if(error) throw error;
+    await onLogin(data.user);
+  } catch(e){
+    err.textContent = e.message === 'Invalid login credentials'
+      ? 'Email ou senha incorretos.' : e.message;
+    err.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  }
+}
+
+// Enter key on password field
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('login-password').addEventListener('keydown', function(e){
+    if(e.key==='Enter') doLogin();
+  });
+  document.getElementById('login-email').addEventListener('keydown', function(e){
+    if(e.key==='Enter') document.getElementById('login-password').focus();
+  });
+
+  // Check existing session
+  _sb.auth.getSession().then(function({data}){
+    if(data.session){
+      onLogin(data.session.user);
+    }
+  });
+});
+
+async function onLogin(user){
+  _currentUser = user;
+  _userRole = (user.user_metadata && user.user_metadata.role) || 'viewer';
+
+  // Hide login screen
+  document.getElementById('login-screen').classList.add('hidden');
+
+  // Show logout button always
+  document.getElementById('logout-btn').style.display='inline-flex';
+  // Show viewer badge if viewer
+  const badge = document.getElementById('viewer-badge');
+  if(_userRole === 'viewer'){
+    badge.style.display = 'inline-flex';
+    // Propagate viewer mode to all iframes after they load
+    setTimeout(function(){ propagateViewerMode(); }, 800);
+  } else {
+    badge.style.display = 'none';
+  }
+
+  // Log the login
+  try{
+    await _sb.from('activity_log').insert({
+      user_id: user.id,
+      user_email: user.email,
+      tracker: 'system',
+      action: 'login',
+      snapshot: {timestamp: new Date().toISOString()}
+    });
+  } catch(e){ console.warn('log login failed:', e); }
+}
+
+// ═══ VIEWER MODE ═══
+function propagateViewerMode(){
+  ['rwe','atlas','dp'].forEach(function(id){
+    try{
+      const frame = document.getElementById('frame-'+id);
+      if(frame && frame.contentWindow && frame.contentWindow.setViewerMode){
+        frame.contentWindow.setViewerMode(true);
+      }
+    }catch(e){}
+  });
+}
+
+// ═══ SAVE INTERCEPTOR — log every save ═══
+// Called by each iframe's saveData via postMessage
+window.addEventListener('message', async function(e){
+  if(!e.data || e.data.type !== 'nodian_save') return;
+  if(!_currentUser) return;
+  try{
+    await _sb.from('activity_log').insert({
+      user_id: _currentUser.id,
+      user_email: _currentUser.email,
+      tracker: e.data.tracker,
+      action: 'save',
+      snapshot: e.data.snapshot
+    });
+  } catch(err){ console.warn('activity log failed:', err); }
+});
+
+// ═══ LOGOUT ═══
+async function doLogout(){
+  await _sb.auth.signOut();
+  _currentUser = null;
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-btn').disabled = false;
+  document.getElementById('login-btn').textContent = 'Entrar';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
 }
 </script>
 </body>
