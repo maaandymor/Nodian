@@ -5263,6 +5263,14 @@ function show(which){
     document.getElementById('frame-'+id).classList.toggle('active',id===which);
     document.getElementById('tab-'+id).classList.toggle('active',id===which);
   });
+  // Refresh Planner whenever its tab is activated — forces cache invalidation
+  // and re-fetch from Supabase so deletions/edits in other trackers are reflected
+  if(which==='week'){
+    var plannerFrame=document.getElementById('frame-week');
+    if(plannerFrame&&plannerFrame.contentWindow&&plannerFrame.contentWindow.load){
+      plannerFrame.contentWindow.load();
+    }
+  }
 }
 
 // ═══ LOGIN ═══
