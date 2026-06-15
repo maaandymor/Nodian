@@ -5360,10 +5360,21 @@ function propagateViewerMode(){
   });
 }
 
-// ═══ SAVE INTERCEPTOR — log every save ═══
+// ═══ SAVE INTERCEPTOR — log every save + keep Planner cache fresh ═══
 // Called by each iframe's saveData via postMessage
+var _trackerRowMap = {rwe:'main', atlas:'atlas', dp:'dp'};
 window.addEventListener('message', async function(e){
   if(!e.data || e.data.type !== 'nodian_save') return;
+  // Immediately push updated snapshot into Planner's _storeCache so it
+  // never serves stale data regardless of Supabase round-trip timing
+  var rowId = _trackerRowMap[e.data.tracker];
+  if(rowId && e.data.snapshot){
+    var plannerWin = document.getElementById('frame-week') &&
+                     document.getElementById('frame-week').contentWindow;
+    if(plannerWin && plannerWin._storeCache){
+      plannerWin._storeCache[rowId] = e.data.snapshot;
+    }
+  }
   if(!_currentUser) return;
   try{
     if(_sb) await _sb.from('activity_log').insert({
