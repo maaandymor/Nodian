@@ -786,7 +786,7 @@ let tempModalTeam=[], tempMilestoneWho=[], tempTaskWho=[];
 const _SB_URL='https://ovktfqdcnlakopeiuaec.supabase.co/rest/v1/projects';
 const _SB_KEY='sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ';
 const _SB_HDR={'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
-function _sbGet(rowId){return fetch(_SB_URL+'?id=eq.'+rowId+'&amp;select=data',{headers:{'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY}}).then(r=>r.ok?r.json():null).catch(()=>null);}
+function _sbGet(rowId){return fetch(_SB_URL+'?id=eq.'+rowId+'&amp;select=data',{headers:{'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY,'Accept':'application/json'}}).then(r=>r.ok?r.json():null).catch(()=>null);}
 function _sbPut(rowId,d){return fetch(_SB_URL,{method:'POST',headers:_SB_HDR,body:JSON.stringify({id:rowId,data:d,updated_at:new Date().toISOString()})}).catch(()=>{});}
 function loadData(){try{const r=localStorage.getItem(STORAGE_KEY);const d=r?JSON.parse(r):null;return(d&amp;&amp;d.projects&amp;&amp;d.projects.length>0)?d:JSON.parse(JSON.stringify(_SEED));}catch{return JSON.parse(JSON.stringify(_SEED));}}
 function saveData(d){localStorage.setItem(STORAGE_KEY,JSON.stringify(d));_sbPut('main',d);}
@@ -2327,7 +2327,7 @@ let draggingCardId=null, dragSrcIdx=null;
 const _SB_URL='https://ovktfqdcnlakopeiuaec.supabase.co/rest/v1/projects';
 const _SB_KEY='sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ';
 const _SB_HDR={'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
-function _sbGet(rowId){return fetch(_SB_URL+'?id=eq.'+rowId+'&amp;select=data',{headers:{'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY}}).then(r=>r.ok?r.json():null).catch(()=>null);}
+function _sbGet(rowId){return fetch(_SB_URL+'?id=eq.'+rowId+'&amp;select=data',{headers:{'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY,'Accept':'application/json'}}).then(r=>r.ok?r.json():null).catch(()=>null);}
 function _sbPut(rowId,d){return fetch(_SB_URL,{method:'POST',headers:_SB_HDR,body:JSON.stringify({id:rowId,data:d,updated_at:new Date().toISOString()})}).catch(()=>{});}
 function loadData(){
   try{const r=localStorage.getItem(STORAGE_KEY);const d=r?JSON.parse(r):null;
@@ -3942,7 +3942,7 @@ let draggingCardId=null, dragSrcIdx=null;
 const _SB_URL='https://ovktfqdcnlakopeiuaec.supabase.co/rest/v1/projects';
 const _SB_KEY='sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ';
 const _SB_HDR={'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
-function _sbGet(rowId){return fetch(_SB_URL+'?id=eq.'+rowId+'&amp;select=data',{headers:{'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY}}).then(r=>r.ok?r.json():null).catch(()=>null);}
+function _sbGet(rowId){return fetch(_SB_URL+'?id=eq.'+rowId+'&amp;select=data',{headers:{'apikey':_SB_KEY,'Authorization':'Bearer '+_SB_KEY,'Accept':'application/json'}}).then(r=>r.ok?r.json():null).catch(()=>null);}
 function _sbPut(rowId,d){return fetch(_SB_URL,{method:'POST',headers:_SB_HDR,body:JSON.stringify({id:rowId,data:d,updated_at:new Date().toISOString()})}).catch(()=>{});}
 function loadData(){
   try{const r=localStorage.getItem(STORAGE_KEY);const d=r?JSON.parse(r):null;
