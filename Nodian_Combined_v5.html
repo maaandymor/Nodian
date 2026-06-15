@@ -803,8 +803,8 @@ document.addEventListener('DOMContentLoaded',async ()=>{
     const rows=await _sbGet('main');
     if(rows&amp;&amp;rows.length>0&amp;&amp;rows[0].data&amp;&amp;rows[0].data.projects&amp;&amp;rows[0].data.projects.length>0){
       db=rows[0].data;localStorage.setItem(STORAGE_KEY,JSON.stringify(db));
-    }else{_sbPut('main',db);}
-  }catch(e){}
+    }else if(!rows){console.warn('[RWE] Supabase fetch failed — using local cache');}
+  }catch(e){console.error('[RWE] init fetch error:',e);}
   renderCurrentView();
 });
 
@@ -2349,8 +2349,8 @@ document.addEventListener('DOMContentLoaded',async ()=>{
     const rows=await _sbGet('atlas');
     if(rows&amp;&amp;rows.length>0&amp;&amp;rows[0].data&amp;&amp;rows[0].data.projects&amp;&amp;rows[0].data.projects.length>0){
       db=rows[0].data;if(!db.calEvents)db.calEvents=[];localStorage.setItem(STORAGE_KEY,JSON.stringify(db));
-    }else{_sbPut('atlas',db);}
-  }catch(e){}
+    }else if(!rows){console.warn('[Atlas] Supabase fetch failed — using local cache');}
+  }catch(e){console.error('[Atlas] init fetch error:',e);}
   renderCurrentView();
 });
 
@@ -3964,8 +3964,8 @@ document.addEventListener('DOMContentLoaded',async ()=>{
     const rows=await _sbGet('dp');
     if(rows&amp;&amp;rows.length>0&amp;&amp;rows[0].data&amp;&amp;rows[0].data.projects&amp;&amp;rows[0].data.projects.length>0){
       db=rows[0].data;if(!db.calEvents)db.calEvents=[];localStorage.setItem(STORAGE_KEY,JSON.stringify(db));
-    }else{_sbPut('dp',db);}
-  }catch(e){}
+    }else if(!rows){console.warn('[DP] Supabase fetch failed — using local cache');}
+  }catch(e){console.error('[DP] init fetch error:',e);}
   renderCurrentView();
 });
 
