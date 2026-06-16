@@ -5248,6 +5248,7 @@ let _userRole = 'viewer';
 function initSB(){
   try{
     _sb = supabase.createClient('https://ovktfqdcnlakopeiuaec.supabase.co','sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ');
+    window._sb = _sb;
     return true;
   }catch(e){
     console.error('Supabase SDK not loaded:',e);
