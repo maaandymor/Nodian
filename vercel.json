@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "Nodian_Combined_v5.html",
+      "src": "nodian-planner.html",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/",
-      "dest": "Nodian_Combined_v5.html"
+      "dest": "nodian-planner.html"
     }
   ]
 }
