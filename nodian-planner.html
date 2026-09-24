@@ -41,7 +41,7 @@ body{font-family:var(--font);background:var(--page-bg);color:var(--color-black);
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(var(--ink-rgb),.15);border-radius:99px}
-#app{display:flex;flex-direction:column;min-height:100vh}
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
 /* ── LOGIN SCREEN ── */
 #login-screen{position:fixed;inset:0;z-index:99999;background:var(--page-bg);display:flex;align-items:center;justify-content:center}
@@ -493,6 +493,79 @@ body.tem-aviso-topo #logout-btn{top:41px}
 .chip-todas .scope-dot-all{background:conic-gradient(var(--color-green),var(--color-blue),var(--color-amber),var(--color-green))}
 .carga-table .col-frente{background:rgba(var(--ink-rgb),.03);font-weight:600}
 
+/* ══ SHELL: a visão ativa é quem rola, não a página ══
+   Sem isto, a barra horizontal do Kanban nasce depois do último card da coluna mais
+   longa — era preciso rolar tudo para baixo só para deslizar o quadro para o lado. */
+#boardView,
+#listView,
+#plannerView,
+#cargaView,
+#timelineView,
+#calView,
+#weekView,
+#summaryView,
+#crmView,
+#adminView{
+  flex:1 1 auto; min-height:0; overflow:auto;
+  overscroll-behavior:contain;
+}
+/* o quadro não precisa mais do próprio scroll: quem rola nos dois eixos é a visão */
+#boardView .board-scroll{overflow:visible;padding-bottom:0}
+/* barra da visão ativa: visível o bastante para se saber que há mais conteúdo ao lado */
+#boardView,
+#listView,
+#plannerView,
+#cargaView,
+#timelineView,
+#calView,
+#weekView,
+#summaryView,
+#crmView,
+#adminView{scrollbar-gutter:stable}
+#boardView,
+#listView,
+#plannerView,
+#cargaView,
+#timelineView,
+#calView,
+#weekView,
+#summaryView,
+#crmView,
+#adminView{
+  scrollbar-width:auto;
+}
+#boardView::-webkit-scrollbar,#listView::-webkit-scrollbar,#plannerView::-webkit-scrollbar,
+#cargaView::-webkit-scrollbar,#timelineView::-webkit-scrollbar,#calView::-webkit-scrollbar,
+#weekView::-webkit-scrollbar,#summaryView::-webkit-scrollbar{width:10px;height:10px}
+#boardView::-webkit-scrollbar-thumb,#listView::-webkit-scrollbar-thumb,#plannerView::-webkit-scrollbar-thumb,
+#cargaView::-webkit-scrollbar-thumb,#timelineView::-webkit-scrollbar-thumb,#calView::-webkit-scrollbar-thumb,
+#weekView::-webkit-scrollbar-thumb,#summaryView::-webkit-scrollbar-thumb{background:rgba(var(--ink-rgb),.22);border-radius:99px}
+#boardView::-webkit-scrollbar-thumb:hover,#listView::-webkit-scrollbar-thumb:hover,#plannerView::-webkit-scrollbar-thumb:hover,
+#cargaView::-webkit-scrollbar-thumb:hover,#timelineView::-webkit-scrollbar-thumb:hover,#calView::-webkit-scrollbar-thumb:hover,
+#weekView::-webkit-scrollbar-thumb:hover,#summaryView::-webkit-scrollbar-thumb:hover{background:rgba(var(--ink-rgb),.38)}
+#boardView::-webkit-scrollbar-track,#listView::-webkit-scrollbar-track,#plannerView::-webkit-scrollbar-track,
+#cargaView::-webkit-scrollbar-track,#timelineView::-webkit-scrollbar-track,#calView::-webkit-scrollbar-track,
+#weekView::-webkit-scrollbar-track,#summaryView::-webkit-scrollbar-track{background:rgba(var(--ink-rgb),.05)}
+#boardView::-webkit-scrollbar-corner{background:transparent}
+
+/* cabeçalho das colunas acompanha a rolagem vertical do quadro */
+#boardView .col-header{position:sticky;top:0;z-index:2;background:var(--page-bg);padding-top:4px}
+
+/* impressão: volta ao fluxo normal, senão o PDF sai cortado na primeira tela */
+@media print{
+  #app{height:auto;overflow:visible}
+  #boardView,
+#listView,
+#plannerView,
+#cargaView,
+#timelineView,
+#calView,
+#weekView,
+#summaryView,
+#crmView,
+#adminView{overflow:visible!important;min-height:0;flex:none}
+}
+
 /* ══ componentes novos (etapa 1): picker "Você", cor de projeto, campos de task, grupos ══ */
 .person-picker-grid.drilldown{display:flex;flex-direction:column;gap:4px}
 .person-picker-grid.drilldown .person-picker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin:2px 0 0}
@@ -574,6 +647,9 @@ body.tem-aviso-topo #logout-btn{top:41px}
 .col-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 /* lista de Projetos: o nome tambem nao pode empurrar o badge da frente */
 .pr-name span{min-width:0}
+
+.board-view{padding-bottom:16px}
+.carga-view,.timeline-view,.cal-view{padding-bottom:24px}
 
 /* ══ CARGA DE TRABALHO ══ */
 .carga-view{padding:0 28px 40px}
