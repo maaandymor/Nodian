@@ -481,6 +481,13 @@ body.tem-aviso-topo #logout-btn{top:41px}
 .week-task-card.is-done{opacity:.55}
 .week-task-card.is-done .week-task-desc{text-decoration:line-through}
 
+/* frente como filtro (na barra de filtros, não na topbar) */
+.chip-frente{display:inline-flex;align-items:center;gap:6px}
+.chip-frente .scope-dot{width:7px;height:7px;border-radius:50%;background:var(--scope-cor,var(--color-gray));flex-shrink:0}
+.chip-frente.active .scope-dot{outline:1.5px solid var(--color-white)}
+.chip-todas .scope-dot-all{background:conic-gradient(var(--color-green),var(--color-blue),var(--color-amber),var(--color-green))}
+.carga-table .col-frente{background:rgba(var(--ink-rgb),.03);font-weight:600}
+
 /* ══ componentes novos (etapa 1): picker "Você", cor de projeto, campos de task, grupos ══ */
 .person-picker-grid.drilldown{display:flex;flex-direction:column;gap:4px}
 .person-picker-grid.drilldown .person-picker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin:2px 0 0}
@@ -544,6 +551,10 @@ body.tem-aviso-topo #logout-btn{top:41px}
 .task-who-pill.com-dias b{background:var(--color-white);border-radius:99px;padding:0 5px;font-size:9px;font-weight:700}
 .task-effort-total{background:transparent;border:1px dashed var(--border-c);color:var(--color-gray);font-weight:600}
 .week-task-effort{font-size:10px;font-weight:700;background:var(--color-bg);border-radius:99px;padding:1px 6px;color:var(--color-black)}
+
+/* prazos: cliente estreito à esquerda, bloco interno à direita */
+.prazos-band{display:grid;grid-template-columns:minmax(130px,1fr) 2fr;gap:10px;align-items:start}
+@media (max-width:520px){.prazos-band{grid-template-columns:1fr}}
 
 /* ══ CARGA DE TRABALHO ══ */
 .carga-view{padding:0 28px 40px}
@@ -720,7 +731,6 @@ body.tem-aviso-topo #logout-btn{top:41px}
     <div class="topbar-logo-dot" id="topbar-logo-dot">N</div>
     Nodian
   </div>
-  <div class="scope-tabs" id="scopeSwitcher" style="display:none"></div>
   <div class="view-tabs" id="viewTabs"></div>
   <input class="topbar-search" type="text" placeholder="Buscar projeto..." id="searchInput" oninput="renderCurrentView()"/>
   <div class="topbar-sep"></div>
@@ -737,6 +747,11 @@ body.tem-aviso-topo #logout-btn{top:41px}
 
 <!-- FILTER BAR -->
 <div class="filter-bar" id="filterBar">
+  <span id="frenteFilterRow" style="display:contents">
+    <span class="filter-label">Frente</span>
+    <span id="scopeChips" style="display:contents"></span>
+    <div class="filter-sep"></div>
+  </span>
   <span class="filter-label">Time</span>
   <button class="filter-chip active" data-filter="all" onclick="setPersonFilter('all',this)">Todos</button>
   <span id="personFilterChips"></span>
@@ -1065,12 +1080,41 @@ body.tem-aviso-topo #logout-btn{top:41px}
 </div>
 
 
-<!-- TASK MODAL -->
+<!-- TASK MODAL — ordem: o que é · em que pé está · quando · quem faz e quanto · como se divide -->
 <div class="overlay" id="taskOverlay" onclick="closeTaskModal(event)">
   <div class="small-modal modal-wide">
     <div class="small-modal-title" id="taskModalTitle">Nova Task</div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <div class="form-row"><label class="form-label">Descrição</label><textarea class="form-textarea" id="taskDesc" placeholder="O que precisa ser feito?" style="min-height:50px"></textarea></div>
+
+      <div class="form-row"><label class="form-label">Status</label>
+        <select class="form-select" id="taskStatus"></select>
+      </div>
+
+      <!-- Prazos: compromisso externo à esquerda, nosso planejamento agrupado à direita -->
+      <div class="prazos-band">
+        <div class="form-row">
+          <label class="form-label">Prazo do cliente</label>
+          <input class="form-input" id="taskDateClient" type="date" onchange="atualizaFolgaTask()" title="Compromisso externo: reunião, apresentação, entrega combinada. A diferença para o prazo interno é a folga."/>
+          <span class="campo-legenda">externo · opcional</span>
+        </div>
+        <div class="bloco-interno">
+          <div class="bloco-titulo">Interno</div>
+          <div class="form-grid">
+            <div class="form-row">
+              <label class="form-label">Início</label>
+              <input class="form-input" id="taskStart" type="date" title="Quando o trabalho começa. Define onde a barra começa na Timeline."/>
+              <span class="campo-legenda">quando começa</span>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Prazo interno</label>
+              <input class="form-input" id="taskDate" type="date" onchange="atualizaFolgaTask()" title="Quando NÓS queremos terminar. É esta data que alimenta a visão de Carga: o esforço é distribuído entre o início e ela."/>
+              <span class="campo-legenda">queremos terminar <b>· conta na Carga</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-hint" id="taskFolga"></div>
 
       <!-- Quem faz + quanto cada um faz: juntos, porque um só faz sentido com o outro -->
       <div class="bloco-equipe">
@@ -1095,34 +1139,6 @@ body.tem-aviso-topo #logout-btn{top:41px}
         </div>
       </div>
 
-      <!-- Compromisso externo primeiro: é a data que devemos a alguém -->
-      <div class="form-row">
-        <label class="form-label">Prazo do cliente</label>
-        <input class="form-input" id="taskDateClient" type="date" onchange="atualizaFolgaTask()" title="Compromisso externo: reunião, apresentação, entrega combinada. A diferença para o prazo interno é a folga."/>
-        <span class="campo-legenda">compromisso externo · opcional</span>
-      </div>
-
-      <!-- Nosso planejamento, agrupado -->
-      <div class="bloco-interno">
-        <div class="bloco-titulo">Interno</div>
-        <div class="form-grid">
-          <div class="form-row">
-            <label class="form-label">Início</label>
-            <input class="form-input" id="taskStart" type="date" title="Quando o trabalho começa. Define onde a barra começa na Timeline."/>
-            <span class="campo-legenda">quando começa</span>
-          </div>
-          <div class="form-row">
-            <label class="form-label">Prazo interno</label>
-            <input class="form-input" id="taskDate" type="date" onchange="atualizaFolgaTask()" title="Quando NÓS queremos terminar. É esta data que alimenta a visão de Carga: o esforço é distribuído entre o início e ela."/>
-            <span class="campo-legenda">queremos terminar <b>· conta na Carga</b></span>
-          </div>
-        </div>
-        <div class="form-hint" id="taskFolga"></div>
-      </div>
-
-      <div class="form-row"><label class="form-label">Coluna</label>
-        <select class="form-select" id="taskStatus"></select>
-      </div>
       <div class="form-row hidden-module" id="taskDealRow"><label class="form-label">Negócio (CRM)</label>
         <select class="form-select" id="taskDealId"><option value="">— nenhum —</option></select>
       </div>
@@ -2138,14 +2154,15 @@ function renderSummaryPersonChips(){ /* legado — o Resumo por pessoa virou a v
 
 // ══ ESCOPO (frentes) ══
 function renderScopeSwitcher(){
-  const el = document.getElementById('scopeSwitcher'); if(!el) return;
-  if(!isMulti()){ el.style.display = 'none'; return; }
-  el.style.display = 'flex';
-  el.innerHTML = FRENTES.map(function(f){
-    return '<button class="scope-tab' + (ESCOPO === f.id ? ' active' : '') + '" style="--scope-cor:' + f.cor + '" onclick="setEscopo(\'' + f.id + '\')"><span class="scope-dot"></span>' + escHtml(f.nome) + '</button>';
-  }).join('')
-  + '<span class="scope-sep"></span>'
-  + '<button class="scope-tab scope-all' + (ESCOPO === ESCOPO_TODOS ? ' active' : '') + '" onclick="setEscopo(\'' + ESCOPO_TODOS + '\')"><span class="scope-dot scope-dot-all"></span>' + escHtml(CFG.theme.marca.nome_curto || 'Todos') + '</button>';
+  const el = document.getElementById('scopeChips'); if(!el) return;
+  const linha = document.getElementById('frenteFilterRow');
+  if(!isMulti()){ if(linha) linha.style.display = 'none'; return; }
+  if(linha) linha.style.display = 'contents';
+  // "Nodian" (todas as frentes) vem primeiro — é o estado padrão e o mais usado.
+  el.innerHTML = '<button class="filter-chip chip-frente chip-todas' + (ESCOPO === ESCOPO_TODOS ? ' active' : '') + '" onclick="setEscopo(\'' + ESCOPO_TODOS + '\')"><span class="scope-dot scope-dot-all"></span>' + escHtml(CFG.theme.marca.nome_curto || 'Todas') + '</button>'
+    + FRENTES.map(function(f){
+      return '<button class="filter-chip chip-frente' + (ESCOPO === f.id ? ' active' : '') + '" style="--scope-cor:' + f.cor + '" onclick="setEscopo(\'' + f.id + '\')"><span class="scope-dot"></span>' + escHtml(f.nome) + '</button>';
+    }).join('');
 }
 function setEscopo(id){
   if(id !== ESCOPO_TODOS && !frenteById(id)) return;
@@ -2154,7 +2171,7 @@ function setEscopo(id){
   deriveFromConfig();
   refreshConfigDerivedUI();
   updateViewTabs();
-  renderCurrentView();
+  setView(currentView); // atualiza só o título; a aba ativa permanece
 }
 
 // ══ INIT ══
@@ -2181,26 +2198,25 @@ document.addEventListener('DOMContentLoaded', function(){
   if(_sb) _sb.auth.getSession().then(function(r){ if(r.data && r.data.session) onLogin(r.data.session.user); });
 });
 
-// ══ VIEWS — registro único (matriz Escopo × Visão) ══
-// escopos: 'single' (só com uma frente ativa), 'all' (só no consolidado), 'both'.
+// ══ VIEWS — registro único ══
+// A frente é um FILTRO, não um modo: todas as visões existem em todos os escopos, então a
+// barra de abas NUNCA muda quando você troca de frente. (Antes, "Projetos" só aparecia
+// dentro de uma frente e "Carga" só no consolidado — o menu mudava debaixo do usuário.)
 const VIEWS = [
-  { id: 'board',    tab: 'Kanban',          mod: 'projetos',     escopos: 'both',   el: 'boardView',    title: 'Kanban de projetos' },
-  { id: 'list',     tab: 'Projetos',        mod: 'planning',     escopos: 'single', el: 'listView',     title: 'Projetos' },
-  { id: 'planner',  tab: 'Planner',         mod: 'planner',      escopos: 'both',   el: 'plannerView',  title: 'Planner' },
-  { id: 'carga',    tab: 'Carga',           mod: 'carga',        escopos: 'all',    el: 'cargaView',    title: 'Carga de trabalho' },
-  { id: 'timeline', tab: 'Timeline',        mod: 'timeline',     escopos: 'both',   el: 'timelineView', title: 'Timeline' },
-  { id: 'cal',      tab: 'Calendário',      mod: 'calendario',   escopos: 'both',   el: 'calView',      title: 'Calendário' },
-  { id: 'week',     tab: 'Kanban de Tasks', mod: 'kanban_tasks', escopos: 'both',   el: 'weekView',     title: 'Kanban de tasks' },
-  { id: 'summary',  tab: 'Resumo',          mod: 'resumo',       escopos: 'both',   el: 'summaryView',  title: 'Resumo' },
-  { id: 'crm',      tab: 'CRM',             mod: 'crm',          escopos: 'single', el: 'crmView',      title: 'CRM' },
-  { id: 'admin',    tab: '⚙ Admin',         mod: 'admin',        escopos: 'both',   el: 'adminView',    title: 'Painel de Admin', adminOnly: true }
+  { id: 'board',    tab: 'Kanban',          mod: 'projetos',     el: 'boardView',    title: 'Kanban de projetos' },
+  { id: 'list',     tab: 'Projetos',        mod: 'planning',     el: 'listView',     title: 'Projetos' },
+  { id: 'planner',  tab: 'Planner',         mod: 'planner',      el: 'plannerView',  title: 'Planner' },
+  { id: 'carga',    tab: 'Carga',           mod: 'carga',        el: 'cargaView',    title: 'Carga de trabalho' },
+  { id: 'timeline', tab: 'Timeline',        mod: 'timeline',     el: 'timelineView', title: 'Timeline' },
+  { id: 'cal',      tab: 'Calendário',      mod: 'calendario',   el: 'calView',      title: 'Calendário' },
+  { id: 'week',     tab: 'Kanban de Tasks', mod: 'kanban_tasks', el: 'weekView',     title: 'Kanban de tasks' },
+  { id: 'summary',  tab: 'Resumo',          mod: 'resumo',       el: 'summaryView',  title: 'Resumo' },
+  { id: 'crm',      tab: 'CRM',             mod: 'crm',          el: 'crmView',      title: 'CRM' },
+  { id: 'admin',    tab: '⚙ Admin',         mod: 'admin',        el: 'adminView',    title: 'Painel de Admin', adminOnly: true }
 ];
 function viewVisible(v){
   if(!moduleEnabled(v.mod)) return false;
   if(v.adminOnly && _userRole !== 'admin') return false;
-  const single = !!frenteAtiva();
-  if(v.escopos === 'single' && !single) return false;
-  if(v.escopos === 'all' && (single || !isMulti())) return false;
   return true;
 }
 function updateViewTabs(){
@@ -2729,15 +2745,23 @@ function renderCarga(){
     + '</div>';
 
   // ── painel de sprint ──
+  // A ocupação é SEMPRE sobre todas as frentes — é o que diz se a pessoa cabe. Quando há
+  // uma frente filtrada, mostramos a parcela dela numa coluna extra.
+  const fAtiva = frenteAtiva();
+  const Rf = fAtiva ? C.alocar(cargaTasks(true), { hoje: hoje, de: per.de, ate: per.ate }) : null;
   const linhas = pessoas.map(function(p){
     const s = R.porPessoa[p] || { alocado: 0, alocadoPeriodo: 0, tasks: 0, naoEstimadas: 0, atrasadas: 0 };
     const pct = capPeriodo > 0 ? s.alocadoPeriodo / capPeriodo : 0;
-    return { p: p, s: s, pct: pct, saldo: capPeriodo - s.alocadoPeriodo };
+    const naFrente = Rf ? ((Rf.porPessoa[p] || { alocadoPeriodo: 0 }).alocadoPeriodo) : null;
+    return { p: p, s: s, pct: pct, saldo: capPeriodo - s.alocadoPeriodo, naFrente: naFrente };
   }).sort(function(a, b){ return b.pct - a.pct; });
   const totAloc = linhas.reduce(function(a, l){ return a + l.s.alocadoPeriodo; }, 0), totCap = capPeriodo * linhas.length;
-  html += '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">Painel de sprint</div><div class="carga-card-sub">' + formatDateShort(per.de) + ' → ' + formatDateShort(per.ate) + ' · ' + diasUteis.length + ' dias úteis · capacidade ' + fmtD(capPeriodo) + ' d/pessoa</div></div>'
+  html += '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">Painel de sprint</div><div class="carga-card-sub">' + formatDateShort(per.de) + ' → ' + formatDateShort(per.ate) + ' · ' + diasUteis.length + ' dias úteis · capacidade ' + fmtD(capPeriodo) + ' d/pessoa'
+    + (fAtiva ? ' · <b>a ocupação considera as ' + FRENTES.length + ' frentes</b> (é o que diz se a pessoa cabe); a coluna ' + escHtml(fAtiva.curto) + ' é a parcela desta frente' : '') + '</div></div>'
     + '<div class="carga-totais"><span><b>' + fmtD(totAloc) + '</b> / ' + fmtD(totCap) + ' d alocados</span><span class="carga-tot-ne">' + R.naoEstimadas.length + ' não estimadas</span><span class="carga-tot-atr">' + R.atrasadas.length + ' atrasadas</span></div></div>'
-    + '<table class="carga-table"><thead><tr><th>Pessoa</th><th>Ocupação</th><th class="num">Alocado</th><th class="num">Capacidade</th><th class="num">Saldo</th><th class="num" title="Tasks abertas sem estimativa de esforço">Não est.</th><th class="num">Atrasadas</th><th class="num">Tasks</th></tr></thead><tbody>'
+    + '<table class="carga-table"><thead><tr><th>Pessoa</th><th>Ocupação</th>'
+    + (fAtiva ? '<th class="num col-frente" title="Parcela vinda da frente filtrada">' + escHtml(fAtiva.curto) + '</th>' : '')
+    + '<th class="num">Alocado</th><th class="num">Capacidade</th><th class="num">Saldo</th><th class="num" title="Tasks abertas sem estimativa de esforço">Não est.</th><th class="num">Atrasadas</th><th class="num">Tasks</th></tr></thead><tbody>'
     + linhas.map(function(l){
       const nv = C.nivel(l.pct);
       const barra = '<div class="carga-bar"><div class="carga-bar-fill cl-' + nv + '" style="width:' + Math.min(100, Math.round(l.pct * 100)) + '%"></div>' + (l.pct > 1 ? '<div class="carga-bar-over" style="width:' + Math.min(100, Math.round((l.pct - 1) * 100)) + '%"></div>' : '') + '</div><span class="carga-pct cl-txt-' + nv + '">' + Math.round(l.pct * 100) + '%</span>';
