@@ -114,22 +114,22 @@ body{font-family:var(--font);background:var(--page-bg);color:var(--color-black);
 .col-count{min-width:18px;height:18px;border-radius:var(--radius-full);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;padding:0 5px}
 
 /* PROJECT CARD */
-.project-card{background:var(--color-white);border:1px solid var(--border-c);border-radius:var(--radius-lg);padding:14px;cursor:pointer;transition:box-shadow .18s,transform .18s;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px;position:relative}
+.project-card{background:var(--color-white);border:1px solid var(--border-c);border-radius:var(--radius-lg);padding:14px;cursor:pointer;transition:box-shadow .18s,transform .18s;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden}
 .project-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
 .project-card.drag-over-card{outline:2px solid var(--color-coral);outline-offset:2px}
-.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.card-name{font-size:13px;font-weight:600;letter-spacing:-.2px;line-height:1.3}
-.status-badge{flex-shrink:0;height:18px;padding:0 7px;border-radius:var(--radius-full);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;cursor:pointer;transition:opacity .15s;white-space:nowrap;max-width:120px;overflow:hidden}
+.card-top{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:6px;min-width:0}
+.card-name{font-size:13px;font-weight:600;letter-spacing:-.2px;line-height:1.3;flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.status-badge{flex:0 0 auto;height:18px;padding:0 7px;border-radius:var(--radius-full);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;cursor:pointer;transition:opacity .15s;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .status-badge:hover{opacity:.75}
-.card-stage{font-size:10px;font-weight:500;color:var(--color-gray);display:flex;align-items:center;gap:4px}
-.card-stage::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--color-amber);flex-shrink:0}
-.card-deadline{display:flex;align-items:center;justify-content:space-between;font-size:10px}
+.card-stage{font-size:10px;font-weight:500;color:var(--color-gray);display:flex;align-items:flex-start;gap:4px;min-width:0;overflow-wrap:anywhere}
+.card-stage::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--color-amber);flex-shrink:0;margin-top:3px}
+.card-deadline{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:10px;min-width:0;flex-wrap:wrap}
 .deadline-date{color:var(--color-gray);font-weight:400}
 .deadline-date.overdue{color:var(--color-red);font-weight:600}
 .deadline-date.soon{color:var(--color-amber);font-weight:600}
 .card-team{display:flex;gap:3px;flex-wrap:wrap}
 .avatar{width:20px;height:20px;border-radius:50%;background:var(--color-white);border:1px solid var(--border-c);color:var(--color-black);font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.card-log{font-size:10px;color:var(--color-gray);font-weight:300;line-height:1.4;font-style:italic;padding-top:7px;border-top:1px solid var(--border-c);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.card-log{font-size:10px;color:var(--color-gray);font-weight:300;line-height:1.4;font-style:italic;padding-top:7px;border-top:1px solid var(--border-c);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere;min-width:0}
 .card-log-empty{color:rgba(var(--muted-rgb),.5)}
 .col-empty{border:1.5px dashed var(--border-c);border-radius:var(--radius-lg);padding:16px;text-align:center;color:rgba(var(--muted-rgb),.5);font-size:11px}
 .card-status-popup{position:absolute;top:30px;right:8px;background:var(--color-white);border-radius:var(--radius-md);box-shadow:var(--shadow-md);border:1px solid var(--border-c);z-index:50;padding:6px;min-width:160px;display:none}
@@ -441,15 +441,20 @@ body.viewer-mode::after{
 .scope-all.active .scope-dot-all{outline:2px solid var(--color-white)}
 .view-title-scope{color:var(--color-gray);font-weight:500}
 
-.frente-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:1px 7px;border-radius:var(--radius-full);background:color-mix(in srgb,var(--fb) 18%,transparent);color:var(--fb);white-space:nowrap;flex-shrink:0}
+.frente-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:1px 7px;border-radius:var(--radius-full);background:color-mix(in srgb,var(--fb) 18%,transparent);color:var(--fb);white-space:nowrap;flex-shrink:0;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
 .frente-section{margin-bottom:26px}
 .frente-section-header{display:flex;align-items:center;gap:10px;padding:0 4px 10px;margin-bottom:12px;border-bottom:2px solid var(--fs-cor,var(--border-c))}
 .frente-section-title{font-size:13px;font-weight:700;letter-spacing:-.2px;font-family:var(--font-title)}
 .frente-section-count{font-size:11px;color:var(--color-gray)}
 .frente-section-dot{width:10px;height:10px;border-radius:50%;background:var(--fs-cor)}
 
-.board-scroll{overflow-x:auto;padding-bottom:8px}
-.board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(196px,1fr);gap:10px;align-items:start;min-width:max-content}
+.board-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:10px;scrollbar-gutter:stable}
+/* o quadro tem 9 colunas: a barra precisa ser visivel para o usuario saber que ha mais */
+.board-scroll::-webkit-scrollbar{height:10px}
+.board-scroll::-webkit-scrollbar-thumb{background:rgba(var(--ink-rgb),.22);border-radius:99px}
+.board-scroll::-webkit-scrollbar-thumb:hover{background:rgba(var(--ink-rgb),.35)}
+.board-scroll::-webkit-scrollbar-track{background:rgba(var(--ink-rgb),.05);border-radius:99px}
+.board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(224px,1fr);gap:12px;align-items:start;min-width:max-content}
 .board-view .board{min-width:100%}
 
 .date-chip{height:26px;width:126px;font-size:11px;padding:0 8px}
@@ -559,6 +564,16 @@ body.tem-aviso-topo #logout-btn{top:41px}
 /* badge da frente dentro do card/linha, agora que os projetos se misturam no mesmo quadro */
 .card-name .frente-badge{margin-left:6px;vertical-align:middle}
 .pr-name .frente-badge{margin-left:6px;flex-shrink:0}
+
+/* nada escapa do card: quem tem texto variavel ganha limite e reticencias */
+.card-who{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0}
+.card-bottom{min-width:0;flex-wrap:wrap}
+.card-team{min-width:0;flex-wrap:wrap}
+.deadline-date{white-space:nowrap;flex-shrink:0}
+.col-header{min-width:0}
+.col-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+/* lista de Projetos: o nome tambem nao pode empurrar o badge da frente */
+.pr-name span{min-width:0}
 
 /* ══ CARGA DE TRABALHO ══ */
 .carga-view{padding:0 28px 40px}
