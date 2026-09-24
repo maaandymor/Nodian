@@ -1443,6 +1443,7 @@ window.CONFIG = CONFIG;
 //  Janela de uma task (start → date):
 //    - só alvo (date):  janela = [max? não: hoje ou alvo, alvo]  → começa hoje se o alvo é futuro
 //    - alvo no passado e task aberta: todo o esforço restante cai em HOJE (atrasada)
+//    - início e alvo:   janela = [início, alvo] INTEIRA, mesmo com o início no passado
 //    - só início:       fim = início + esforço em dias úteis (ou o próprio início)
 //    - nada:            sem janela → "não planejada"
 //  Esforço dividido igualmente entre os responsáveis (ou por task.effortBy), espalhado
@@ -1492,8 +1493,13 @@ window.CONFIG = CONFIG;
     }
     if(start > fim) return { inicio: fim, fim: fim, atrasada: fim < hoje };
     if(fim < hoje) return { inicio: hoje, fim: hoje, atrasada: true };
-    // início no passado: o que sobrou se concentra de hoje em diante
-    return { inicio: start < hoje ? hoje : start, fim: fim, atrasada: false };
+    // Janela PLANEJADA inteira, mesmo que o início já tenha passado. Truncar o início em
+    // hoje (o que se fazia antes) esvaziava os dias em que a task esteve em curso e
+    // empilhava o esforço todo em HOJE: 3 dias iniciados em 21/09 com alvo 24/09 viravam
+    // 3,0 hoje e 0,0 nos dias 21–23. Só faria sentido se soubéssemos quanto já foi feito,
+    // e não há registro de progresso — então o plano é a melhor leitura disponível.
+    // (Alvo no passado continua caindo inteiro em hoje, logo acima: ali o plano acabou.)
+    return { inicio: start, fim: fim, atrasada: false };
   }
   function temEsforco(t){ return t.effort !== null && t.effort !== undefined && t.effort !== '' && !isNaN(Number(t.effort)) && Number(t.effort) > 0; }
   function pessoasDe(t){ return Array.isArray(t.who) ? t.who.filter(Boolean) : (t.who ? [t.who] : []); }
@@ -2865,7 +2871,10 @@ function renderCarga(){
   const R = C.alocar(tasks, { hoje: hoje, de: per.de, ate: per.ate });
   const diasUteis = C.listaDiasUteis(per.de, per.ate);
   const capPeriodo = cap / 5 * diasUteis.length;
-  const pessoas = TEAM_OPTIONS.filter(function(p){ return filterPerson === 'all' || p === filterPerson; });
+  // Ordem alfabética: o painel de sprint e o mapa de calor ficam lado a lado, então a
+  // linha da pessoa precisa ser a mesma nos dois para se ler na horizontal.
+  const pessoas = TEAM_OPTIONS.filter(function(p){ return filterPerson === 'all' || p === filterPerson; })
+    .sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); });
   const fmtD = function(n){ return C.arred(n, 1).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); };
 
   // ── toolbar ──
@@ -2888,7 +2897,7 @@ function renderCarga(){
     const pct = capPeriodo > 0 ? s.alocadoPeriodo / capPeriodo : 0;
     const naFrente = Rf ? ((Rf.porPessoa[p] || { alocadoPeriodo: 0 }).alocadoPeriodo) : null;
     return { p: p, s: s, pct: pct, saldo: capPeriodo - s.alocadoPeriodo, naFrente: naFrente };
-  }).sort(function(a, b){ return b.pct - a.pct; });
+  });  // já vem em ordem alfabética de `pessoas` — ver comentário acima
   const totAloc = linhas.reduce(function(a, l){ return a + l.s.alocadoPeriodo; }, 0), totCap = capPeriodo * linhas.length;
   html += '<div class="carga-topo">'
     + '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">Painel de sprint</div><div class="carga-card-sub">' + formatDateShort(per.de) + ' → ' + formatDateShort(per.ate) + ' · ' + diasUteis.length + ' dias úteis · capacidade ' + fmtD(capPeriodo) + ' d/pessoa'
