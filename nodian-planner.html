@@ -523,6 +523,28 @@ body.tem-aviso-topo #logout-btn{top:41px}
 .milestone-date.today{color:var(--color-prazo-hoje);font-weight:600}
 .milestone-date.soon{color:var(--color-prazo-breve);font-weight:600}
 
+.campo-legenda{font-size:10px;color:var(--color-gray);line-height:1.3;margin-top:-2px}
+.campo-legenda b{color:var(--color-black);font-weight:600}
+
+/* bloco equipe + esforço por pessoa */
+.bloco-equipe{border:1px solid var(--border-c);border-radius:var(--radius-md);padding:10px 12px;background:var(--color-bg)}
+.bloco-interno{border:1px solid var(--border-c);border-radius:var(--radius-md);padding:8px 12px 10px;position:relative}
+.bloco-titulo{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--color-gray);background:var(--color-white);padding:0 6px;position:absolute;top:-7px;left:10px}
+.campo-legenda-inline{font-size:9px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--color-gray);margin-left:6px}
+.campo-legenda-inline b{color:var(--color-black)}
+.campo-legenda-inline .sem-est{font-style:italic}
+.esforco-grid{display:flex;flex-wrap:wrap;gap:6px}
+.esforco-grid.solo .form-input{width:100%}
+.esforco-item{display:flex;align-items:center;gap:5px;background:var(--color-white);border:1.5px solid var(--border-c);border-radius:var(--radius-full);padding:2px 10px 2px 3px}
+.esforco-sigla{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.esforco-input{width:52px;height:24px;padding:0 4px;border:none;background:transparent;font-size:12px;font-weight:600;text-align:right}
+.esforco-input:focus{outline:none}
+.esforco-un{font-size:10px;color:var(--color-gray)}
+.task-who-pill.com-dias{padding-right:3px;display:inline-flex;align-items:center;gap:4px}
+.task-who-pill.com-dias b{background:var(--color-white);border-radius:99px;padding:0 5px;font-size:9px;font-weight:700}
+.task-effort-total{background:transparent;border:1px dashed var(--border-c);color:var(--color-gray);font-weight:600}
+.week-task-effort{font-size:10px;font-weight:700;background:var(--color-bg);border-radius:99px;padding:1px 6px;color:var(--color-black)}
+
 /* ══ CARGA DE TRABALHO ══ */
 .carga-view{padding:0 28px 40px}
 .carga-toolbar{padding:0 0 14px}
@@ -746,7 +768,7 @@ body.tem-aviso-topo #logout-btn{top:41px}
     <button class="filter-chip active" data-ptype="milestones" onclick="togglePlannerType('milestones',this)">Marcos</button>
     <div class="filter-sep"></div>
     <span class="filter-label">Período</span>
-    <input class="form-input date-chip" type="date" id="plannerDateFrom" onchange="renderPlanner()" title="Data início"/>
+    <input class="form-input date-chip" type="date" id="plannerDateFrom" onchange="renderPlanner()" title="Mostrar itens a partir desta data"/>
     <span style="font-size:10px;color:var(--color-gray)">até</span>
     <input class="form-input date-chip" type="date" id="plannerDateTo" onchange="renderPlanner()" title="Data fim"/>
     <button class="icon-btn" onclick="clearPlannerDates()" title="Limpar datas">✕</button>
@@ -954,7 +976,7 @@ body.tem-aviso-topo #logout-btn{top:41px}
         <select class="quick-inbox-who" id="quickTaskWho">
           <option value="">Quem?</option>
         </select>
-        <input class="quick-inbox-date" id="quickTaskDate" type="date" title="Alvo interno"/>
+        <input class="quick-inbox-date" id="quickTaskDate" type="date" title="Nosso prazo — quando queremos terminar"/>
         <input class="quick-inbox-date quick-inbox-effort" id="quickTaskEffort" type="number" min="0" step="0.5" placeholder="dias" title="Esforço (dias úteis)"/>
         <button class="btn btn-sm btn-primary" onclick="submitQuickTask()">↵</button>
       </div>
@@ -1049,31 +1071,57 @@ body.tem-aviso-topo #logout-btn{top:41px}
     <div class="small-modal-title" id="taskModalTitle">Nova Task</div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <div class="form-row"><label class="form-label">Descrição</label><textarea class="form-textarea" id="taskDesc" placeholder="O que precisa ser feito?" style="min-height:50px"></textarea></div>
-      <div class="form-row"><label class="form-label">Responsáveis</label>
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <div style="display:flex;gap:4px;flex-wrap:wrap" id="taskWhoField"></div>
-          <div class="person-picker">
-            <button class="team-add-btn" onclick="togglePersonPicker('taskWhoDropdown',event)">+ Adicionar</button>
-            <div class="person-picker-dropdown" id="taskWhoDropdown">
-              <div class="person-picker-grid" id="taskPickerGrid"></div>
-              <div class="person-picker-divider"></div>
-              <input class="person-custom-input" placeholder="Outro..." id="taskCustomPerson" onkeydown="handleCustomPersonKey(event,'task')"/>
-              <div class="person-picker-actions"><button class="btn btn-sm btn-secondary" onclick="closePersonPicker('taskWhoDropdown')">OK</button></div>
+
+      <!-- Quem faz + quanto cada um faz: juntos, porque um só faz sentido com o outro -->
+      <div class="bloco-equipe">
+        <div class="form-row">
+          <label class="form-label">Responsáveis <span class="campo-legenda-inline" id="taskEffortTotal"></span></label>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;gap:4px;flex-wrap:wrap" id="taskWhoField"></div>
+            <div class="person-picker">
+              <button class="team-add-btn" onclick="togglePersonPicker('taskWhoDropdown',event)">+ Adicionar</button>
+              <div class="person-picker-dropdown" id="taskWhoDropdown">
+                <div class="person-picker-grid" id="taskPickerGrid"></div>
+                <div class="person-picker-divider"></div>
+                <input class="person-custom-input" placeholder="Outro..." id="taskCustomPerson" onkeydown="handleCustomPersonKey(event,'task')"/>
+                <div class="person-picker-actions"><button class="btn btn-sm btn-secondary" onclick="closePersonPicker('taskWhoDropdown')">OK</button></div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="form-grid form-grid-3">
-        <div class="form-row"><label class="form-label">Início</label><input class="form-input" id="taskStart" type="date"/></div>
-        <div class="form-row"><label class="form-label">Alvo interno</label><input class="form-input" id="taskDate" type="date" onchange="atualizaFolgaTask()"/></div>
-        <div class="form-row"><label class="form-label">Prazo cliente</label><input class="form-input" id="taskDateClient" type="date" onchange="atualizaFolgaTask()"/></div>
-      </div>
-      <div class="form-hint" id="taskFolga"></div>
-      <div class="form-grid">
-        <div class="form-row"><label class="form-label">Esforço (dias úteis)</label><input class="form-input" id="taskEffort" type="number" min="0" step="0.5" placeholder="vazio = não estimada"/></div>
-        <div class="form-row"><label class="form-label">Coluna</label>
-          <select class="form-select" id="taskStatus"></select>
+        <div class="form-row" style="margin-top:8px">
+          <label class="form-label">Esforço em dias úteis <span class="campo-legenda-inline">trabalho, não duração</span></label>
+          <div id="taskEffortFields" class="esforco-grid"></div>
         </div>
+      </div>
+
+      <!-- Compromisso externo primeiro: é a data que devemos a alguém -->
+      <div class="form-row">
+        <label class="form-label">Prazo do cliente</label>
+        <input class="form-input" id="taskDateClient" type="date" onchange="atualizaFolgaTask()" title="Compromisso externo: reunião, apresentação, entrega combinada. A diferença para o prazo interno é a folga."/>
+        <span class="campo-legenda">compromisso externo · opcional</span>
+      </div>
+
+      <!-- Nosso planejamento, agrupado -->
+      <div class="bloco-interno">
+        <div class="bloco-titulo">Interno</div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label class="form-label">Início</label>
+            <input class="form-input" id="taskStart" type="date" title="Quando o trabalho começa. Define onde a barra começa na Timeline."/>
+            <span class="campo-legenda">quando começa</span>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Prazo interno</label>
+            <input class="form-input" id="taskDate" type="date" onchange="atualizaFolgaTask()" title="Quando NÓS queremos terminar. É esta data que alimenta a visão de Carga: o esforço é distribuído entre o início e ela."/>
+            <span class="campo-legenda">queremos terminar <b>· conta na Carga</b></span>
+          </div>
+        </div>
+        <div class="form-hint" id="taskFolga"></div>
+      </div>
+
+      <div class="form-row"><label class="form-label">Coluna</label>
+        <select class="form-select" id="taskStatus"></select>
       </div>
       <div class="form-row hidden-module" id="taskDealRow"><label class="form-label">Negócio (CRM)</label>
         <select class="form-select" id="taskDealId"><option value="">— nenhum —</option></select>
@@ -2380,7 +2428,7 @@ function renderPlanningRow(p, cols){
     + '<div class="quick-row-base quick-task-row" id="qr-' + p.id + '" onclick="event.stopPropagation()">'
     + '<input class="quick-task-input" id="qt-desc-' + p.id + '" placeholder="Descrição da task..." onkeydown="handleListQuickKey(event,\'' + p.id + '\')"/>'
     + '<select class="quick-who-select" id="qt-who-' + p.id + '">' + whoOpts('Quem?') + '</select>'
-    + '<input class="quick-date-input" id="qt-date-' + p.id + '" type="date" value="' + hojeISO() + '" title="Alvo interno"/>'
+    + '<input class="quick-date-input" id="qt-date-' + p.id + '" type="date" value="' + hojeISO() + '" title="Nosso prazo"/>'
     + '<input class="quick-date-input quick-effort-input" id="qt-effort-' + p.id + '" type="number" min="0" step="0.5" placeholder="dias" title="Esforço (dias úteis)"/>'
     + '<button class="btn btn-sm btn-primary" onclick="submitListQuickTask(\'' + p.id + '\')">Adicionar ↵</button></div>'
     + '</div>';
@@ -2534,8 +2582,9 @@ function plannerItems(){
         if(dateFrom && t.date && t.date < dateFrom) return;
         if(dateTo && t.date && t.date > dateTo) return;
         const persons = whoArr(t).length ? whoArr(t) : ['—'];
+        const porPessoa = esforcoPessoa(t); // a coluna é de UMA pessoa: mostrar a parcela dela
         persons.forEach(function(person){
-          items.push({ person: person, type: 'task', desc: t.desc || '', date: t.date || '', start: t.start || '', dateClient: t.dateClient || '', effort: t.effort, projectName: p.name, projectId: p.id, status: t.status || STATUS_TASK[0].id, done: done, frente: f, taskId: t.id });
+          items.push({ person: person, type: 'task', desc: t.desc || '', date: t.date || '', start: t.start || '', dateClient: t.dateClient || '', effort: porPessoa[person], projectName: p.name, projectId: p.id, status: t.status || STATUS_TASK[0].id, done: done, frente: f, taskId: t.id });
         });
       });
     }
@@ -2610,7 +2659,7 @@ function renderPlannerCard(item){
     statusBadge = '<span class="week-task-status" style="background:' + hexToRgba(sh, .18) + ';color:' + sh + '">' + escHtml(lbl) + '</span>';
   }
   const badge = item.frente && isMulti() ? '<span class="frente-badge" style="--fb:' + item.frente.cor + '">' + escHtml(item.frente.curto) + '</span>' : '';
-  const effort = (!isMilestone && item.effort) ? '<span class="week-task-date" title="Esforço estimado">' + item.effort + 'd</span>' : '';
+  const effort = (!isMilestone && item.effort) ? '<span class="week-task-effort" title="Esforço desta pessoa (dias úteis)">' + fmtDias(item.effort) + 'd</span>' : '';
   const prazo = item.date ? '<span class="week-task-date ' + dcls + '">' + (dcls === 'today' ? 'hoje' : formatDateShort(item.date)) + '</span>' : '<span class="week-task-date">Sem prazo</span>';
   const edit = (!isMilestone && item.taskId) ? '<button class="icon-btn week-task-edit" title="Editar task aqui" onclick="event.stopPropagation();openTaskEditor(\'' + item.projectId + '\',\'' + item.taskId + '\')">✎</button>' : '';
   return '<div class="week-task-card' + (item.done ? ' is-done' : '') + '" style="border-left-color:' + hex + '" onclick="openProject(\'' + item.projectId + '\')">'
@@ -2756,7 +2805,7 @@ function cargaHistoricoHtml(){
 function cargaLista(titulo, itens, sub, editavel, tasks){
   return '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">' + titulo + ' <span class="carga-count">' + itens.length + '</span></div><div class="carga-card-sub">' + sub + '</div></div></div>'
     + (itens.length ? '<div class="carga-lista">' + itens.map(function(t){
-      const edit = editavel ? '<input class="form-input carga-inline" type="date" value="' + (t.date || '') + '" title="Alvo interno" onchange="cargaEditTask(\'' + t.projectId + '\',\'' + t.id + '\',\'date\',this.value)"/><input class="form-input carga-inline carga-inline-eff" type="number" min="0" step="0.5" placeholder="dias" value="' + (t.effort == null ? '' : t.effort) + '" title="Esforço (dias úteis)" onchange="cargaEditTask(\'' + t.projectId + '\',\'' + t.id + '\',\'effort\',this.value)"/>' : (t.date ? '<span class="carga-item-val ' + deadlineClass(t.date) + '">' + formatDateShort(t.date) + '</span>' : '');
+      const edit = editavel ? '<input class="form-input carga-inline" type="date" value="' + (t.date || '') + '" title="Nosso prazo" onchange="cargaEditTask(\'' + t.projectId + '\',\'' + t.id + '\',\'date\',this.value)"/><input class="form-input carga-inline carga-inline-eff" type="number" min="0" step="0.5" placeholder="dias" value="' + (t.effort == null ? '' : t.effort) + '" title="Esforço (dias úteis)" onchange="cargaEditTask(\'' + t.projectId + '\',\'' + t.id + '\',\'effort\',this.value)"/>' : (t.date ? '<span class="carga-item-val ' + deadlineClass(t.date) + '">' + formatDateShort(t.date) + '</span>' : '');
       return '<div class="carga-item">' + (t.frente && isMulti() ? '<span class="frente-badge" style="--fb:' + t.frente.cor + '">' + escHtml(t.frente.curto) + '</span>' : '') + '<span class="carga-item-proj" onclick="openProject(\'' + t.projectId + '\')">' + escHtml(t.projectName) + '</span><span class="carga-item-desc" onclick="openTaskEditor(\'' + t.projectId + '\',\'' + t.id + '\')" title="Editar task">' + escHtml(t.desc) + '</span><span class="carga-item-who">' + (t.who.length ? t.who.join(', ') : '—') + '</span>' + edit + '<button class="icon-btn" title="Editar task" onclick="openTaskEditor(\'' + t.projectId + '\',\'' + t.id + '\')">✎</button></div>';
     }).join('') + '</div>' : '<div class="carga-vazio">Nenhuma. 👌</div>') + '</div>';
 }
@@ -2785,7 +2834,7 @@ function plannerCapacidadeHtml(person){
   return '<div class="week-person-cap" title="Semana atual, todas as frentes">' + parcial + '<b class="cl-txt-' + nv + '">' + fmtD(s.alocadoPeriodo) + '</b> / ' + fmtD(cap) + ' d na semana' + (s.naoEstimadas ? ' · <span class="ne-chip">' + s.naoEstimadas + ' não est.</span>' : '') + (pct > 1 ? ' ⚠️' : '') + '<div class="carga-bar mini"><div class="carga-bar-fill cl-' + nv + '" style="width:' + Math.min(100, Math.round(pct * 100)) + '%"></div></div></div>';
 }
 // ══════════════════════════════
-//  VIEW: TIMELINE (Gantt) — barras início → alvo interno, extensão hachurada até o prazo
+//  VIEW: TIMELINE (Gantt) — barras início → nosso prazo, extensão hachurada até o prazo
 //  cliente (folga), marcos como losangos, linha de hoje. Agrupável por projeto ou por pessoa.
 //  Substitui os "eventos" manuais do calendário legado: o trabalho agora tem janela própria.
 // ══════════════════════════════
@@ -2839,7 +2888,7 @@ function renderTimeline(){
     + '<input class="form-input date-chip" type="date" id="tlDe" value="' + per.de + '" onchange="setTlCustom()"/><span style="font-size:10px;color:var(--color-gray)">até</span><input class="form-input date-chip" type="date" id="tlAte" value="' + per.ate + '" onchange="setTlCustom()"/>'
     + '<div class="filter-sep"></div><span class="filter-label">Agrupar</span><button class="filter-chip' + (tlGrupo === 'projeto' ? ' active' : '') + '" onclick="setTlGrupo(\'projeto\')">Por projeto</button><button class="filter-chip' + (tlGrupo === 'pessoa' ? ' active' : '') + '" onclick="setTlGrupo(\'pessoa\')">Por pessoa</button>'
     + '<div class="filter-sep"></div><span class="filter-label">Concluídas</span><button class="filter-chip' + (tlMostrarDone ? ' active' : '') + '" onclick="toggleTlDone(this)">' + (tlMostrarDone ? 'Ocultar' : 'Mostrar') + '</button>'
-    + '<div class="filter-sep"></div><span class="tl-legend"><i class="tl-lg-bar"></i> início→alvo <i class="tl-lg-folga"></i> folga até prazo cliente <i class="tl-lg-ms">◆</i> marco <i class="tl-lg-hoje"></i> hoje</span></div>';
+    + '<div class="filter-sep"></div><span class="tl-legend"><i class="tl-lg-bar"></i> início→nosso prazo <i class="tl-lg-folga"></i> folga até o prazo do cliente <i class="tl-lg-ms">◆</i> marco <i class="tl-lg-hoje"></i> hoje</span></div>';
 
   // grupos
   let grupos = [];
@@ -2896,7 +2945,7 @@ function renderTimeline(){
 }
 // ══════════════════════════════
 //  VIEW: CALENDÁRIO — "o que devo a alguém, e quando". Grade mensal só de COMPROMISSOS:
-//  marcos (◆) e prazos-cliente de tasks (◇). Alvos internos entram só se ligados.
+//  marcos (◆) e prazos do cliente (◇). Os nossos prazos entram só se ligados.
 //  Sem eventos manuais (aposentados): o trabalho em andamento vive na Timeline.
 // ══════════════════════════════
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
@@ -2937,7 +2986,7 @@ function renderCalendar(){
     + '<div class="filter-sep"></div><span class="filter-label">Mostrar</span>'
     + '<button class="filter-chip' + (calTipos.marcos ? ' active' : '') + '" onclick="toggleCalTipo(\'marcos\',this)">◆ Marcos</button>'
     + '<button class="filter-chip' + (calTipos.cliente ? ' active' : '') + '" onclick="toggleCalTipo(\'cliente\',this)">◇ Prazos cliente</button>'
-    + '<button class="filter-chip' + (calTipos.alvo ? ' active' : '') + '" onclick="toggleCalTipo(\'alvo\',this)">▸ Alvos internos</button>'
+    + '<button class="filter-chip' + (calTipos.alvo ? ' active' : '') + '" onclick="toggleCalTipo(\'alvo\',this)">▸ Nossos prazos</button>'
     + '<span class="cal-count">' + totalMes + ' compromisso' + (totalMes !== 1 ? 's' : '') + ' no mês</span></div>';
   html += '<div class="cal"><div class="cal-dow-row">' + ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(function(d, i){ return '<div class="cal-dow' + (i === 0 || i === 6 ? ' fds' : '') + '">' + d + '</div>'; }).join('') + '</div><div class="cal-grid">';
   const MAX = 4;
@@ -3013,7 +3062,10 @@ function removePerson(p, ctx){
 function pillsHtml(arr, ctx){ return arr.map(function(p){ return '<div class="team-pill" style="' + avatarStyle(p) + '">' + escHtml(p) + '<button class="team-pill-remove" onclick="removePerson(\'' + p + '\',\'' + ctx + '\')">✕</button></div>'; }).join(''); }
 function renderModalTeamPills(){ const f = document.getElementById('modalTeamField'); const pk = document.getElementById('modalTeamPicker'); f.innerHTML = ''; f.insertAdjacentHTML('beforeend', pillsHtml(tempModalTeam, 'modal')); f.appendChild(pk); saveCurrentProject(); }
 function renderMilestoneWhoPills(){ document.getElementById('milestoneWhoField').innerHTML = pillsHtml(tempMilestoneWho, 'milestone'); }
-function renderTaskWhoPills(){ document.getElementById('taskWhoField').innerHTML = pillsHtml(tempTaskWho, 'task'); }
+function renderTaskWhoPills(){
+  document.getElementById('taskWhoField').innerHTML = pillsHtml(tempTaskWho, 'task');
+  if(typeof sincronizaEsforcoComResponsaveis === 'function') sincronizaEsforcoComResponsaveis();
+}
 // ══ PROJECT CRUD ══
 function openNewProjectModal(){
   document.getElementById('newProjectName').value = ''; document.getElementById('newProjectTeam').value = minhaSigla() || '';
@@ -3191,13 +3243,14 @@ function closeLogModal(e){ if(!e || e.target === document.getElementById('logOve
 // ══ TASKS ══
 // Modelo (decisão de 18/09/2026):
 //   desc, who[], status, subtasks[]           — legado
-//   date        = ALVO INTERNO (quando queremos terminar; dirige a carga)  — campo legado reaproveitado
+//   date        = NOSSO PRAZO (quando queremos terminar; dirige a carga) — campo legado reaproveitado
 //   start       = início planejado (opcional)
-//   dateClient  = PRAZO CLIENTE / apresentação / reunião (opcional; compromisso externo)
-//   effort      = esforço em DIAS ÚTEIS (opcional; sem default: task sem estimativa é "não estimada")
+//   dateClient  = PRAZO DO CLIENTE / apresentação / reunião (opcional; compromisso externo)
+//   effort      = esforço TOTAL em DIAS ÚTEIS (opcional; sem default: task sem estimativa é "não estimada")
+//   effortBy    = {sigla: dias} — só quando a divisão entre os responsáveis NÃO é igual
 //   doneAt      = data em que virou concluída (para velocidade/histórico)
 function novaTask(campos){
-  const t = { id: uid(), desc: '', who: [], date: '', start: '', dateClient: '', effort: null, status: STATUS_TASK[0].id, subtasks: [], doneAt: null };
+  const t = { id: uid(), desc: '', who: [], date: '', start: '', dateClient: '', effort: null, effortBy: null, status: STATUS_TASK[0].id, subtasks: [], doneAt: null };
   Object.keys(campos || {}).forEach(function(k){ t[k] = campos[k]; });
   if(t.effort !== null && t.effort !== undefined && (isNaN(t.effort) || t.effort < 0)) t.effort = null;
   if(t.status === TASK_DONE_ID && !t.doneAt) t.doneAt = hojeISO();
@@ -3219,6 +3272,10 @@ function openTaskEditor(pid, tid){
   editTask(idx);
 }
 function _fimEditorStandalone(){ if(_taskEditorStandalone){ _taskEditorStandalone = false; currentProjectId = null; renderCurrentView(); } }
+// Dias por pessoa: usa effortBy quando existe, senão divide o total igualmente.
+// Delega para o motor de carga para não haver duas regras diferentes no app.
+function esforcoPessoa(t){ return (typeof PlannerCarga !== 'undefined') ? PlannerCarga.esforcoPorPessoa(t) : {}; }
+function fmtDias(n){ const v = Math.round(Number(n) * 10) / 10; return (Number.isInteger(v) ? v : v.toFixed(1).replace('.', ',')); }
 function effortLabel(t){ if(t.effort === null || t.effort === undefined || t.effort === '') return ''; const n = Number(t.effort); return (Number.isInteger(n) ? n : n.toFixed(1).replace('.0', '')) + 'd'; }
 
 function renderTasks(p){
@@ -3236,13 +3293,23 @@ function renderTaskCard(t, idx){
   const dcls = t.date ? deadlineClass(t.date, done) : '';
   const subs = t.subtasks && t.subtasks.length > 0 ? '<div class="subtasks">' + t.subtasks.map(function(s, si){ return '<div class="subtask ' + (s.done ? 'done' : '') + '"><div class="subtask-check ' + (s.done ? 'checked' : '') + '" onclick="toggleSubtask(' + idx + ',' + si + ')"></div><span>' + escHtml(s.text) + '</span></div>'; }).join('') + '</div>' : '';
   const crmBadge = t.origem === 'crm' ? '<span class="crm-tag" title="Criada a partir do CRM">CRM</span> ' : '';
-  const janela = (t.start ? formatDateShort(t.start) + ' → ' : '') + (t.date ? '<span class="task-date ' + dcls + '" title="Alvo interno">' + formatDateShort(t.date) + '</span>' : '<span class="task-date" title="Sem alvo">sem prazo</span>');
-  const cliente = t.dateClient ? '<span class="task-date task-date-client ' + (done ? '' : deadlineClass(t.dateClient)) + '" title="Prazo cliente">◆ ' + formatDateShort(t.dateClient) + '</span>' : '';
-  const esforco = effortLabel(t) ? '<span class="task-effort" title="Esforço estimado (dias úteis)">' + effortLabel(t) + '</span>' : (done ? '' : '<span class="task-effort task-effort-none" title="Sem estimativa">?d</span>');
+  const janela = (t.start ? formatDateShort(t.start) + ' → ' : '') + (t.date ? '<span class="task-date ' + dcls + '" title="Nosso prazo">' + formatDateShort(t.date) + '</span>' : '<span class="task-date" title="Sem prazo definido">sem prazo</span>');
+  const cliente = t.dateClient ? '<span class="task-date task-date-client ' + (done ? '' : deadlineClass(t.dateClient)) + '" title="Prazo do cliente">◆ ' + formatDateShort(t.dateClient) + '</span>' : '';
+  // Com esforço dividido, o número relevante é o de cada pessoa — então ele vai NA pill,
+  // colado em quem faz. O chip solto só aparece quando não há responsável ou não há estimativa.
+  const porPessoa = esforcoPessoa(t), temEsforco = !!effortLabel(t);
+  const pills = whoArr(t).map(function(w){
+    const d = porPessoa[w];
+    return '<span class="task-who-pill' + (d ? ' com-dias' : '') + '" title="' + escHtml(w) + (d ? ' · ' + fmtDias(d) + ' dias úteis' : '') + '">' + escHtml(w) + (d ? '<b>' + fmtDias(d) + 'd</b>' : '') + '</span>';
+  }).join('');
+  const esforco = (temEsforco && whoArr(t).length)
+    ? (whoArr(t).length > 1 ? '<span class="task-effort task-effort-total" title="Esforço total">Σ ' + effortLabel(t) + '</span>' : '')
+    : (temEsforco ? '<span class="task-effort" title="Esforço estimado (dias úteis)">' + effortLabel(t) + '</span>'
+                  : (done ? '' : '<span class="task-effort task-effort-none" title="Sem estimativa">?d</span>'));
   return '<div class="task-card"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px">'
     + '<div class="task-desc">' + crmBadge + escHtml(t.desc) + '</div>'
     + '<div style="display:flex;gap:1px;flex-shrink:0"><button class="icon-btn" style="font-size:10px" onclick="editTask(' + idx + ')">✎</button><button class="icon-btn" style="font-size:10px;color:var(--color-red)" onclick="removeTask(' + idx + ')">✕</button></div></div>'
-    + '<div class="task-meta"><div class="task-who-pills">' + whoArr(t).map(function(w){ return '<span class="task-who-pill">' + escHtml(w) + '</span>'; }).join('') + '</div>'
+    + '<div class="task-meta"><div class="task-who-pills">' + pills + '</div>'
     + '<span class="task-dates">' + janela + cliente + esforco + '</span></div>'
     + subs + '</div>';
 }
@@ -3257,23 +3324,75 @@ function populateTaskDealOptions(selectedDealId){
   }).join('');
   sel.innerHTML = '<option value="">— nenhum —</option>' + opts;
 }
+// Valores do formulário de esforço, por sigla. Chave '' = task sem responsável.
+let tempTaskEffort = {};
+function renderTaskEffortFields(){
+  const wrap = document.getElementById('taskEffortFields'); if(!wrap) return;
+  const pessoas = tempTaskWho.slice();
+  if(!pessoas.length){
+    wrap.className = 'esforco-grid solo';
+    wrap.innerHTML = '<input class="form-input" id="taskEffort" type="number" min="0" step="0.5" placeholder="vazio = não estimada" value="' + (tempTaskEffort[''] == null ? '' : tempTaskEffort['']) + '" oninput="onEffortInput(\'\',this.value)"/>';
+  }else{
+    wrap.className = 'esforco-grid' + (pessoas.length === 1 ? ' solo' : '');
+    wrap.innerHTML = pessoas.map(function(w){
+      const v = tempTaskEffort[w];
+      return '<label class="esforco-item"><span class="esforco-sigla" style="' + avatarStyle(w) + '">' + escHtml(w) + '</span>'
+        + '<input class="form-input esforco-input" type="number" min="0" step="0.5" placeholder="—" value="' + (v == null ? '' : v) + '" oninput="onEffortInput(\'' + w + '\',this.value)"/>'
+        + '<span class="esforco-un">d</span></label>';
+    }).join('');
+    // id estável para quem tem 1 responsável (e para os testes)
+    if(pessoas.length === 1) wrap.querySelector('input').id = 'taskEffort';
+  }
+  atualizaTotalEsforco();
+}
+function onEffortInput(sigla, val){
+  const n = parseFloat(String(val).replace(',', '.'));
+  tempTaskEffort[sigla] = (val === '' || isNaN(n) || n < 0) ? null : n;
+  atualizaTotalEsforco();
+}
+function totalEsforcoForm(){
+  const chaves = tempTaskWho.length ? tempTaskWho : [''];
+  let soma = 0, algum = false;
+  chaves.forEach(function(k){ if(tempTaskEffort[k] != null){ soma += tempTaskEffort[k]; algum = true; } });
+  return algum ? soma : null;
+}
+function atualizaTotalEsforco(){
+  const el = document.getElementById('taskEffortTotal'); if(!el) return;
+  const tot = totalEsforcoForm();
+  if(tot === null){ el.innerHTML = '<span class="sem-est">sem estimativa</span>'; return; }
+  el.innerHTML = tempTaskWho.length > 1
+    ? 'total <b>' + fmtDias(tot) + ' dias</b>'
+    : '<b>' + fmtDias(tot) + ' dia' + (tot === 1 ? '' : 's') + '</b>';
+}
+// Chamado pelo person-picker: mantém os valores de quem continua e zera quem saiu.
+function sincronizaEsforcoComResponsaveis(){
+  const novos = {};
+  tempTaskWho.forEach(function(w){ novos[w] = (tempTaskEffort[w] != null) ? tempTaskEffort[w] : null; });
+  if(!tempTaskWho.length && tempTaskEffort[''] != null) novos[''] = tempTaskEffort[''];
+  tempTaskEffort = novos;
+  renderTaskEffortFields();
+}
 function _fillTaskForm(t){
   document.getElementById('taskDesc').value = t.desc || '';
   document.getElementById('taskStart').value = t.start || '';
   document.getElementById('taskDate').value = t.date || '';
   document.getElementById('taskDateClient').value = t.dateClient || '';
-  document.getElementById('taskEffort').value = (t.effort === null || t.effort === undefined) ? '' : t.effort;
+  tempTaskEffort = {};
+  const por = esforcoPessoa(t);
+  if(tempTaskWho.length){ tempTaskWho.forEach(function(w){ tempTaskEffort[w] = (por[w] != null) ? por[w] : null; }); }
+  else tempTaskEffort[''] = (t.effort === null || t.effort === undefined) ? null : t.effort;
+  renderTaskEffortFields();
   document.getElementById('taskStatus').value = t.status || STATUS_TASK[0].id;
   document.getElementById('taskSubtasks').value = (t.subtasks || []).map(function(s){ return s.text; }).join('\n');
   atualizaFolgaTask();
 }
-// Folga = dias úteis entre o alvo interno e o prazo cliente. Negativa = alvo depois do compromisso.
+// Folga = dias úteis entre o prazo interno e o do cliente. Negativa = prazo interno depois do compromisso.
 function atualizaFolgaTask(){
   const el = document.getElementById('taskFolga'); if(!el) return;
   const alvo = document.getElementById('taskDate').value, cli = document.getElementById('taskDateClient').value;
   if(!alvo || !cli){ el.textContent = ''; return; }
   const n = (typeof PlannerCarga !== 'undefined') ? PlannerCarga.diasUteisEntre(alvo, cli) : Math.round((parseISO(cli) - parseISO(alvo)) / 86400000);
-  el.innerHTML = n < 0 ? '<span style="color:var(--color-red);font-weight:600">Alvo ' + (-n) + ' dia' + (n !== -1 ? 's' : '') + ' úteis DEPOIS do prazo do cliente</span>' : '<span style="color:var(--color-gray)">Folga: ' + n + ' dia' + (n !== 1 ? 's' : '') + ' úteis</span>';
+  el.innerHTML = n < 0 ? '<span style="color:var(--color-red);font-weight:600">⚠ O prazo interno é ' + (-n) + ' dia' + (n !== -1 ? 's' : '') + ' úteis DEPOIS do prazo do cliente</span>' : '<span style="color:var(--color-gray)">Folga de ' + n + ' dia' + (n !== 1 ? 's' : '') + ' úteis entre o prazo interno e o do cliente</span>';
 }
 function addTask(defaultStatus){
   editingTaskIdx = null; tempTaskWho = minhaSigla() ? [minhaSigla()] : [];
@@ -3300,14 +3419,20 @@ function saveTask(){
   });
   const dealSel = document.getElementById('taskDealId');
   const dealId = dealSel && dealSel.value ? dealSel.value : (prev ? (prev.dealId || null) : null);
-  const effortRaw = document.getElementById('taskEffort').value;
   const start = document.getElementById('taskStart').value, date = document.getElementById('taskDate').value;
-  if(start && date && start > date){ toast('Início depois do alvo interno'); return; }
+  if(start && date && start > date){ toast('O início não pode ser depois do prazo interno'); return; }
   const task = prev ? Object.assign({}, prev) : novaTask({});
   task.desc = desc; task.who = tempTaskWho.slice();
   task.start = start; task.date = date; task.dateClient = document.getElementById('taskDateClient').value;
-  task.effort = effortRaw === '' ? null : Math.max(0, parseFloat(effortRaw));
-  if(isNaN(task.effort)) task.effort = null;
+  // effort = soma; effortBy só quando a divisão é desigual (senão a divisão igual já resolve
+  // e o dado continua correto se alguém entrar/sair dos responsáveis depois).
+  task.effort = totalEsforcoForm();
+  task.effortBy = null;
+  if(task.effort !== null && tempTaskWho.length > 1){
+    const igual = task.effort / tempTaskWho.length;
+    const desigual = tempTaskWho.some(function(w){ return Math.abs((tempTaskEffort[w] || 0) - igual) > 0.01; });
+    if(desigual){ task.effortBy = {}; tempTaskWho.forEach(function(w){ task.effortBy[w] = tempTaskEffort[w] || 0; }); }
+  }
   task.subtasks = subtasks; task.dealId = dealId || null; task.origem = prev ? (prev.origem || null) : null;
   applyTaskStatus(task, document.getElementById('taskStatus').value);
   if(!p.tasks) p.tasks = [];
