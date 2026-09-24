@@ -748,6 +748,15 @@ body.tem-aviso-topo #logout-btn{top:41px}
 .carga-topo .heat{width:100%}
 @media (max-width:1180px){.carga-topo{grid-template-columns:1fr}}
 
+/* concluídas: ficam no histórico do mapa, mas não podem ser lidas como trabalho a fazer */
+.heat-cell.feito{opacity:.45}
+.heat-cell.feito::after{content:'✓';position:absolute;bottom:0;right:3px;font-size:8px;font-weight:800;opacity:.8}
+.cl-feito{background:rgba(114,149,205,.55);opacity:.45}
+.done-chip{font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;background:var(--color-bg);color:var(--color-gray);white-space:nowrap}
+.carga-item-desc.feita{text-decoration:line-through;color:var(--color-gray)}
+.carga-done-sub{font-size:9px;font-weight:600;color:var(--color-gray);margin-left:5px;white-space:nowrap}
+.carga-tot-ok{color:var(--color-gray)}
+
 /* ══ TIMELINE ══ */
 .timeline-view,.cal-view{padding:0 28px 40px}
 .tl-legend{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--color-gray)}
@@ -1446,6 +1455,9 @@ window.CONFIG = CONFIG;
 //    - início e alvo:   janela = [início, alvo] INTEIRA, mesmo com o início no passado
 //    - só início:       fim = início + esforço em dias úteis (ou o próprio início)
 //    - nada:            sem janela → "não planejada"
+//    - CONCLUÍDA:       janela = [início, doneAt] (ou os `effort` dias úteis que terminam
+//                       em doneAt). Fica no histórico e nunca ocupa o futuro; sem doneAt,
+//                       fica de fora. Não conta como task aberta.
 //  Esforço dividido igualmente entre os responsáveis (ou por task.effortBy), espalhado
 //  uniformemente pelos dias úteis da janela.
 // ══════════════════════════════════════════════════════════
@@ -1476,12 +1488,30 @@ window.CONFIG = CONFIG;
     while(restam > 0 && guard++ < 5000){ cur = addDias(cur, 1); if(ehDiaUtil(cur, feriados)) restam--; }
     return cur;
   }
+  // Retrocede n dias uteis a partir de iso (n>=0), contando o proprio iso como o primeiro.
+  function subDiasUteis(iso, n, feriados){
+    let cur = iso; let guard = 0;
+    while(!ehDiaUtil(cur, feriados) && guard++ < 30) cur = addDias(cur, -1);
+    let restam = Math.max(0, Math.ceil(n) - 1);
+    while(restam > 0 && guard++ < 5000){ cur = addDias(cur, -1); if(ehDiaUtil(cur, feriados)) restam--; }
+    return cur;
+  }
   function inicioSemana(iso){ const d = parse(iso); const w = d.getDay(); d.setDate(d.getDate() - ((w + 6) % 7)); return fmt(d); } // segunda
   function fimSemana(iso){ return addDias(inicioSemana(iso), 6); } // domingo
 
   function janela(task, hoje, feriados){
     const start = task.start || '', fim = task.date || '';
     const eff = temEsforco(task) ? Number(task.effort) : null;
+    // Concluída: a carga ficou nos dias em que a task esteve em curso, até `doneAt`.
+    // Como doneAt <= hoje, ela nunca ocupa o futuro — o que está por vir segue só com
+    // trabalho pendente. Sem doneAt (concluídas antes do campo existir) não dá para saber
+    // QUANDO, então fica fora em vez de chutar um dia.
+    if(task.done){
+      const dt = task.doneAt || '';
+      if(!dt) return null;
+      if(start && start <= dt) return { inicio: start, fim: dt, atrasada: false, concluida: true };
+      return { inicio: eff ? subDiasUteis(dt, eff, feriados) : dt, fim: dt, atrasada: false, concluida: true };
+    }
     if(!start && !fim) return null;
     if(fim && !start){
       if(fim < hoje) return { inicio: hoje, fim: hoje, atrasada: true };
@@ -1526,17 +1556,23 @@ window.CONFIG = CONFIG;
     opts = opts || {};
     const hoje = opts.hoje || fmt(new Date());
     const de = opts.de || null, ate = opts.ate || null, fer = opts.feriados || null;
-    const R = { porPessoaDia: {}, porPessoa: {}, naoEstimadas: [], semJanela: [], semDono: [], atrasadas: [], detalhe: {} };
-    const acc = function(p){ if(!R.porPessoa[p]) R.porPessoa[p] = { alocado: 0, alocadoPeriodo: 0, tasks: 0, naoEstimadas: 0, atrasadas: 0 }; return R.porPessoa[p]; };
+    const R = { porPessoaDia: {}, porPessoaDiaDone: {}, porPessoa: {}, naoEstimadas: [], semJanela: [], semDono: [], atrasadas: [], concluidas: [], detalhe: {} };
+    const acc = function(p){ if(!R.porPessoa[p]) R.porPessoa[p] = { alocado: 0, alocadoPeriodo: 0, concluido: 0, concluidoPeriodo: 0, tasks: 0, naoEstimadas: 0, atrasadas: 0 }; return R.porPessoa[p]; };
     tasks.forEach(function(t){
-      if(t.done) return;
+      const feita = !!t.done;
       const pessoas = pessoasDe(t);
-      if(!pessoas.length){ R.semDono.push(t); return; }
+      if(!pessoas.length){ if(!feita) R.semDono.push(t); return; }
       const j = janela(t, hoje, fer);
-      pessoas.forEach(function(p){ acc(p).tasks++; });
-      if(!j){ R.semJanela.push(t); if(!temEsforco(t)){ R.naoEstimadas.push(t); pessoas.forEach(function(p){ acc(p).naoEstimadas++; }); } return; }
-      if(j.atrasada){ R.atrasadas.push(t); pessoas.forEach(function(p){ acc(p).atrasadas++; }); }
-      if(!temEsforco(t)){ R.naoEstimadas.push(t); pessoas.forEach(function(p){ acc(p).naoEstimadas++; }); return; }
+      if(feita){
+        // Só histórico: não conta como task aberta nem entra nas listas de ação.
+        if(!j || !temEsforco(t)) return;
+        R.concluidas.push(t);
+      }else{
+        pessoas.forEach(function(p){ acc(p).tasks++; });
+        if(!j){ R.semJanela.push(t); if(!temEsforco(t)){ R.naoEstimadas.push(t); pessoas.forEach(function(p){ acc(p).naoEstimadas++; }); } return; }
+        if(j.atrasada){ R.atrasadas.push(t); pessoas.forEach(function(p){ acc(p).atrasadas++; }); }
+        if(!temEsforco(t)){ R.naoEstimadas.push(t); pessoas.forEach(function(p){ acc(p).naoEstimadas++; }); return; }
+      }
       const porPessoa = esforcoPorPessoa(t);
       let dias = listaDiasUteis(j.inicio, j.fim, fer);
       if(!dias.length) dias = [j.fim];
@@ -1544,15 +1580,21 @@ window.CONFIG = CONFIG;
       Object.keys(porPessoa).forEach(function(p){
         const e = porPessoa[p]; if(!e) return;
         acc(p).alocado += e;
+        if(feita) acc(p).concluido += e;
         dias.forEach(function(d){
           const v = e * porDia;
           if(de && d < de) return; if(ate && d > ate) return;
           if(!R.porPessoaDia[p]) R.porPessoaDia[p] = {};
           R.porPessoaDia[p][d] = (R.porPessoaDia[p][d] || 0) + v;
           acc(p).alocadoPeriodo += v;
+          if(feita){
+            if(!R.porPessoaDiaDone[p]) R.porPessoaDiaDone[p] = {};
+            R.porPessoaDiaDone[p][d] = (R.porPessoaDiaDone[p][d] || 0) + v;
+            acc(p).concluidoPeriodo += v;
+          }
           if(!R.detalhe[p]) R.detalhe[p] = {};
           if(!R.detalhe[p][d]) R.detalhe[p][d] = [];
-          R.detalhe[p][d].push({ id: t.id, desc: t.desc, projectName: t.projectName, dias: v, atrasada: !!j.atrasada });
+          R.detalhe[p][d].push({ id: t.id, desc: t.desc, projectName: t.projectName, dias: v, atrasada: !!j.atrasada, concluida: feita });
         });
       });
     });
@@ -1589,7 +1631,7 @@ window.CONFIG = CONFIG;
   }
   function arred(n, casas){ const f = Math.pow(10, casas == null ? 1 : casas); return Math.round(n * f) / f; }
 
-  const api = { parse: parse, fmt: fmt, addDias: addDias, ehDiaUtil: ehDiaUtil, listaDiasUteis: listaDiasUteis, diasUteisEntre: diasUteisEntre, addDiasUteis: addDiasUteis,
+  const api = { parse: parse, fmt: fmt, addDias: addDias, ehDiaUtil: ehDiaUtil, listaDiasUteis: listaDiasUteis, diasUteisEntre: diasUteisEntre, addDiasUteis: addDiasUteis, subDiasUteis: subDiasUteis,
     inicioSemana: inicioSemana, fimSemana: fimSemana, janela: janela, temEsforco: temEsforco, esforcoPorPessoa: esforcoPorPessoa, alocar: alocar, agregarSemanas: agregarSemanas, nivel: nivel, arred: arred };
   if(typeof module !== 'undefined' && module.exports) module.exports = api;
   root.PlannerCarga = api;
@@ -2855,9 +2897,10 @@ function cargaTasks(soEscopo){
     (docOf(f.id).projects || []).forEach(function(p){
       if(search && !p.name.toLowerCase().includes(search)) return;
       (p.tasks || []).forEach(function(t){
-        if(t.status === TASK_DONE_ID) return;
         if(filterPerson !== 'all' && whoArr(t).indexOf(filterPerson) < 0) return;
-        out.push({ id: t.id, desc: t.desc, who: whoArr(t), effort: t.effort, effortBy: t.effortBy, start: t.start, date: t.date, status: t.status, done: false, projectName: p.name, projectId: p.id, frente: f });
+        // As concluídas vêm junto: o motor as usa só para os dias em que estiveram em curso
+        // (até doneAt). Sem isso, concluir uma task apagava a carga do passado dela.
+        out.push({ id: t.id, desc: t.desc, who: whoArr(t), effort: t.effort, effortBy: t.effortBy, start: t.start, date: t.date, status: t.status, done: t.status === TASK_DONE_ID, doneAt: t.doneAt, projectName: p.name, projectId: p.id, frente: f });
       });
     });
   });
@@ -2899,17 +2942,22 @@ function renderCarga(){
     return { p: p, s: s, pct: pct, saldo: capPeriodo - s.alocadoPeriodo, naFrente: naFrente };
   });  // já vem em ordem alfabética de `pessoas` — ver comentário acima
   const totAloc = linhas.reduce(function(a, l){ return a + l.s.alocadoPeriodo; }, 0), totCap = capPeriodo * linhas.length;
+  const totFeito = linhas.reduce(function(a, l){ return a + l.s.concluidoPeriodo; }, 0);
   html += '<div class="carga-topo">'
     + '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">Painel de sprint</div><div class="carga-card-sub">' + formatDateShort(per.de) + ' → ' + formatDateShort(per.ate) + ' · ' + diasUteis.length + ' dias úteis · capacidade ' + fmtD(capPeriodo) + ' d/pessoa'
     + (fAtiva ? ' · <b>a ocupação considera as ' + FRENTES.length + ' frentes</b> (é o que diz se a pessoa cabe); a coluna ' + escHtml(fAtiva.curto) + ' é a parcela desta frente' : '') + '</div></div>'
-    + '<div class="carga-totais"><span><b>' + fmtD(totAloc) + '</b> / ' + fmtD(totCap) + ' d alocados</span><span class="carga-tot-ne">' + R.naoEstimadas.length + ' não estimadas</span><span class="carga-tot-atr">' + R.atrasadas.length + ' atrasadas</span></div></div>'
+    + '<div class="carga-totais"><span><b>' + fmtD(totAloc) + '</b> / ' + fmtD(totCap) + ' d alocados</span>' + (totFeito > .05 ? '<span class="carga-tot-ok" title="Já concluído dentro do período">' + fmtD(totFeito) + ' d concluídos</span>' : '') + '<span class="carga-tot-ne">' + R.naoEstimadas.length + ' não estimadas</span><span class="carga-tot-atr">' + R.atrasadas.length + ' atrasadas</span></div></div>'
     + '<table class="carga-table"><thead><tr><th>Pessoa</th><th>Ocupação</th>'
     + (fAtiva ? '<th class="num col-frente" title="Parcela vinda da frente filtrada">' + escHtml(fAtiva.curto) + '</th>' : '')
     + '<th class="num">Alocado</th><th class="num">Capacidade</th><th class="num">Saldo</th><th class="num" title="Tasks abertas sem estimativa de esforço">Não est.</th><th class="num">Atrasadas</th><th class="num">Tasks</th></tr></thead><tbody>'
     + linhas.map(function(l){
       const nv = C.nivel(l.pct);
       const barra = '<div class="carga-bar"><div class="carga-bar-fill cl-' + nv + '" style="width:' + Math.min(100, Math.round(l.pct * 100)) + '%"></div>' + (l.pct > 1 ? '<div class="carga-bar-over" style="width:' + Math.min(100, Math.round((l.pct - 1) * 100)) + '%"></div>' : '') + '</div><span class="carga-pct cl-txt-' + nv + '">' + Math.round(l.pct * 100) + '%</span>';
-      return '<tr><td><div class="carga-pessoa"><div class="avatar" style="' + avatarStyle(l.p) + '">' + l.p + '</div><span>' + escHtml(l.p) + '</span></div></td><td>' + barra + '</td><td class="num">' + fmtD(l.s.alocadoPeriodo) + '</td><td class="num">' + fmtD(capPeriodo) + '</td><td class="num ' + (l.saldo < 0 ? 'neg' : '') + '">' + (l.saldo < 0 ? '−' : '') + fmtD(Math.abs(l.saldo)) + '</td><td class="num">' + (l.s.naoEstimadas ? '<span class="ne-chip">' + l.s.naoEstimadas + '</span>' : '—') + '</td><td class="num">' + (l.s.atrasadas ? '<span class="atr-chip">' + l.s.atrasadas + '</span>' : '—') + '</td><td class="num">' + l.s.tasks + '</td></tr>';
+      return '<tr><td><div class="carga-pessoa"><div class="avatar" style="' + avatarStyle(l.p) + '">' + l.p + '</div><span>' + escHtml(l.p) + '</span></div></td><td>' + barra + '</td>'
+        // sem este <td> o corpo fica com uma coluna a menos que o cabeçalho e a tabela
+        // inteira escorrega para a esquerda (a coluna da frente mostrava o total)
+        + (fAtiva ? '<td class="num col-frente" title="Parcela desta frente no total alocado">' + fmtD(l.naFrente || 0) + '</td>' : '')
+        + '<td class="num">' + fmtD(l.s.alocadoPeriodo) + (l.s.concluidoPeriodo > .05 ? '<span class="carga-done-sub" title="Destes, já concluídos">' + fmtD(l.s.concluidoPeriodo) + '✓</span>' : '') + '</td><td class="num">' + fmtD(capPeriodo) + '</td><td class="num ' + (l.saldo < 0 ? 'neg' : '') + '">' + (l.saldo < 0 ? '−' : '') + fmtD(Math.abs(l.saldo)) + '</td><td class="num">' + (l.s.naoEstimadas ? '<span class="ne-chip">' + l.s.naoEstimadas + '</span>' : '—') + '</td><td class="num">' + (l.s.atrasadas ? '<span class="atr-chip">' + l.s.atrasadas + '</span>' : '—') + '</td><td class="num">' + l.s.tasks + '</td></tr>';
     }).join('') + '</tbody></table></div>';
 
   // ── heatmap ──
@@ -2917,19 +2965,22 @@ function renderCarga(){
   if(cargaGran === 'dia'){ cols = diasUteis.map(function(d){ return { key: d, label: formatDateShort(d), sub: ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][parseISO(d).getDay()], hoje: d === hoje }; }); capCel = cap / 5; }
   else{
     const S = C.agregarSemanas(R.porPessoaDia, per.de, per.ate, cap);
-    cols = S.map(function(w){ return { key: w.inicio, label: formatDateShort(w.inicio) + '–' + formatDateShort(w.fim), sub: w.diasUteis + ' du', hoje: hoje >= w.inicio && hoje <= w.fim, cap: w.capacidade, porPessoa: w.porPessoa }; });
+    const SD = C.agregarSemanas(R.porPessoaDiaDone, per.de, per.ate, cap);
+    cols = S.map(function(w, i){ return { key: w.inicio, label: formatDateShort(w.inicio) + '–' + formatDateShort(w.fim), sub: w.diasUteis + ' du', hoje: hoje >= w.inicio && hoje <= w.fim, cap: w.capacidade, porPessoa: w.porPessoa, porPessoaDone: (SD[i] || {}).porPessoa || {} }; });
   }
   const valor = function(p, col){ if(cargaGran === 'dia') return (R.porPessoaDia[p] && R.porPessoaDia[p][col.key]) || 0; return (col.porPessoa && col.porPessoa[p]) || 0; };
+  const feito = function(p, col){ if(cargaGran === 'dia') return (R.porPessoaDiaDone[p] && R.porPessoaDiaDone[p][col.key]) || 0; return (col.porPessoaDone && col.porPessoaDone[p]) || 0; };
   const capDe = function(col){ return cargaGran === 'dia' ? capCel : col.cap; };
-  html += '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">Mapa de calor — ' + (cargaGran === 'dia' ? 'por dia útil' : 'por semana') + '</div><div class="carga-card-sub">célula = dias alocados ÷ capacidade da célula (' + (cargaGran === 'dia' ? fmtD(capCel) + ' d/dia' : fmtD(cap) + ' d/semana cheia') + '). Clique numa célula para ver as tasks.</div></div>'
-    + '<div class="carga-legend"><span class="cl-swatch cl-vazio"></span>0<span class="cl-swatch cl-baixo"></span>&lt;60%<span class="cl-swatch cl-ok"></span>60–100%<span class="cl-swatch cl-cheio"></span>100–120%<span class="cl-swatch cl-estourado"></span>&gt;120%<span class="cl-swatch cl-ne"></span>não estimada</div></div>'
+  html += '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">Mapa de calor — ' + (cargaGran === 'dia' ? 'por dia útil' : 'por semana') + '</div><div class="carga-card-sub">célula = dias alocados ÷ capacidade da célula (' + (cargaGran === 'dia' ? fmtD(capCel) + ' d/dia' : fmtD(cap) + ' d/semana cheia') + '). Clique numa célula para ver as tasks. Task concluída continua nos dias em que esteve em curso (até a data de conclusão), esmaecida.</div></div>'
+    + '<div class="carga-legend"><span class="cl-swatch cl-vazio"></span>0<span class="cl-swatch cl-baixo"></span>&lt;60%<span class="cl-swatch cl-ok"></span>60–100%<span class="cl-swatch cl-cheio"></span>100–120%<span class="cl-swatch cl-estourado"></span>&gt;120%<span class="cl-swatch cl-ne"></span>não estimada<span class="cl-swatch cl-feito"></span>concluída</div></div>'
     + '<div class="heat-scroll"><table class="heat"><thead><tr><th class="heat-corner"></th>' + cols.map(function(c){ return '<th class="heat-col' + (c.hoje ? ' hoje' : '') + '"><div>' + c.label + '</div><div class="heat-sub">' + c.sub + '</div></th>'; }).join('') + '<th class="heat-col heat-ne-col" title="Tasks abertas sem estimativa (não entram nas células)">não est.</th></tr></thead><tbody>'
     + pessoas.map(function(p){
       const s = R.porPessoa[p] || { naoEstimadas: 0 };
       return '<tr><th class="heat-row"><div class="avatar" style="' + avatarStyle(p) + '">' + p + '</div></th>' + cols.map(function(c){
         const v = valor(p, c), pct = capDe(c) > 0 ? v / capDe(c) : 0, nv = C.nivel(pct);
+        const vf = feito(p, c), tudoFeito = v > 0 && vf >= v - 0.001;
         const sel = cargaDetalhe && cargaDetalhe.p === p && cargaDetalhe.key === c.key;
-        return '<td class="heat-cell cl-' + nv + (c.hoje ? ' hoje' : '') + (sel ? ' sel' : '') + '" onclick="cargaToggleDetalhe(\'' + p + '\',\'' + c.key + '\')" title="' + p + ' · ' + c.label + ' · ' + fmtD(v) + ' d (' + Math.round(pct * 100) + '%)">' + (v > 0 ? fmtD(v) : '') + (pct > 1.2 ? '<span class="heat-alert">!</span>' : '') + '</td>';
+        return '<td class="heat-cell cl-' + nv + (c.hoje ? ' hoje' : '') + (sel ? ' sel' : '') + (tudoFeito ? ' feito' : '') + '" onclick="cargaToggleDetalhe(\'' + p + '\',\'' + c.key + '\')" title="' + p + ' · ' + c.label + ' · ' + fmtD(v) + ' d (' + Math.round(pct * 100) + '%)' + (vf > .001 ? ' · ' + fmtD(vf) + ' d já concluídos' : '') + '">' + (v > 0 ? fmtD(v) : '') + (pct > 1.2 && !tudoFeito ? '<span class="heat-alert">!</span>' : '') + '</td>';
       }).join('') + '<td class="heat-cell cl-ne">' + (s.naoEstimadas || '') + '</td></tr>';
     }).join('') + '</tbody></table></div>';
   // detalhe da célula
@@ -2939,7 +2990,7 @@ function renderCarga(){
     else{ const col = cols.find(function(c){ return c.key === cargaDetalhe.key; }); if(col){ const agg = {}; Object.keys(R.detalhe[cargaDetalhe.p] || {}).forEach(function(d){ if(d >= col.key && d <= C.addDias(col.key, 6)) R.detalhe[cargaDetalhe.p][d].forEach(function(it){ const k = it.id; if(!agg[k]) agg[k] = Object.assign({}, it, { dias: 0 }); agg[k].dias += it.dias; }); }); itens = Object.keys(agg).map(function(k){ return agg[k]; }); } }
     const byId = {}; tasks.forEach(function(t){ byId[t.id] = t; });
     html += '<div class="carga-detalhe"><div class="carga-detalhe-head"><b>' + escHtml(cargaDetalhe.p) + '</b> · ' + escHtml((cols.find(function(c){ return c.key === cargaDetalhe.key; }) || {}).label || '') + ' · ' + itens.length + ' task' + (itens.length !== 1 ? 's' : '') + '<button class="icon-btn" onclick="cargaToggleDetalhe(null)">✕</button></div>'
-      + (itens.length ? itens.sort(function(a, b){ return b.dias - a.dias; }).map(function(it){ const t = byId[it.id]; return '<div class="carga-item" onclick="openProject(\'' + (t ? t.projectId : '') + '\')">' + (t && t.frente && isMulti() ? '<span class="frente-badge" style="' + frenteStyle(t.frente.cor) + '">' + escHtml(t.frente.curto) + '</span>' : '') + '<span class="carga-item-proj">' + escHtml(it.projectName || '') + '</span><span class="carga-item-desc">' + escHtml(it.desc || '') + '</span>' + (it.atrasada ? '<span class="atr-chip">atrasada</span>' : '') + '<span class="carga-item-val">' + fmtD(it.dias) + ' d</span></div>'; }).join('') : '<div class="carga-vazio">Nada alocado.</div>')
+      + (itens.length ? itens.sort(function(a, b){ return b.dias - a.dias; }).map(function(it){ const t = byId[it.id]; return '<div class="carga-item" onclick="openProject(\'' + (t ? t.projectId : '') + '\')">' + (t && t.frente && isMulti() ? '<span class="frente-badge" style="' + frenteStyle(t.frente.cor) + '">' + escHtml(t.frente.curto) + '</span>' : '') + '<span class="carga-item-proj">' + escHtml(it.projectName || '') + '</span><span class="carga-item-desc' + (it.concluida ? ' feita' : '') + '">' + escHtml(it.desc || '') + '</span>' + (it.concluida ? '<span class="done-chip">✓ concluída</span>' : '') + (it.atrasada ? '<span class="atr-chip">atrasada</span>' : '') + '<span class="carga-item-val">' + fmtD(it.dias) + ' d</span></div>'; }).join('') : '<div class="carga-vazio">Nada alocado.</div>')
       + '</div>';
   }
   html += '</div></div>'; // fecha o card do mapa + a linha .carga-topo
