@@ -441,7 +441,7 @@ body.viewer-mode::after{
 .scope-all.active .scope-dot-all{outline:2px solid var(--color-white)}
 .view-title-scope{color:var(--color-gray);font-weight:500}
 
-.frente-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:1px 7px;border-radius:var(--radius-full);background:color-mix(in srgb,var(--fb) 18%,transparent);color:var(--fb);white-space:nowrap;flex-shrink:0;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.frente-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:1px 7px;border-radius:var(--radius-full);background:var(--fb-bg,transparent);color:var(--fb);white-space:nowrap;flex-shrink:0;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
 .frente-section{margin-bottom:26px}
 .frente-section-header{display:flex;align-items:center;gap:10px;padding:0 4px 10px;margin-bottom:12px;border-bottom:2px solid var(--fs-cor,var(--border-c))}
 .frente-section-title{font-size:13px;font-weight:700;letter-spacing:-.2px;font-family:var(--font-title)}
@@ -732,6 +732,22 @@ body.tem-aviso-topo #logout-btn{top:41px}
 .hist-bar{width:100%;max-width:48px;background:var(--color-blue);border-radius:4px 4px 0 0;min-height:2px}
 .hist-lbl{font-size:9px;color:var(--color-gray)}
 
+/* ══ Painel de sprint + Mapa de calor na mesma linha ══
+   Empilhados, os dois esticavam pela largura toda: o painel sobrava espaço e o mapa
+   ficava longe dele. Lado a lado dá para ler "quem está cheio" e "em que dia" de uma
+   vez. O mapa continua com rolagem horizontal própria, então nada é cortado. */
+.carga-topo{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:16px;margin-bottom:16px}
+.carga-topo>.carga-card{margin-bottom:0;min-width:0}
+/* em meia largura a barra de ocupação cede espaço às colunas numéricas */
+.carga-topo .carga-bar{width:92px}
+.carga-topo .carga-table{font-size:11px}
+.carga-topo .carga-table th,.carga-topo .carga-table td{padding:6px 5px}
+.carga-topo .carga-pct{margin-left:6px}
+/* com poucas colunas (2 semanas) o mapa deixava meio card vazio; agora as células
+   ocupam a largura disponível e só voltam ao mínimo de 44px quando o período cresce */
+.carga-topo .heat{width:100%}
+@media (max-width:1180px){.carga-topo{grid-template-columns:1fr}}
+
 /* ══ TIMELINE ══ */
 .timeline-view,.cal-view{padding:0 28px 40px}
 .tl-legend{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--color-gray)}
@@ -788,7 +804,7 @@ body.tem-aviso-topo #logout-btn{top:41px}
 .cal-day.hoje{border-color:var(--color-black)}
 .cal-day.hoje .cal-num{background:var(--color-black);color:var(--color-white)}
 .cal-num{font-size:11px;font-weight:700;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;align-self:flex-end}
-.cal-chip{font-size:10px;line-height:1.3;padding:2px 5px;border-radius:4px;background:color-mix(in srgb,var(--c) 16%,transparent);color:var(--color-black);border-left:3px solid var(--c);cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.cal-chip{font-size:10px;line-height:1.3;padding:2px 5px;border-radius:4px;background:var(--c-bg,transparent);color:var(--color-black);border-left:3px solid var(--c);cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .cal-chip-proj{font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--color-gray)}
 .cal-chip.cal-cliente{font-weight:600}
 .cal-chip.cal-alvo{opacity:.8;border-left-style:dashed}
@@ -2382,10 +2398,14 @@ function diasAte(d){ const alvo = parseISO(d); if(!alvo) return null; const n = 
 function deadlineClass(d, done){ if(!d || done) return ''; const dias = diasAte(d); if(dias === null) return ''; if(dias < 0) return 'overdue'; if(dias === 0) return 'today'; if(dias <= 7) return 'soon'; return ''; }
 function toast(msg, type){ const el = document.createElement('div'); el.className = 'toast' + (type ? ' ' + type : ''); el.textContent = msg; document.getElementById('toastContainer').appendChild(el); setTimeout(function(){ el.remove(); }, 2600); }
 function whoArr(x){ return Array.isArray(x.who) ? x.who : (x.who ? [x.who] : []); }
+// Estilo do badge de frente. O tom de fundo vem calculado daqui (rgba) em vez de
+// color-mix() no CSS: o html2canvas nao consegue ler a funcao color() que o navegador
+// gera a partir do color-mix, e isso quebrava a exportacao em PNG.
+function frenteStyle(cor){ return '--fb:' + cor + ';--fb-bg:' + hexToRgba(cor, .18); }
 function frenteBadge(p){
   if(!isMulti()) return '';
   const f = projectFrente(p); if(!f) return '';
-  return '<span class="frente-badge" style="--fb:' + f.cor + '">' + escHtml(f.curto) + '</span>';
+  return '<span class="frente-badge" style="' + frenteStyle(f.cor) + '">' + escHtml(f.curto) + '</span>';
 }
 
 function handleGlobalClick(e){
@@ -2788,7 +2808,7 @@ function renderPlannerCard(item){
     const sh = statusColorHex(item.status, STATUS_TASK);
     statusBadge = '<span class="week-task-status" style="background:' + hexToRgba(sh, .18) + ';color:' + sh + '">' + escHtml(lbl) + '</span>';
   }
-  const badge = item.frente && isMulti() ? '<span class="frente-badge" style="--fb:' + item.frente.cor + '">' + escHtml(item.frente.curto) + '</span>' : '';
+  const badge = item.frente && isMulti() ? '<span class="frente-badge" style="' + frenteStyle(item.frente.cor) + '">' + escHtml(item.frente.curto) + '</span>' : '';
   const effort = (!isMilestone && item.effort) ? '<span class="week-task-effort" title="Esforço desta pessoa (dias úteis)">' + fmtDias(item.effort) + 'd</span>' : '';
   const prazo = item.date ? '<span class="week-task-date ' + dcls + '">' + (dcls === 'today' ? 'hoje' : formatDateShort(item.date)) + '</span>' : '<span class="week-task-date">Sem prazo</span>';
   const edit = (!isMilestone && item.taskId) ? '<button class="icon-btn week-task-edit" title="Editar task aqui" onclick="event.stopPropagation();openTaskEditor(\'' + item.projectId + '\',\'' + item.taskId + '\')">✎</button>' : '';
@@ -2870,7 +2890,8 @@ function renderCarga(){
     return { p: p, s: s, pct: pct, saldo: capPeriodo - s.alocadoPeriodo, naFrente: naFrente };
   }).sort(function(a, b){ return b.pct - a.pct; });
   const totAloc = linhas.reduce(function(a, l){ return a + l.s.alocadoPeriodo; }, 0), totCap = capPeriodo * linhas.length;
-  html += '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">Painel de sprint</div><div class="carga-card-sub">' + formatDateShort(per.de) + ' → ' + formatDateShort(per.ate) + ' · ' + diasUteis.length + ' dias úteis · capacidade ' + fmtD(capPeriodo) + ' d/pessoa'
+  html += '<div class="carga-topo">'
+    + '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">Painel de sprint</div><div class="carga-card-sub">' + formatDateShort(per.de) + ' → ' + formatDateShort(per.ate) + ' · ' + diasUteis.length + ' dias úteis · capacidade ' + fmtD(capPeriodo) + ' d/pessoa'
     + (fAtiva ? ' · <b>a ocupação considera as ' + FRENTES.length + ' frentes</b> (é o que diz se a pessoa cabe); a coluna ' + escHtml(fAtiva.curto) + ' é a parcela desta frente' : '') + '</div></div>'
     + '<div class="carga-totais"><span><b>' + fmtD(totAloc) + '</b> / ' + fmtD(totCap) + ' d alocados</span><span class="carga-tot-ne">' + R.naoEstimadas.length + ' não estimadas</span><span class="carga-tot-atr">' + R.atrasadas.length + ' atrasadas</span></div></div>'
     + '<table class="carga-table"><thead><tr><th>Pessoa</th><th>Ocupação</th>'
@@ -2909,10 +2930,10 @@ function renderCarga(){
     else{ const col = cols.find(function(c){ return c.key === cargaDetalhe.key; }); if(col){ const agg = {}; Object.keys(R.detalhe[cargaDetalhe.p] || {}).forEach(function(d){ if(d >= col.key && d <= C.addDias(col.key, 6)) R.detalhe[cargaDetalhe.p][d].forEach(function(it){ const k = it.id; if(!agg[k]) agg[k] = Object.assign({}, it, { dias: 0 }); agg[k].dias += it.dias; }); }); itens = Object.keys(agg).map(function(k){ return agg[k]; }); } }
     const byId = {}; tasks.forEach(function(t){ byId[t.id] = t; });
     html += '<div class="carga-detalhe"><div class="carga-detalhe-head"><b>' + escHtml(cargaDetalhe.p) + '</b> · ' + escHtml((cols.find(function(c){ return c.key === cargaDetalhe.key; }) || {}).label || '') + ' · ' + itens.length + ' task' + (itens.length !== 1 ? 's' : '') + '<button class="icon-btn" onclick="cargaToggleDetalhe(null)">✕</button></div>'
-      + (itens.length ? itens.sort(function(a, b){ return b.dias - a.dias; }).map(function(it){ const t = byId[it.id]; return '<div class="carga-item" onclick="openProject(\'' + (t ? t.projectId : '') + '\')">' + (t && t.frente && isMulti() ? '<span class="frente-badge" style="--fb:' + t.frente.cor + '">' + escHtml(t.frente.curto) + '</span>' : '') + '<span class="carga-item-proj">' + escHtml(it.projectName || '') + '</span><span class="carga-item-desc">' + escHtml(it.desc || '') + '</span>' + (it.atrasada ? '<span class="atr-chip">atrasada</span>' : '') + '<span class="carga-item-val">' + fmtD(it.dias) + ' d</span></div>'; }).join('') : '<div class="carga-vazio">Nada alocado.</div>')
+      + (itens.length ? itens.sort(function(a, b){ return b.dias - a.dias; }).map(function(it){ const t = byId[it.id]; return '<div class="carga-item" onclick="openProject(\'' + (t ? t.projectId : '') + '\')">' + (t && t.frente && isMulti() ? '<span class="frente-badge" style="' + frenteStyle(t.frente.cor) + '">' + escHtml(t.frente.curto) + '</span>' : '') + '<span class="carga-item-proj">' + escHtml(it.projectName || '') + '</span><span class="carga-item-desc">' + escHtml(it.desc || '') + '</span>' + (it.atrasada ? '<span class="atr-chip">atrasada</span>' : '') + '<span class="carga-item-val">' + fmtD(it.dias) + ' d</span></div>'; }).join('') : '<div class="carga-vazio">Nada alocado.</div>')
       + '</div>';
   }
-  html += '</div>';
+  html += '</div></div>'; // fecha o card do mapa + a linha .carga-topo
 
   // ── listas de ação ──
   html += '<div class="carga-grid2">'
@@ -2944,7 +2965,7 @@ function cargaLista(titulo, itens, sub, editavel, tasks){
   return '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">' + titulo + ' <span class="carga-count">' + itens.length + '</span></div><div class="carga-card-sub">' + sub + '</div></div></div>'
     + (itens.length ? '<div class="carga-lista">' + itens.map(function(t){
       const edit = editavel ? '<input class="form-input carga-inline" type="date" value="' + (t.date || '') + '" title="Nosso prazo" onchange="cargaEditTask(\'' + t.projectId + '\',\'' + t.id + '\',\'date\',this.value)"/><input class="form-input carga-inline carga-inline-eff" type="number" min="0" step="0.5" placeholder="dias" value="' + (t.effort == null ? '' : t.effort) + '" title="Esforço (dias úteis)" onchange="cargaEditTask(\'' + t.projectId + '\',\'' + t.id + '\',\'effort\',this.value)"/>' : (t.date ? '<span class="carga-item-val ' + deadlineClass(t.date) + '">' + formatDateShort(t.date) + '</span>' : '');
-      return '<div class="carga-item">' + (t.frente && isMulti() ? '<span class="frente-badge" style="--fb:' + t.frente.cor + '">' + escHtml(t.frente.curto) + '</span>' : '') + '<span class="carga-item-proj" onclick="openProject(\'' + t.projectId + '\')">' + escHtml(t.projectName) + '</span><span class="carga-item-desc" onclick="openTaskEditor(\'' + t.projectId + '\',\'' + t.id + '\')" title="Editar task">' + escHtml(t.desc) + '</span><span class="carga-item-who">' + (t.who.length ? t.who.join(', ') : '—') + '</span>' + edit + '<button class="icon-btn" title="Editar task" onclick="openTaskEditor(\'' + t.projectId + '\',\'' + t.id + '\')">✎</button></div>';
+      return '<div class="carga-item">' + (t.frente && isMulti() ? '<span class="frente-badge" style="' + frenteStyle(t.frente.cor) + '">' + escHtml(t.frente.curto) + '</span>' : '') + '<span class="carga-item-proj" onclick="openProject(\'' + t.projectId + '\')">' + escHtml(t.projectName) + '</span><span class="carga-item-desc" onclick="openTaskEditor(\'' + t.projectId + '\',\'' + t.id + '\')" title="Editar task">' + escHtml(t.desc) + '</span><span class="carga-item-who">' + (t.who.length ? t.who.join(', ') : '—') + '</span>' + edit + '<button class="icon-btn" title="Editar task" onclick="openTaskEditor(\'' + t.projectId + '\',\'' + t.id + '\')">✎</button></div>';
     }).join('') + '</div>' : '<div class="carga-vazio">Nenhuma. 👌</div>') + '</div>';
 }
 function cargaToggleDetalhe(p, key){ cargaDetalhe = (p && !(cargaDetalhe && cargaDetalhe.p === p && cargaDetalhe.key === key)) ? { p: p, key: key } : null; renderCarga(); }
@@ -3075,7 +3096,7 @@ function renderTimeline(){
     }).join('');
     const label = g.pessoa
       ? '<div class="tl-label"><div class="avatar" style="' + avatarStyle(g.key) + '">' + escHtml(g.key.slice(0, 2)) + '</div><span>' + escHtml(g.label) + '</span><span class="tl-label-n">' + g.itens.length + '</span></div>'
-      : '<div class="tl-label" onclick="openProject(\'' + g.pid + '\')" style="cursor:pointer"><span class="project-color-swatch" style="background:' + g.cor + '"></span><span class="tl-label-txt">' + escHtml(g.label) + '</span>' + (g.sub ? '<span class="frente-badge" style="--fb:' + g.sub.cor + '">' + escHtml(g.sub.curto) + '</span>' : '') + '</div>';
+      : '<div class="tl-label" onclick="openProject(\'' + g.pid + '\')" style="cursor:pointer"><span class="project-color-swatch" style="background:' + g.cor + '"></span><span class="tl-label-txt">' + escHtml(g.label) + '</span>' + (g.sub ? '<span class="frente-badge" style="' + frenteStyle(g.sub.cor) + '">' + escHtml(g.sub.curto) + '</span>' : '') + '</div>';
     html += '<div class="tl-row" style="height:' + alt + 'px">' + label + '<div class="tl-track">' + fundo + hojeLine + bars + '</div></div>';
   });
   html += '</div>';
@@ -3136,7 +3157,7 @@ function renderCalendar(){
       + vis.map(function(it){
         const ico = it.tipo === 'marco' ? '◆' : it.tipo === 'cliente' ? '◇' : '▸';
         const dc = it.done ? '' : deadlineClass(iso);
-        return '<div class="cal-chip cal-' + it.tipo + (it.done ? ' done' : '') + (dc === 'overdue' ? ' overdue' : '') + '" style="--c:' + it.cor + '" title="' + escHtml(it.p.name + ' · ' + it.label + (it.who.length ? ' · ' + it.who.join(', ') : '')) + '" onclick="openProject(\'' + it.p.id + '\')">' + ico + ' <span class="cal-chip-proj">' + escHtml(it.p.name) + '</span> ' + escHtml(it.label) + '</div>';
+        return '<div class="cal-chip cal-' + it.tipo + (it.done ? ' done' : '') + (dc === 'overdue' ? ' overdue' : '') + '" style="--c:' + it.cor + ';--c-bg:' + hexToRgba(it.cor, .16) + '" title="' + escHtml(it.p.name + ' · ' + it.label + (it.who.length ? ' · ' + it.who.join(', ') : '')) + '" onclick="openProject(\'' + it.p.id + '\')">' + ico + ' <span class="cal-chip-proj">' + escHtml(it.p.name) + '</span> ' + escHtml(it.label) + '</div>';
       }).join('')
       + (over > 0 ? '<div class="cal-more" onclick="calShowDay(\'' + iso + '\')">+' + over + '</div>' : '') + '</div>';
   });
@@ -3146,7 +3167,7 @@ function renderCalendar(){
 function calShowDay(iso){
   const lista = calItens()[iso] || [];
   document.getElementById('calDayDetail').innerHTML = '<div class="carga-card" style="margin-top:12px"><div class="carga-card-head"><div class="carga-card-title">' + formatDate(iso) + ' · ' + lista.length + ' compromissos</div><button class="icon-btn" onclick="document.getElementById(\'calDayDetail\').innerHTML=\'\'">✕</button></div><div class="carga-lista">'
-    + lista.map(function(it){ return '<div class="carga-item" onclick="openProject(\'' + it.p.id + '\')">' + (it.frente && isMulti() ? '<span class="frente-badge" style="--fb:' + it.frente.cor + '">' + escHtml(it.frente.curto) + '</span>' : '') + '<span class="carga-item-proj">' + escHtml(it.p.name) + '</span><span class="carga-item-desc">' + (it.tipo === 'marco' ? '◆ ' : it.tipo === 'cliente' ? '◇ ' : '▸ ') + escHtml(it.label) + '</span><span class="carga-item-who">' + (it.who.length ? it.who.join(', ') : '—') + '</span></div>'; }).join('') + '</div></div>';
+    + lista.map(function(it){ return '<div class="carga-item" onclick="openProject(\'' + it.p.id + '\')">' + (it.frente && isMulti() ? '<span class="frente-badge" style="' + frenteStyle(it.frente.cor) + '">' + escHtml(it.frente.curto) + '</span>' : '') + '<span class="carga-item-proj">' + escHtml(it.p.name) + '</span><span class="carga-item-desc">' + (it.tipo === 'marco' ? '◆ ' : it.tipo === 'cliente' ? '◇ ' : '▸ ') + escHtml(it.label) + '</span><span class="carga-item-who">' + (it.who.length ? it.who.join(', ') : '—') + '</span></div>'; }).join('') + '</div></div>';
 }
 // ══ PERSON PICKER SYSTEM ══
 // Drilldown "Você primeiro": o botão grande com a sua sigla vem no topo; as outras pessoas
@@ -3272,7 +3293,7 @@ function openProject(id){
   document.getElementById('modalName').textContent = p.name;
   document.getElementById('modalStatus').innerHTML = cols.map(function(c){ return '<option value="' + c.id + '"' + (p.status === c.id ? ' selected' : '') + '>' + escHtml(c.label) + '</option>'; }).join('');
   const fl = document.getElementById('modalFrenteLabel');
-  if(fl){ fl.style.display = isMulti() && f ? 'inline-flex' : 'none'; if(f) fl.innerHTML = '<span class="frente-badge" style="--fb:' + f.cor + '">' + escHtml(f.nome) + '</span>'; }
+  if(fl){ fl.style.display = isMulti() && f ? 'inline-flex' : 'none'; if(f) fl.innerHTML = '<span class="frente-badge" style="' + frenteStyle(f.cor) + '">' + escHtml(f.nome) + '</span>'; }
   tempModalTeam = (p.team || []).slice();
   renderPickerGrid('modalPickerGrid', tempModalTeam);
   const fld = document.getElementById('modalTeamField'); const pk = document.getElementById('modalTeamPicker');
@@ -3684,16 +3705,24 @@ function captureAsPng(elementId, filename){
   if(!el){ toast('Elemento não encontrado'); return; }
   if(typeof html2canvas === 'undefined'){ toast('html2canvas não carregado'); return; }
   toast('Gerando PNG…');
+  // Desde que a visao passou a ser o contêiner rolavel, window.scrollY e sempre 0 — o
+  // deslocamento que importa e o do proprio contêiner. Zeramos durante a captura e
+  // devolvemos depois, senao o html2canvas corta a parte que esta fora da viewport.
+  const cont = el.closest('#boardView,#listView,#plannerView,#cargaView,#timelineView,#calView,#weekView,#summaryView');
+  const sx = cont ? cont.scrollLeft : 0, sy = cont ? cont.scrollTop : 0;
+  if(cont){ cont.scrollLeft = 0; cont.scrollTop = 0; }
+  const restaura = function(){ if(cont){ cont.scrollLeft = sx; cont.scrollTop = sy; } };
   html2canvas(el, {
     scale: 2, backgroundColor: CFG.theme.cores.bg, useCORS: true, logging: false,
-    scrollX: 0, scrollY: -window.scrollY, windowWidth: el.scrollWidth, windowHeight: el.scrollHeight
+    scrollX: 0, scrollY: 0, windowWidth: el.scrollWidth, windowHeight: el.scrollHeight
   }).then(function(canvas){
+    restaura();
     const link = document.createElement('a');
     link.download = filename + '-' + hojeISO() + '.png';
     link.href = canvas.toDataURL('image/png');
     link.click();
     toast('PNG salvo!', 'success');
-  }).catch(function(err){ console.error(err); toast('Erro ao gerar PNG'); });
+  }).catch(function(err){ restaura(); console.error(err); toast('Erro ao gerar PNG: ' + (err && err.message ? err.message : err)); });
 }
 // ══ EXPORT MARKDOWN ══
 function exportMarkdown(){
