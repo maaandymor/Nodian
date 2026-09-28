@@ -767,9 +767,10 @@ body.tem-aviso-topo #logout-btn{top:41px}
 @media (max-width:1180px){.carga-topo{grid-template-columns:1fr}}
 
 /* concluídas: ficam no histórico do mapa, mas não podem ser lidas como trabalho a fazer */
-.heat-cell.feito{opacity:.45}
-.heat-cell.feito::after{content:'✓';position:absolute;bottom:0;right:3px;font-size:8px;font-weight:800;opacity:.8}
-.cl-feito{background:rgba(114,149,205,.55);opacity:.45}
+/* verde (success do tema, #55b583) em vez do azul esmaecido, que se confundia com <60% */
+.heat-cell.feito{background:rgba(85,181,131,.30);border-color:rgba(85,181,131,.55);color:var(--color-black)}
+.heat-cell.feito::after{content:'✓';position:absolute;bottom:0;right:3px;font-size:8px;font-weight:800;color:var(--color-green)}
+.cl-feito{background:rgba(85,181,131,.30);border:1px solid rgba(85,181,131,.55)}
 .done-chip{font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;background:var(--color-bg);color:var(--color-gray);white-space:nowrap}
 .carga-item-desc.feita{text-decoration:line-through;color:var(--color-gray)}
 .carga-done-sub{font-size:9px;font-weight:600;color:var(--color-gray);margin-left:5px;white-space:nowrap}
@@ -3014,7 +3015,7 @@ function renderCarga(){
   const valor = function(p, col){ if(cargaGran === 'dia') return (R.porPessoaDia[p] && R.porPessoaDia[p][col.key]) || 0; return (col.porPessoa && col.porPessoa[p]) || 0; };
   const feito = function(p, col){ if(cargaGran === 'dia') return (R.porPessoaDiaDone[p] && R.porPessoaDiaDone[p][col.key]) || 0; return (col.porPessoaDone && col.porPessoaDone[p]) || 0; };
   const capDe = function(col){ return cargaGran === 'dia' ? capCel : col.cap; };
-  html += '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">Mapa de calor — ' + (cargaGran === 'dia' ? 'por dia útil' : 'por semana') + '</div><div class="carga-card-sub">célula = dias alocados ÷ capacidade da célula (' + (cargaGran === 'dia' ? fmtD(capCel) + ' d/dia' : fmtD(cap) + ' d/semana cheia') + '). Clique numa célula para ver as tasks. Task concluída continua nos dias em que esteve em curso (até a data de conclusão), esmaecida.</div></div>'
+  html += '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">Mapa de calor — ' + (cargaGran === 'dia' ? 'por dia útil' : 'por semana') + '</div><div class="carga-card-sub">célula = dias alocados ÷ capacidade da célula (' + (cargaGran === 'dia' ? fmtD(capCel) + ' d/dia' : fmtD(cap) + ' d/semana cheia') + '). Clique numa célula para ver as tasks. Task concluída continua nos dias em que esteve em curso (até a data de conclusão), em verde.</div></div>'
     + '<div class="carga-legend"><span class="cl-swatch cl-vazio"></span>0<span class="cl-swatch cl-baixo"></span>&lt;60%<span class="cl-swatch cl-ok"></span>60–100%<span class="cl-swatch cl-cheio"></span>100–120%<span class="cl-swatch cl-estourado"></span>&gt;120%<span class="cl-swatch cl-ne"></span>não estimada<span class="cl-swatch cl-feito"></span>concluída</div></div>'
     + '<div class="heat-scroll"><table class="heat"><thead><tr><th class="heat-corner"></th>' + cols.map(function(c){ return '<th class="heat-col' + (c.hoje ? ' hoje' : '') + '"><div>' + c.label + '</div><div class="heat-sub">' + c.sub + '</div></th>'; }).join('') + '<th class="heat-col heat-ne-col" title="Tasks abertas sem estimativa (não entram nas células)">não est.</th></tr></thead><tbody>'
     + pessoas.map(function(p){
