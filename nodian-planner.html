@@ -647,6 +647,10 @@ body.tem-aviso-topo #logout-btn{top:41px}
 .col-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 /* lista de Projetos: o nome tambem nao pode empurrar o badge da frente */
 .pr-name span{min-width:0}
+/* Projetos: o nome é a informação principal da linha — coluna mais larga e quebra em até
+   2 linhas em vez de cortar com reticências (o registro, flex:1, absorve a diferença). */
+.pr-name{width:260px}
+.pr-name span[title]{white-space:normal;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
 
 .board-view{padding-bottom:16px}
 .carga-view,.timeline-view,.cal-view{padding-bottom:24px}
@@ -2427,10 +2431,18 @@ function getFilteredProjects(){
   const single = !!frenteAtiva();
   return db.projects.filter(function(p){
     if(single && filterStatus !== 'all' && p.status !== filterStatus) return false;
-    if(filterPerson !== 'all' && !(p.team || []).includes(filterPerson)) return false;
+    if(filterPerson !== 'all' && !projetoTemPessoa(p, filterPerson)) return false;
     if(search && !p.name.toLowerCase().includes(search)) return false;
     return true;
   });
+}
+
+// A pessoa "está" no projeto se é da equipe OU responsável por alguma task/marco: muita gente
+// pega task em projeto sem constar em p.team, e o filtro só por equipe escondia esse trabalho.
+function projetoTemPessoa(p, pessoa){
+  if((p.team || []).includes(pessoa)) return true;
+  const tem = function(x){ return whoArr(x).indexOf(pessoa) >= 0; };
+  return (p.tasks || []).some(tem) || (p.milestones || []).some(tem);
 }
 
 // ══ UTILS ══
@@ -2597,7 +2609,9 @@ function renderPlanningList(){
 
 function renderPlanningRow(p, cols){
   cols = cols || colsForProject(p);
-  const team = (p.team || []).slice(0, 4).map(function(t){ return '<div class="avatar" style="width:18px;height:18px;font-size:7px;' + avatarStyle(t) + '">' + t.slice(0, 2) + '</div>'; }).join('');
+  // Sem avatares da equipe aqui: a coluna é estreita e o nome do projeto é o que importa.
+  // A equipe fica no tooltip do nome.
+  const nomeTip = escHtml(p.name) + ((p.team || []).length ? ' · ' + escHtml(p.team.join(', ')) : '');
   const hex = statusColorHex(p.status, cols);
   const pcolor = projectColorHex(p);
   const statusOptions = cols.map(function(c){ return '<option value="' + c.id + '"' + (p.status === c.id ? ' selected' : '') + '>' + escHtml(c.label) + '</option>'; }).join('');
@@ -2610,7 +2624,7 @@ function renderPlanningRow(p, cols){
 
   return '<div id="prow-wrap-' + p.id + '">'
     + '<div class="planning-row" onclick="openProject(\'' + p.id + '\')">'
-    + '<div class="pr-name">' + (pcolor ? '<span class="project-color-swatch" style="background:' + pcolor + '"></span>' : '') + (team ? '<div style="display:flex;gap:2px;flex-shrink:0">' + team + '</div>' : '') + '<span>' + escHtml(p.name) + '</span>' + frenteBadge(p) + '</div>'
+    + '<div class="pr-name">' + (pcolor ? '<span class="project-color-swatch" style="background:' + pcolor + '"></span>' : '') + '<span title="' + nomeTip + '">' + escHtml(p.name) + '</span>' + frenteBadge(p) + '</div>'
     + '<div class="pr-status" onclick="event.stopPropagation()"><select class="pr-status-sel" style="background:' + hexToRgba(hex, .18) + ';color:' + hex + '" id="psel-' + p.id + '" onchange="inlineStatusChange(\'' + p.id + '\',this)" onclick="event.stopPropagation()">' + statusOptions + '</select></div>'
     + '<div class="pr-stage">' + logBlock + '</div>'
     + '<div class="pr-actions" onclick="event.stopPropagation()">'
@@ -3077,6 +3091,7 @@ function tlItens(per){
     const f = projectFrente(p), cor = projectColorHex(p) || (f && isMulti() ? f.cor : statusColorHex(p.status, colsForProject(p)));
     (p.tasks || []).forEach(function(t){
       const done = t.status === TASK_DONE_ID;
+      if(filterPerson !== 'all' && whoArr(t).indexOf(filterPerson) < 0) return;
       if(done && (!tlMostrarDone || !t.doneAt)) return;
       let ini, fim;
       if(done){ ini = t.start || t.date || t.doneAt; fim = t.doneAt; }
@@ -3088,6 +3103,7 @@ function tlItens(per){
     });
     (p.milestones || []).forEach(function(m){
       if(!m.date) return;
+      if(filterPerson !== 'all' && whoArr(m).indexOf(filterPerson) < 0) return;
       if(m.status === 'done' && !tlMostrarDone) return;
       if(m.date < per.de || m.date > per.ate) return;
       out.push({ tipo: 'marco', id: m.id, desc: m.label, ini: m.date, fim: m.date, cli: '', who: whoArr(m), done: m.status === 'done', p: p, frente: f, cor: cor, msStatus: m.status });
