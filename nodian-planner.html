@@ -610,21 +610,35 @@ body.tem-aviso-topo #logout-btn{top:41px}
 
 .campo-legenda{font-size:10px;color:var(--color-gray);line-height:1.3;margin-top:-2px}
 .campo-legenda b{color:var(--color-black);font-weight:600}
+/* Data de task em sábado/domingo: só a placa, sem texto */
+.aviso-fds{display:inline-flex;vertical-align:-1px;margin:0 3px;color:#E0A100;flex-shrink:0;cursor:help}
+.aviso-fds svg{width:10px;height:10px;display:block}
+.campo-legenda .aviso-fds{margin-left:0}
 
 /* bloco equipe + esforço por pessoa */
-.bloco-equipe{border:1px solid var(--border-c);border-radius:var(--radius-md);padding:10px 12px;background:var(--color-bg)}
 .bloco-interno{border:1px solid var(--border-c);border-radius:var(--radius-md);padding:8px 12px 10px;position:relative}
 .bloco-titulo{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--color-gray);background:var(--color-white);padding:0 6px;position:absolute;top:-7px;left:10px}
 .campo-legenda-inline{font-size:9px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--color-gray);margin-left:6px}
 .campo-legenda-inline b{color:var(--color-black)}
 .campo-legenda-inline .sem-est{font-style:italic}
-.esforco-grid{display:flex;flex-wrap:wrap;gap:6px}
-.esforco-grid.solo .form-input{width:100%}
-.esforco-item{display:flex;align-items:center;gap:5px;background:var(--color-white);border:1.5px solid var(--border-c);border-radius:var(--radius-full);padding:2px 10px 2px 3px}
-.esforco-sigla{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
-.esforco-input{width:52px;height:24px;padding:0 4px;border:none;background:transparent;font-size:12px;font-weight:600;text-align:right}
-.esforco-input:focus{outline:none}
+/* tabela responsável | esforço | remover */
+.esforco-tabela{display:flex;flex-direction:column;background:var(--color-white);border:1px solid var(--border-c);border-radius:var(--radius-md)}
+.esforco-head,.esforco-item{display:grid;grid-template-columns:1fr 92px 26px;align-items:center;gap:8px;padding:5px 10px}
+.esforco-head{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--color-gray);padding-top:8px;padding-bottom:6px;border-bottom:1px solid var(--border-c);background:var(--color-bg);border-radius:var(--radius-md) var(--radius-md) 0 0}
+.esforco-head span:nth-child(2){text-align:right;padding-right:10px}
+.esforco-item + .esforco-item{border-top:1px solid var(--border-c)}
+.esforco-quem{display:flex;align-items:center;gap:8px;min-width:0}
+.esforco-sigla{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;background:var(--color-bg);color:var(--color-gray)}
+.esforco-nome{font-size:12px;font-weight:600;color:var(--color-black);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.esforco-item.vazio .esforco-nome{font-weight:400;font-style:italic;color:var(--color-gray)}
+.esforco-valor{display:flex;align-items:center;justify-content:flex-end;gap:4px;border:1.5px solid var(--border-c);border-radius:var(--radius-sm);padding:0 8px 0 4px;height:28px;background:var(--color-white)}
+.esforco-valor:focus-within{border-color:var(--color-coral)}
+.esforco-input{width:100%;min-width:0;height:24px;padding:0 2px;border:none;background:transparent;font-size:12px;font-weight:600;text-align:right}
+.esforco-input:focus{outline:none;box-shadow:none}
 .esforco-un{font-size:10px;color:var(--color-gray)}
+.esforco-remover{width:22px;height:22px;border:none;border-radius:50%;background:transparent;color:var(--color-gray);font-size:10px;cursor:pointer}
+.esforco-remover:hover{background:var(--color-bg);color:var(--color-red)}
+.esforco-rodape{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;border-top:1px solid var(--border-c)}
 .task-who-pill.com-dias{padding-right:3px;display:inline-flex;align-items:center;gap:4px}
 .task-who-pill.com-dias b{background:var(--color-white);border-radius:99px;padding:0 5px;font-size:9px;font-weight:700}
 .task-effort-total{background:transparent;border:1px dashed var(--border-c);color:var(--color-gray);font-weight:600}
@@ -1220,34 +1234,34 @@ body.tem-aviso-topo #logout-btn{top:41px}
         <div class="form-row">
           <label class="form-label">Prazo do cliente</label>
           <input class="form-input" id="taskDateClient" type="date" onchange="atualizaFolgaTask()" title="Compromisso externo: reunião, apresentação, entrega combinada. A diferença para o prazo interno é a folga."/>
-          <span class="campo-legenda">externo · opcional</span>
+          <span class="campo-legenda"><span id="taskDateClientFds"></span>externo · opcional</span>
         </div>
         <div class="bloco-interno">
           <div class="bloco-titulo">Interno</div>
           <div class="form-grid">
             <div class="form-row">
               <label class="form-label">Início</label>
-              <input class="form-input" id="taskStart" type="date" title="Quando o trabalho começa. Define onde a barra começa na Timeline."/>
-              <span class="campo-legenda">quando começa</span>
+              <input class="form-input" id="taskStart" type="date" onchange="atualizaAvisosFds()" title="Quando o trabalho começa. Define onde a barra começa na Timeline."/>
+              <span class="campo-legenda"><span id="taskStartFds"></span>quando começa</span>
             </div>
             <div class="form-row">
               <label class="form-label">Prazo interno</label>
               <input class="form-input" id="taskDate" type="date" onchange="atualizaFolgaTask()" title="Quando NÓS queremos terminar. É esta data que alimenta a visão de Carga: o esforço é distribuído entre o início e ela."/>
-              <span class="campo-legenda">queremos terminar <b>· conta na Carga</b></span>
+              <span class="campo-legenda"><span id="taskDateFds"></span>queremos terminar <b>· conta na Carga</b></span>
             </div>
           </div>
         </div>
       </div>
       <div class="form-hint" id="taskFolga"></div>
 
-      <!-- Quem faz + quanto cada um faz: juntos, porque um só faz sentido com o outro -->
-      <div class="bloco-equipe">
-        <div class="form-row">
-          <label class="form-label">Responsáveis <span class="campo-legenda-inline" id="taskEffortTotal"></span></label>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            <div style="display:flex;gap:4px;flex-wrap:wrap" id="taskWhoField"></div>
+      <!-- Quem faz + quanto cada um faz: uma linha por responsável, o esforço colado na sigla -->
+      <div class="form-row">
+        <div class="esforco-tabela">
+          <div class="esforco-head"><span>Responsáveis</span><span title="Esforço: dias úteis de trabalho, não duração">Dias úteis</span><span></span></div>
+          <div id="taskEffortFields"></div>
+          <div class="esforco-rodape">
             <div class="person-picker">
-              <button class="team-add-btn" onclick="togglePersonPicker('taskWhoDropdown',event)">+ Adicionar</button>
+              <button class="team-add-btn" onclick="togglePersonPicker('taskWhoDropdown',event)">+ Adicionar responsável</button>
               <div class="person-picker-dropdown" id="taskWhoDropdown">
                 <div class="person-picker-grid" id="taskPickerGrid"></div>
                 <div class="person-picker-divider"></div>
@@ -1255,11 +1269,8 @@ body.tem-aviso-topo #logout-btn{top:41px}
                 <div class="person-picker-actions"><button class="btn btn-sm btn-secondary" onclick="closePersonPicker('taskWhoDropdown')">OK</button></div>
               </div>
             </div>
+            <span class="campo-legenda-inline" id="taskEffortTotal"></span>
           </div>
-        </div>
-        <div class="form-row" style="margin-top:8px">
-          <label class="form-label">Esforço em dias úteis <span class="campo-legenda-inline">trabalho, não duração</span></label>
-          <div id="taskEffortFields" class="esforco-grid"></div>
         </div>
       </div>
 
@@ -1948,7 +1959,9 @@ function projectColorHex(p){
 const DOCS = {};       // fid -> { projects: [...] }
 const PROJ_FID = {};   // projectId -> fid
 const _st = {};        // fid -> { docVer, baseline, booted, saving, pending }
-let filterPerson = 'all', filterStatus = 'all', currentView = 'board';
+// filterPessoas: siglas selecionadas no filtro de TIME (vazio = Todos). Seleção múltipla para
+// o líder ver só os seus analistas.
+let filterPessoas = [], filterStatus = 'all', currentView = 'board';
 let currentProjectId = null, editingMilestoneIdx = null, editingTaskIdx = null, milestoneType = 'milestone';
 let tempModalTeam = [], tempMilestoneWho = [], tempTaskWho = [];
 let _readOnly = false;
@@ -2279,9 +2292,9 @@ function setViewerMode(on){
 // ══ BOOTSTRAP DE UI DERIVADA DO CONFIG ══
 function renderFilterChips(){
   document.getElementById('personFilterChips').innerHTML = TEAM_OPTIONS.map(function(t){
-    return '<button class="filter-chip' + (filterPerson === t ? ' active' : '') + '" data-filter="' + t + '" onclick="setPersonFilter(\'' + t + '\',this)">' + t + '</button>';
+    return '<button class="filter-chip' + (filterPessoas.indexOf(t) >= 0 ? ' active' : '') + '" data-filter="' + t + '" onclick="setPersonFilter(\'' + t + '\',this)">' + t + '</button>';
   }).join('');
-  document.querySelector('[data-filter="all"]').classList.toggle('active', filterPerson === 'all');
+  document.querySelector('[data-filter="all"]').classList.toggle('active', !filtroPessoaAtivo());
   // Status de projeto é por frente: em ESCOPO_TODOS os ids não coincidem → esconde o grupo.
   const statusGroup = document.getElementById('statusFilterGroup');
   const single = !!frenteAtiva();
@@ -2424,14 +2437,24 @@ function renderCurrentView(){
 }
 
 // ══ FILTERS ══
-function setPersonFilter(val, btn){ filterPerson = val; document.querySelectorAll('[data-filter]').forEach(function(b){ b.classList.remove('active'); }); if(btn) btn.classList.add('active'); renderCurrentView(); }
+// Clique numa sigla liga/desliga ela na seleção; "Todos" limpa. Selecionar todas equivale a Todos.
+function setPersonFilter(val){
+  if(val === 'all') filterPessoas = [];
+  else{ const i = filterPessoas.indexOf(val); if(i >= 0) filterPessoas.splice(i, 1); else filterPessoas.push(val); }
+  if(filterPessoas.length && TEAM_OPTIONS.every(function(t){ return filterPessoas.indexOf(t) >= 0; })) filterPessoas = [];
+  document.querySelectorAll('[data-filter]').forEach(function(b){ const f = b.getAttribute('data-filter'); b.classList.toggle('active', f === 'all' ? !filtroPessoaAtivo() : filterPessoas.indexOf(f) >= 0); });
+  renderCurrentView();
+}
+function filtroPessoaAtivo(){ return filterPessoas.length > 0; }
+function pessoaNoFiltro(w){ return !filtroPessoaAtivo() || filterPessoas.indexOf(w) >= 0; }
+function algumaNoFiltro(lista){ return !filtroPessoaAtivo() || (lista || []).some(function(w){ return filterPessoas.indexOf(w) >= 0; }); }
 function setStatusFilter(val, btn){ filterStatus = val; document.querySelectorAll('[data-status]').forEach(function(b){ b.classList.remove('active'); }); if(btn) btn.classList.add('active'); renderCurrentView(); }
 function getFilteredProjects(){
   const search = (document.getElementById('searchInput').value || '').toLowerCase();
   const single = !!frenteAtiva();
   return db.projects.filter(function(p){
     if(single && filterStatus !== 'all' && p.status !== filterStatus) return false;
-    if(filterPerson !== 'all' && !projetoTemPessoa(p, filterPerson)) return false;
+    if(filtroPessoaAtivo() && !filterPessoas.some(function(w){ return projetoTemPessoa(p, w); })) return false;
     if(search && !p.name.toLowerCase().includes(search)) return false;
     return true;
   });
@@ -2457,6 +2480,12 @@ function diasAte(d){ const alvo = parseISO(d); if(!alvo) return null; const n = 
 // overdue (<0) · today (0) · soon (≤7 dias) — mesma régua em todas as visões.
 function deadlineClass(d, done){ if(!d || done) return ''; const dias = diasAte(d); if(dias === null) return ''; if(dias < 0) return 'overdue'; if(dias === 0) return 'today'; if(dias <= 7) return 'soon'; return ''; }
 function toast(msg, type){ const el = document.createElement('div'); el.className = 'toast' + (type ? ' ' + type : ''); el.textContent = msg; document.getElementById('toastContainer').appendChild(el); setTimeout(function(){ el.remove(); }, 2600); }
+// Placa de alerta (sem rótulo) para data de task que cai em sábado/domingo. Vazio se dia útil.
+function ehFds(iso){ const d = parseISO(iso); if(!d) return false; const w = d.getDay(); return w === 0 || w === 6; }
+function avisoFds(iso){
+  if(!iso || !ehFds(iso)) return '';
+  return '<span class="aviso-fds" title="Cai em ' + (parseISO(iso).getDay() === 0 ? 'domingo' : 'sábado') + '"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 15 14H1z" fill="currentColor"/><path d="M8 6v3.6" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="11.8" r=".95" fill="#fff"/></svg></span>';
+}
 function whoArr(x){ return Array.isArray(x.who) ? x.who : (x.who ? [x.who] : []); }
 // Estilo do badge de frente. O tom de fundo vem calculado daqui (rgba) em vez de
 // color-mix() no CSS: o html2canvas nao consegue ler a funcao color() que o navegador
@@ -2750,7 +2779,7 @@ function renderTaskKanbanCard(t){
   return '<div class="project-card" draggable="true" ondragstart="taskKanbanDragStart(event,\'' + t.projectId + '\',\'' + t.id + '\')" onclick="openProject(\'' + t.projectId + '\')">'
     + '<div class="card-top"><div class="card-name" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--color-gray)">' + escHtml(t.projectName) + '</div>' + frenteBadge(t._p) + '</div>'
     + '<div class="card-stage" style="font-size:12px;font-weight:500;color:var(--color-black)">' + escHtml(t.desc) + '</div>'
-    + (t.date ? '<div class="card-deadline"><span class="deadline-date ' + dcls + '">' + formatDate(t.date) + '</span>' + (t.effort ? '<span class="card-who">' + t.effort + 'd</span>' : '') + '</div>' : '')
+    + (t.date ? '<div class="card-deadline"><span class="deadline-date ' + dcls + '">' + formatDate(t.date) + '</span>' + avisoFds(t.date) + (t.effort ? '<span class="card-who">' + t.effort + 'd</span>' : '') + '</div>' : '')
     + (team ? '<div class="card-team">' + team + '</div>' : '')
     + '</div>';
 }
@@ -2822,7 +2851,7 @@ function renderPlanner(){
   const semPrazo = items.filter(function(i){ return i.person !== '—' && i.type === 'task' && !i.date && !i.done; }).sort(function(a, b){ return a.projectName.localeCompare(b.projectName); });
   const presentPeople = TEAM_OPTIONS.filter(function(t){ return items.some(function(i){ return i.person === t; }); });
   const extraPeople = Array.from(new Set(items.map(function(i){ return i.person; }))).filter(function(p){ return p !== '—' && TEAM_OPTIONS.indexOf(p) < 0; });
-  const displayPeople = filterPerson === 'all' ? presentPeople.concat(extraPeople) : [filterPerson];
+  const displayPeople = !filtroPessoaAtivo() ? presentPeople.concat(extraPeople) : TEAM_OPTIONS.filter(pessoaNoFiltro);
 
   if(displayPeople.length === 0 && semDono.length === 0){
     grid.innerHTML = '<div class="week-empty" style="min-width:320px">Nenhum item encontrado' + (document.getElementById('plannerDateFrom').value || document.getElementById('plannerDateTo').value ? ' no período selecionado' : '') + '.</div>';
@@ -2847,7 +2876,7 @@ function renderPlanner(){
   });
 
   let backlogCol = '';
-  if(filterPerson === 'all' && (semDono.length || semPrazo.length)){
+  if(!filtroPessoaAtivo() && (semDono.length || semPrazo.length)){
     backlogCol = '<div class="week-person-col"><div class="week-backlog-header"><div class="week-backlog-label">Backlog</div><div class="week-backlog-count">' + (semDono.length + semPrazo.length) + ' ite' + (semDono.length + semPrazo.length === 1 ? 'm' : 'ns') + '</div></div>'
       + (semDono.length ? '<div class="week-backlog-sub">Sem responsável · ' + semDono.length + '</div>' + semDono.map(renderPlannerCard).join('') : '')
       + (semPrazo.length ? '<div class="week-backlog-sub">Sem prazo · ' + semPrazo.length + '</div>' + semPrazo.map(renderPlannerCard).join('') : '')
@@ -2872,7 +2901,7 @@ function renderPlannerCard(item){
   }
   const badge = item.frente && isMulti() ? '<span class="frente-badge" style="' + frenteStyle(item.frente.cor) + '">' + escHtml(item.frente.curto) + '</span>' : '';
   const effort = (!isMilestone && item.effort) ? '<span class="week-task-effort" title="Esforço desta pessoa (dias úteis)">' + fmtDias(item.effort) + 'd</span>' : '';
-  const prazo = item.date ? '<span class="week-task-date ' + dcls + '">' + (dcls === 'today' ? 'hoje' : formatDateShort(item.date)) + '</span>' : '<span class="week-task-date">Sem prazo</span>';
+  const prazo = item.date ? '<span class="week-task-date ' + dcls + '">' + (dcls === 'today' ? 'hoje' : formatDateShort(item.date)) + '</span>' + (isMilestone ? '' : avisoFds(item.date)) : '<span class="week-task-date">Sem prazo</span>';
   const edit = (!isMilestone && item.taskId) ? '<button class="icon-btn week-task-edit" title="Editar task aqui" onclick="event.stopPropagation();openTaskEditor(\'' + item.projectId + '\',\'' + item.taskId + '\')">✎</button>' : '';
   return '<div class="week-task-card' + (item.done ? ' is-done' : '') + '" style="border-left-color:' + hex + '" onclick="openProject(\'' + item.projectId + '\')">'
     + '<div class="week-task-top" style="display:flex;justify-content:space-between;gap:6px;align-items:center"><div class="week-task-project">' + escHtml(item.projectName) + '</div><span style="display:flex;gap:4px;align-items:center">' + badge + edit + '</span></div>'
@@ -2911,7 +2940,7 @@ function cargaTasks(soEscopo){
     (docOf(f.id).projects || []).forEach(function(p){
       if(search && !p.name.toLowerCase().includes(search)) return;
       (p.tasks || []).forEach(function(t){
-        if(filterPerson !== 'all' && whoArr(t).indexOf(filterPerson) < 0) return;
+        if(!algumaNoFiltro(whoArr(t))) return;
         // As concluídas vêm junto: o motor as usa só para os dias em que estiveram em curso
         // (até doneAt). Sem isso, concluir uma task apagava a carga do passado dela.
         out.push({ id: t.id, desc: t.desc, who: whoArr(t), effort: t.effort, effortBy: t.effortBy, start: t.start, date: t.date, status: t.status, done: t.status === TASK_DONE_ID, doneAt: t.doneAt, projectName: p.name, projectId: p.id, frente: f });
@@ -2930,7 +2959,7 @@ function renderCarga(){
   const capPeriodo = cap / 5 * diasUteis.length;
   // Ordem alfabética: o painel de sprint e o mapa de calor ficam lado a lado, então a
   // linha da pessoa precisa ser a mesma nos dois para se ler na horizontal.
-  const pessoas = TEAM_OPTIONS.filter(function(p){ return filterPerson === 'all' || p === filterPerson; })
+  const pessoas = TEAM_OPTIONS.filter(function(p){ return pessoaNoFiltro(p); })
     .sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); });
   const fmtD = function(n){ return C.arred(n, 1).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); };
 
@@ -3091,7 +3120,7 @@ function tlItens(per){
     const f = projectFrente(p), cor = projectColorHex(p) || (f && isMulti() ? f.cor : statusColorHex(p.status, colsForProject(p)));
     (p.tasks || []).forEach(function(t){
       const done = t.status === TASK_DONE_ID;
-      if(filterPerson !== 'all' && whoArr(t).indexOf(filterPerson) < 0) return;
+      if(!algumaNoFiltro(whoArr(t))) return;
       if(done && (!tlMostrarDone || !t.doneAt)) return;
       let ini, fim;
       if(done){ ini = t.start || t.date || t.doneAt; fim = t.doneAt; }
@@ -3103,7 +3132,7 @@ function tlItens(per){
     });
     (p.milestones || []).forEach(function(m){
       if(!m.date) return;
-      if(filterPerson !== 'all' && whoArr(m).indexOf(filterPerson) < 0) return;
+      if(!algumaNoFiltro(whoArr(m))) return;
       if(m.status === 'done' && !tlMostrarDone) return;
       if(m.date < per.de || m.date > per.ate) return;
       out.push({ tipo: 'marco', id: m.id, desc: m.label, ini: m.date, fim: m.date, cli: '', who: whoArr(m), done: m.status === 'done', p: p, frente: f, cor: cor, msStatus: m.status });
@@ -3133,7 +3162,7 @@ function renderTimeline(){
     grupos = Object.keys(byP).map(function(k){ return byP[k]; }).sort(function(a, b){ return a.label.localeCompare(b.label, 'pt-BR'); });
   }else{
     const byW = {};
-    itens.forEach(function(it){ (it.who.length ? it.who : ['—']).forEach(function(w){ if(filterPerson !== 'all' && w !== filterPerson) return; if(!byW[w]) byW[w] = { key: w, label: w, pessoa: true, itens: [] }; byW[w].itens.push(Object.assign({}, it, { desc: it.p.name + ' · ' + it.desc })); }); });
+    itens.forEach(function(it){ (it.who.length ? it.who : ['—']).forEach(function(w){ if(!pessoaNoFiltro(w)) return; if(!byW[w]) byW[w] = { key: w, label: w, pessoa: true, itens: [] }; byW[w].itens.push(Object.assign({}, it, { desc: it.p.name + ' · ' + it.desc })); }); });
     const ordem = TEAM_OPTIONS.concat(['—']);
     grupos = Object.keys(byW).map(function(k){ return byW[k]; }).sort(function(a, b){ return ordem.indexOf(a.key) - ordem.indexOf(b.key); });
   }
@@ -3297,8 +3326,8 @@ function removePerson(p, ctx){
 function pillsHtml(arr, ctx){ return arr.map(function(p){ return '<div class="team-pill" style="' + avatarStyle(p) + '">' + escHtml(p) + '<button class="team-pill-remove" onclick="removePerson(\'' + p + '\',\'' + ctx + '\')">✕</button></div>'; }).join(''); }
 function renderModalTeamPills(){ const f = document.getElementById('modalTeamField'); const pk = document.getElementById('modalTeamPicker'); f.innerHTML = ''; f.insertAdjacentHTML('beforeend', pillsHtml(tempModalTeam, 'modal')); f.appendChild(pk); saveCurrentProject(); }
 function renderMilestoneWhoPills(){ document.getElementById('milestoneWhoField').innerHTML = pillsHtml(tempMilestoneWho, 'milestone'); }
+// Na task os responsáveis não são pills: cada um é uma linha da tabela de esforço (64-tasks.js).
 function renderTaskWhoPills(){
-  document.getElementById('taskWhoField').innerHTML = pillsHtml(tempTaskWho, 'task');
   if(typeof sincronizaEsforcoComResponsaveis === 'function') sincronizaEsforcoComResponsaveis();
 }
 // ══ PROJECT CRUD ══
@@ -3528,8 +3557,8 @@ function renderTaskCard(t, idx){
   const dcls = t.date ? deadlineClass(t.date, done) : '';
   const subs = t.subtasks && t.subtasks.length > 0 ? '<div class="subtasks">' + t.subtasks.map(function(s, si){ return '<div class="subtask ' + (s.done ? 'done' : '') + '"><div class="subtask-check ' + (s.done ? 'checked' : '') + '" onclick="toggleSubtask(' + idx + ',' + si + ')"></div><span>' + escHtml(s.text) + '</span></div>'; }).join('') + '</div>' : '';
   const crmBadge = t.origem === 'crm' ? '<span class="crm-tag" title="Criada a partir do CRM">CRM</span> ' : '';
-  const janela = (t.start ? formatDateShort(t.start) + ' → ' : '') + (t.date ? '<span class="task-date ' + dcls + '" title="Nosso prazo">' + formatDateShort(t.date) + '</span>' : '<span class="task-date" title="Sem prazo definido">sem prazo</span>');
-  const cliente = t.dateClient ? '<span class="task-date task-date-client ' + (done ? '' : deadlineClass(t.dateClient)) + '" title="Prazo do cliente">◆ ' + formatDateShort(t.dateClient) + '</span>' : '';
+  const janela = (t.start ? formatDateShort(t.start) + avisoFds(t.start) + ' → ' : '') + (t.date ? '<span class="task-date ' + dcls + '" title="Nosso prazo">' + formatDateShort(t.date) + '</span>' + avisoFds(t.date) : '<span class="task-date" title="Sem prazo definido">sem prazo</span>');
+  const cliente = t.dateClient ? '<span class="task-date task-date-client ' + (done ? '' : deadlineClass(t.dateClient)) + '" title="Prazo do cliente">◆ ' + formatDateShort(t.dateClient) + '</span>' + avisoFds(t.dateClient) : '';
   // Com esforço dividido, o número relevante é o de cada pessoa — então ele vai NA pill,
   // colado em quem faz. O chip solto só aparece quando não há responsável ou não há estimativa.
   const porPessoa = esforcoPessoa(t), temEsforco = !!effortLabel(t);
@@ -3561,23 +3590,24 @@ function populateTaskDealOptions(selectedDealId){
 }
 // Valores do formulário de esforço, por sigla. Chave '' = task sem responsável.
 let tempTaskEffort = {};
-function renderTaskEffortFields(){
+// Uma linha por responsável: avatar + sigla | dias | remover. Sem responsável, uma linha
+// "sem responsável" mantém a estimativa possível. .esforco-item e #taskEffort são usados pelo selftest.
+function renderTaskEffortFields(foco){
   const wrap = document.getElementById('taskEffortFields'); if(!wrap) return;
   const pessoas = tempTaskWho.slice();
+  const campo = function(chave, v){ return '<span class="esforco-valor"><input class="form-input esforco-input" type="number" min="0" step="0.5" placeholder="—" value="' + (v == null ? '' : v) + '" oninput="onEffortInput(\'' + chave + '\',this.value)"/><span class="esforco-un">d</span></span>'; };
   if(!pessoas.length){
-    wrap.className = 'esforco-grid solo';
-    wrap.innerHTML = '<input class="form-input" id="taskEffort" type="number" min="0" step="0.5" placeholder="vazio = não estimada" value="' + (tempTaskEffort[''] == null ? '' : tempTaskEffort['']) + '" oninput="onEffortInput(\'\',this.value)"/>';
+    wrap.innerHTML = '<div class="esforco-item vazio"><span class="esforco-quem"><span class="esforco-sigla">—</span><span class="esforco-nome">sem responsável</span></span>' + campo('', tempTaskEffort['']) + '<span></span></div>';
   }else{
-    wrap.className = 'esforco-grid' + (pessoas.length === 1 ? ' solo' : '');
     wrap.innerHTML = pessoas.map(function(w){
-      const v = tempTaskEffort[w];
-      return '<label class="esforco-item"><span class="esforco-sigla" style="' + avatarStyle(w) + '">' + escHtml(w) + '</span>'
-        + '<input class="form-input esforco-input" type="number" min="0" step="0.5" placeholder="—" value="' + (v == null ? '' : v) + '" oninput="onEffortInput(\'' + w + '\',this.value)"/>'
-        + '<span class="esforco-un">d</span></label>';
+      return '<div class="esforco-item" data-sigla="' + escHtml(w) + '"><span class="esforco-quem"><span class="esforco-sigla" style="' + avatarStyle(w) + '">' + escHtml(w.slice(0, 2)) + '</span><span class="esforco-nome">' + escHtml(w) + '</span></span>'
+        + campo(w, tempTaskEffort[w])
+        + '<button class="esforco-remover" type="button" title="Remover ' + escHtml(w) + '" onclick="removePerson(\'' + w + '\',\'task\')">✕</button></div>';
     }).join('');
-    // id estável para quem tem 1 responsável (e para os testes)
-    if(pessoas.length === 1) wrap.querySelector('input').id = 'taskEffort';
   }
+  // id estável para quem tem 0 ou 1 responsável (e para os testes)
+  if(pessoas.length <= 1) wrap.querySelector('input').id = 'taskEffort';
+  if(foco){ const inp = wrap.querySelector('.esforco-item[data-sigla="' + foco + '"] input'); if(inp) inp.focus(); }
   atualizaTotalEsforco();
 }
 function onEffortInput(sigla, val){
@@ -3595,17 +3625,18 @@ function atualizaTotalEsforco(){
   const el = document.getElementById('taskEffortTotal'); if(!el) return;
   const tot = totalEsforcoForm();
   if(tot === null){ el.innerHTML = '<span class="sem-est">sem estimativa</span>'; return; }
-  el.innerHTML = tempTaskWho.length > 1
-    ? 'total <b>' + fmtDias(tot) + ' dias</b>'
-    : '<b>' + fmtDias(tot) + ' dia' + (tot === 1 ? '' : 's') + '</b>';
+  // Com 0/1 responsável o valor da linha já é o total: não repete.
+  el.innerHTML = tempTaskWho.length > 1 ? 'total <b>' + fmtDias(tot) + ' dias</b>' : '';
 }
 // Chamado pelo person-picker: mantém os valores de quem continua e zera quem saiu.
 function sincronizaEsforcoComResponsaveis(){
+  // quem acabou de entrar ganha o foco no campo de dias
+  const novo = tempTaskWho.filter(function(w){ return !(w in tempTaskEffort); }).pop();
   const novos = {};
   tempTaskWho.forEach(function(w){ novos[w] = (tempTaskEffort[w] != null) ? tempTaskEffort[w] : null; });
   if(!tempTaskWho.length && tempTaskEffort[''] != null) novos[''] = tempTaskEffort[''];
   tempTaskEffort = novos;
-  renderTaskEffortFields();
+  renderTaskEffortFields(novo);
 }
 function _fillTaskForm(t){
   document.getElementById('taskDesc').value = t.desc || '';
@@ -3621,8 +3652,13 @@ function _fillTaskForm(t){
   document.getElementById('taskSubtasks').value = (t.subtasks || []).map(function(s){ return s.text; }).join('\n');
   atualizaFolgaTask();
 }
+// Placa de fim de semana ao lado da legenda de cada data do modal.
+function atualizaAvisosFds(){
+  ['taskDateClient', 'taskStart', 'taskDate'].forEach(function(id){ const inp = document.getElementById(id), slot = document.getElementById(id + 'Fds'); if(inp && slot) slot.innerHTML = avisoFds(inp.value); });
+}
 // Folga = dias úteis entre o prazo interno e o do cliente. Negativa = prazo interno depois do compromisso.
 function atualizaFolgaTask(){
+  atualizaAvisosFds();
   const el = document.getElementById('taskFolga'); if(!el) return;
   const alvo = document.getElementById('taskDate').value, cli = document.getElementById('taskDateClient').value;
   if(!alvo || !cli){ el.textContent = ''; return; }
@@ -3761,7 +3797,7 @@ function renderSummaryCard(p, cols){
       const dcls = t.date ? deadlineClass(t.date) : '';
       return '<div class="summary-task-item"><div class="summary-task-dot"></div><span style="flex:1">' + escHtml(t.desc) + '</span>'
         + (whoArr(t).length ? '<span class="summary-task-who">' + escHtml(whoArr(t).join(', ')) + '</span>' : '')
-        + (t.date ? '<span class="summary-task-date ' + dcls + '">' + formatDate(t.date) + '</span>' : '') + '</div>';
+        + (t.date ? '<span class="summary-task-date ' + dcls + '">' + formatDate(t.date) + '</span>' + avisoFds(t.date) : '') + '</div>';
     }).join('') + '</div></div>'
     : '<div class="summary-no-tasks">Sem tasks abertas</div>';
   const pcolor = projectColorHex(p);
