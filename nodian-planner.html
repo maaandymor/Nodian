@@ -904,6 +904,8 @@ tr.pl-proj{cursor:pointer}
 tr.pl-proj td{background:var(--color-bg);font-weight:600}
 tr.pl-proj:hover td{filter:brightness(.97)}
 tr.pl-proj.vazio td{opacity:.7}
+.pl-proj-nome{cursor:pointer}
+.pl-proj-nome:hover{text-decoration:underline}
 .pl-seta{display:inline-block;width:10px;color:var(--color-gray)}
 .pl-n{font-size:10px;font-weight:500;color:var(--color-gray)}
 .pl-nova{height:18px;padding:0 8px;border-radius:99px;border:1px dashed var(--color-gray);background:transparent;color:var(--color-gray);font-family:var(--font);font-size:9px;font-weight:600;cursor:pointer;margin-left:4px}
@@ -919,6 +921,13 @@ tr.pl-task.feita td.pl-desc{text-decoration:line-through;color:var(--color-gray)
 .pl-q{display:inline-flex;align-items:center;justify-content:center;height:16px;min-width:20px;padding:0 4px;margin-right:2px;border-radius:99px;font-size:9px;font-weight:700}
 .pl-q.sem{opacity:.35;filter:grayscale(1)}
 .pl-vazia{padding:24px 12px!important;white-space:normal!important;max-width:none!important;color:var(--color-gray);font-style:italic}
+/* edição direta na grade: prazo (data inline) e responsáveis (picker) */
+tr.pl-task td.pl-edit{cursor:pointer}
+tr.pl-task td.pl-edit:hover{background:rgba(var(--ink-rgb),.05)}
+/* atrasada: prazo em vermelho (o .overdue do app só cobre outras classes) e uma marca discreta na linha */
+tr.pl-task td.pl-c-prazo.overdue{color:var(--color-red);font-weight:600}
+tr.pl-task.pl-atrasada td.pl-c-nome{box-shadow:inset 3px 0 0 var(--color-red)}
+.pl-prazo-input{width:100%;box-sizing:border-box;height:20px;padding:0 2px;font-family:var(--font);font-size:10px;border:1px solid var(--color-coral);border-radius:var(--radius-sm);background:var(--color-white);color:var(--color-black)}
 tr.pl-focus td{box-shadow:inset 0 0 0 2px var(--color-blue)}
 
 /* célula editável */
@@ -2026,12 +2035,16 @@ function deepMerge(base, override){
 
 // ══ FRENTES × ESCOPO ══
 // Uma "frente" é uma linha em `projects` (row_id) com seu próprio workflow (colunas de
-// status, presets de marco) e cor. O ESCOPO é o que o usuário está olhando: uma frente
-// ou ESCOPO_TODOS (união de todas — "Nodian"). Config com uma frente só (Suricatus) vira
-// uma frente sintética a partir de row_id, e o seletor de escopo fica oculto.
+// status, presets de marco) e cor. O ESCOPO é o que o usuário está olhando: um CONJUNTO
+// de frentes (ESCOPO_SEL, ids; vazio = todas — "Nodian"). ESCOPO é o espelho em string,
+// mantido por _syncEscopo(): ESCOPO_TODOS (nenhuma/todas), o id (uma só) ou ESCOPO_VARIAS
+// (subconjunto com 2+). Config com uma frente só (Suricatus) vira uma frente sintética a
+// partir de row_id, e o seletor de escopo fica oculto.
 const ESCOPO_TODOS = 'all';
+const ESCOPO_VARIAS = 'multi';
 let FRENTES = [];
 let ESCOPO = ESCOPO_TODOS;
+let ESCOPO_SEL = [];
 
 function computeFrentes(){
   const d = CFG.data;
@@ -2048,14 +2061,34 @@ function computeFrentes(){
       presets_marcos: (f.presets_marcos && f.presets_marcos.length) ? f.presets_marcos : null
     };
   });
-  if(!isMulti()) ESCOPO = FRENTES[0].id;
-  else if(ESCOPO !== ESCOPO_TODOS && !frenteById(ESCOPO)) ESCOPO = ESCOPO_TODOS;
+  if(!isMulti()) ESCOPO_SEL = [FRENTES[0].id];
+  else normalizaEscopoSel();
+  _syncEscopo();
+}
+// Descarta ids que não existem mais, ordena como FRENTES e trata "todas marcadas" como vazio.
+function normalizaEscopoSel(){
+  ESCOPO_SEL = FRENTES.map(function(f){ return f.id; }).filter(function(id){ return ESCOPO_SEL.indexOf(id) >= 0; });
+  if(isMulti() && ESCOPO_SEL.length === FRENTES.length) ESCOPO_SEL = [];
+}
+function _syncEscopo(){
+  ESCOPO = !ESCOPO_SEL.length ? ESCOPO_TODOS : (ESCOPO_SEL.length === 1 ? ESCOPO_SEL[0] : ESCOPO_VARIAS);
 }
 function isMulti(){ return FRENTES.length > 1; }
 function frenteById(fid){ return FRENTES.find(function(f){ return f.id === fid; }) || null; }
-function frentesNoEscopo(){ return ESCOPO === ESCOPO_TODOS ? FRENTES.slice() : [frenteById(ESCOPO)].filter(Boolean); }
-function frenteAtiva(){ return ESCOPO === ESCOPO_TODOS ? null : frenteById(ESCOPO); }
-function escopoLabel(){ const f = frenteAtiva(); return f ? f.nome : (CFG.theme.marca.nome_curto || 'Todos'); }
+// Frente selecionada explicitamente no filtro (false com "Nodian"/nenhuma marcada).
+function frenteSelecionada(fid){ return ESCOPO_SEL.indexOf(fid) >= 0; }
+function frenteNoEscopo(fid){ return !ESCOPO_SEL.length || frenteSelecionada(fid); }
+function frentesNoEscopo(){ return FRENTES.filter(function(f){ return frenteNoEscopo(f.id); }); }
+// A frente quando há exatamente UMA no escopo; null em "todas" ou em 2+ (parcela da Carga,
+// grupo de Status e presets só fazem sentido com uma).
+function frenteAtiva(){ return ESCOPO_SEL.length === 1 ? frenteById(ESCOPO_SEL[0]) : null; }
+function escopoLabel(){
+  const f = frenteAtiva(); if(f) return f.nome;
+  if(ESCOPO_SEL.length > 1) return frentesNoEscopo().map(function(x){ return x.curto; }).join(' + ');
+  return CFG.theme.marca.nome_curto || 'Todos';
+}
+// Sufixo para nomes de arquivo exportados: '' em "todas", senão os ids das frentes do escopo.
+function escopoSlug(){ return ESCOPO_SEL.length ? frentesNoEscopo().map(function(f){ return f.id; }).join('-') : ''; }
 // Colunas de status de PROJETO de uma frente (override de app_config > frente > global).
 function colsFor(fid){
   const f = frenteById(fid);
@@ -2073,7 +2106,7 @@ function presetsFor(fid){
 let TEAM_OPTIONS = CONFIG.data.usuarios.map(function(u){ return u.sigla; });
 let STATUS_PROJ = CONFIG.data.colunas_status;
 let STATUS_TASK = CONFIG.data.colunas_status;
-let STATUS_COLS = STATUS_PROJ; // alias: colunas de projeto da frente ATIVA (escopo único). Em ESCOPO_TODOS use colsFor(fid).
+let STATUS_COLS = STATUS_PROJ; // alias: colunas de projeto da frente ATIVA (escopo único). Com 2+ frentes use colsFor(fid).
 let MILESTONE_PRESETS = CONFIG.data.presets_marcos;
 // Coluna "concluído" de TASK: a que tiver `done:true` na config; senão a última (convenção legada).
 let TASK_DONE_ID = 'done';
@@ -2272,7 +2305,7 @@ function removeProject(pid){
   const doc = docOf(fid); doc.projects = (doc.projects || []).filter(function(p){ return p.id !== pid; });
   delete PROJ_FID[pid]; saveFrente(fid);
 }
-// Frente "alvo" para criação quando o escopo é único; null em ESCOPO_TODOS (pede ao usuário).
+// Frente "alvo" para criação quando o escopo é único; null com 2+ frentes no escopo (pede ao usuário).
 function frenteAlvoPadrao(){ const fs = frentesNoEscopo(); return fs.length === 1 ? fs[0].id : null; }
 
 // ══ SUPABASE AUTH ══
@@ -2575,7 +2608,7 @@ function renderFilterChips(){
     return '<button class="filter-chip' + (filterPessoas.indexOf(t) >= 0 ? ' active' : '') + '" data-filter="' + t + '" onclick="setPersonFilter(\'' + t + '\',this)">' + t + '</button>';
   }).join('');
   document.querySelector('[data-filter="all"]').classList.toggle('active', !filtroPessoaAtivo());
-  // Status de projeto é por frente: em ESCOPO_TODOS os ids não coincidem → esconde o grupo.
+  // Status de projeto é por frente: só aparece com UMA frente no escopo.
   const statusGroup = document.getElementById('statusFilterGroup');
   const single = !!frenteAtiva();
   statusGroup.style.display = single ? 'contents' : 'none';
@@ -2614,17 +2647,33 @@ function renderScopeSwitcher(){
   const linha = document.getElementById('frenteFilterRow');
   if(!isMulti()){ if(linha) linha.style.display = 'none'; return; }
   if(linha) linha.style.display = 'contents';
-  // "Nodian" (todas as frentes) vem primeiro — é o estado padrão e o mais usado.
+  // "Nodian" (todas as frentes) vem primeiro — é o estado padrão e o mais usado. Cada
+  // frente liga/desliga (dá para ver 2+ juntas); "Nodian" limpa a seleção.
   el.innerHTML = '<button class="filter-chip chip-frente chip-todas' + (ESCOPO === ESCOPO_TODOS ? ' active' : '') + '" onclick="setEscopo(\'' + ESCOPO_TODOS + '\')"><span class="scope-dot scope-dot-all"></span>' + escHtml(CFG.theme.marca.nome_curto || 'Todas') + '</button>'
     + FRENTES.map(function(f){
-      return '<button class="filter-chip chip-frente' + (ESCOPO === f.id ? ' active' : '') + '" style="--scope-cor:' + f.cor + '" onclick="setEscopo(\'' + f.id + '\')"><span class="scope-dot"></span>' + escHtml(f.nome) + '</button>';
+      return '<button class="filter-chip chip-frente' + (frenteSelecionada(f.id) ? ' active' : '') + '" data-frente="' + escHtml(f.id) + '" style="--scope-cor:' + f.cor + '" onclick="toggleEscopo(\'' + f.id + '\')"><span class="scope-dot"></span>' + escHtml(f.nome) + '</button>';
     }).join('');
 }
+// setEscopo(ESCOPO_TODOS) = todas; setEscopo(fid) = só esta frente; setEscopo([ids]) = conjunto.
 function setEscopo(id){
-  if(id !== ESCOPO_TODOS && !frenteById(id)) return;
-  ESCOPO = id;
+  let sel;
+  if(Array.isArray(id)) sel = id.filter(function(x){ return frenteById(x); });
+  else if(id === ESCOPO_TODOS) sel = [];
+  else if(frenteById(id)) sel = [id];
+  else return;
+  aplicaEscopoSel(sel);
+}
+// Clique no chip de uma frente: liga/desliga ela na seleção (todas marcadas = "Nodian").
+function toggleEscopo(fid){
+  if(!frenteById(fid)) return;
+  const sel = ESCOPO_SEL.slice(), i = sel.indexOf(fid);
+  if(i >= 0) sel.splice(i, 1); else sel.push(fid);
+  aplicaEscopoSel(sel);
+}
+function aplicaEscopoSel(sel){
+  ESCOPO_SEL = sel;
   filterStatus = 'all';
-  deriveFromConfig();
+  deriveFromConfig(); // normaliza ESCOPO_SEL e recalcula ESCOPO
   refreshConfigDerivedUI();
   updateViewTabs();
   setView(currentView); // atualiza só o título; a aba ativa permanece
@@ -2791,7 +2840,7 @@ function closeTopOverlay(){
 }
 // ══════════════════════════════
 //  VIEW 1: KANBAN DE PROJETOS
-//  Escopo único: colunas = workflow da frente. ESCOPO_TODOS: uma seção por frente,
+//  Escopo único: colunas = workflow da frente. 2+ frentes (todas ou um subconjunto): uma seção por frente,
 //  cada uma com o SEU workflow (os ids de status não coincidem entre frentes).
 // ══════════════════════════════
 // Frentes com o MESMO workflow podem dividir o mesmo quadro — é o caso desde que os
@@ -3667,7 +3716,9 @@ function plColeta(per){
         const chipNoPeriodo = dias.some(function(d){ return d >= per.de && d <= per.ate; });
         const semData = !t.date && !t.dateClient && !t.start && !dias.length;
         if(semData){ if(!feita) gaveta.push({ p: p, t: t, f: f }); return; }
-        if(dentro(t.date, lo, hi) || dentro(t.dateClient, lo, hi) || chipNoPeriodo || dentro(t.start, per.de, per.ate)) itens.push(t);
+        // task aberta e atrasada (prazo interno já passou) entra sempre, por mais antigo que seja o prazo
+        const atrasada = !feita && !!t.date && t.date < hoje;
+        if(atrasada || dentro(t.date, lo, hi) || dentro(t.dateClient, lo, hi) || chipNoPeriodo || dentro(t.start, per.de, per.ate)) itens.push(t);
       });
       itens.sort(function(a, b){
         if(a.date && b.date && a.date !== b.date) return a.date < b.date ? -1 : 1;
@@ -3726,7 +3777,7 @@ function renderPlanejar(){
   let corpo = '';
   const linhaProj = function(x, vazio){
     const p = x.p, aberto = plProjAberto(p.id), prazos = x.tasks.map(function(t){ return t.date; }).filter(Boolean).sort();
-    const nome = '<td class="pl-c-nome"><span class="pl-seta">' + (aberto ? '▾' : '▸') + '</span> <b>' + escHtml(p.name) + '</b> <span class="pl-n">(' + x.tasks.length + ' task' + (x.tasks.length !== 1 ? 's' : '') + ')</span>'
+    const nome = '<td class="pl-c-nome"><span class="pl-seta">' + (aberto ? '▾' : '▸') + '</span> <b class="pl-proj-nome" title="Abrir o projeto" onclick="event.stopPropagation();openProject(\'' + p.id + '\')">' + escHtml(p.name) + '</b> <span class="pl-n">(' + x.tasks.length + ' task' + (x.tasks.length !== 1 ? 's' : '') + ')</span>'
       + (isMulti() && x.f ? ' <span class="frente-badge" style="' + frenteStyle(x.f.cor) + '">' + escHtml(x.f.curto) + '</span>' : '')
       + (ro ? '' : ' <button class="pl-nova" onclick="event.stopPropagation();plNovaTask(\'' + p.id + '\')" title="Criar task neste projeto">+ nova task</button>') + '</td>';
     const cel = dias.map(function(iso){
@@ -3739,7 +3790,7 @@ function renderPlanejar(){
   const linhaTask = function(p, t){
     const quem = whoArr(t), chipsQuem = {};
     C.diasAlocacao(t).forEach(function(d){ plChipsDe(t, d).forEach(function(s){ chipsQuem[s] = true; }); });
-    const feita = t.status === TASK_DONE_ID;
+    const feita = t.status === TASK_DONE_ID, atrasada = !feita && !!t.date && t.date < hoje, ed = ro ? '' : ' pl-edit';
     const cel = dias.map(function(iso){
       const dia = (t.alocacao && t.alocacao[iso]) || {}, sig = Object.keys(dia).filter(function(s){ return dia[s]; });
       let c = 'pl-cell' + cls(iso) + (t.date && iso === t.date ? ' prazo' : '') + (t.dateClient && iso === t.dateClient ? ' cliente' : '') + (t.date && iso > t.date && sig.length ? ' estouro' : '')
@@ -3748,10 +3799,10 @@ function renderPlanejar(){
       return '<td class="' + c + '" data-pid="' + escHtml(p.id) + '" data-tid="' + escHtml(t.id) + '" data-iso="' + iso + '" title="' + escHtml(tt) + '">'
         + sig.map(function(s){ const meio = dia[s] === 0.5; return '<span class="pl-chip' + (meio ? ' meio' : '') + '" data-sigla="' + escHtml(s) + '" style="' + avatarStyle(s) + '">' + escHtml(s) + (meio ? '½' : '') + '</span>'; }).join('') + '</td>';
     }).join('');
-    return '<tr class="pl-task' + (feita ? ' feita' : '') + (plFocoTid === t.id ? ' pl-focus' : '') + '" data-pid="' + escHtml(p.id) + '" data-tid="' + escHtml(t.id) + '">'
+    return '<tr class="pl-task' + (feita ? ' feita' : '') + (atrasada ? ' pl-atrasada' : '') + (plFocoTid === t.id ? ' pl-focus' : '') + '" data-pid="' + escHtml(p.id) + '" data-tid="' + escHtml(t.id) + '">'
       + '<td class="pl-c-nome pl-desc" title="Editar task" onclick="openTaskEditor(\'' + p.id + '\',\'' + t.id + '\')">' + escHtml(t.desc || '(sem descrição)') + '</td>'
-      + '<td class="pl-c-prazo' + (t.date ? ' ' + deadlineClass(t.date) : '') + '">' + (t.date ? formatDateShort(t.date) : '—') + (t.dateClient ? ' <span class="pl-cli" title="Prazo do cliente: ' + escHtml(formatDateShort(t.dateClient)) + '">⚑</span>' : '') + '</td>'
-      + '<td class="pl-c-quem">' + (quem.length ? quem.map(function(s){ return '<span class="pl-q' + (chipsQuem[s] ? '' : ' sem') + '" style="' + avatarStyle(s) + '" title="' + (chipsQuem[s] ? '' : 'sem dias alocados') + '">' + escHtml(s) + '</span>'; }).join('') : '<span class="pl-n">—</span>') + '</td>'
+      + '<td class="pl-c-prazo' + ed + (t.date ? ' ' + deadlineClass(t.date, feita) : '') + '"' + (ro ? '' : ' title="Editar o prazo"') + '>' + (t.date ? formatDateShort(t.date) : '—') + (t.dateClient ? ' <span class="pl-cli" title="Prazo do cliente: ' + escHtml(formatDateShort(t.dateClient)) + '">⚑</span>' : '') + '</td>'
+      + '<td class="pl-c-quem' + ed + '"' + (ro ? '' : ' title="Editar responsáveis"') + '>' + (quem.length ? quem.map(function(s){ return '<span class="pl-q' + (chipsQuem[s] ? '' : ' sem') + '" style="' + avatarStyle(s) + '" title="' + (chipsQuem[s] ? '' : 'sem dias alocados') + '">' + escHtml(s) + '</span>'; }).join('') : '<span class="pl-n">—</span>') + '</td>'
       + cel + '</tr>';
   };
   dados.com.forEach(function(x){
@@ -3806,14 +3857,15 @@ function plPassadoConfirma(isos){
   plPassadoOk = true; return true;
 }
 // Aplica fn(task) (uma ou mais chamadas a PlannerCarga.setChip), registra undo e grava.
-function plAplicar(pid, tid, fn){
+// exato: edição direta de responsáveis/prazo; o undo restaura who/date/effortBy como estavam (sem dedução).
+function plAplicar(pid, tid, fn, exato){
   if(_readOnly){ toast('Modo leitura', 'warn'); return false; }
   const t = plTask(pid, tid); if(!t) return false;
-  const antes = plClone(t.alocacao), quemAntes = whoArr(t).slice();
+  const antes = plClone(t.alocacao), quemAntes = whoArr(t).slice(), dateAntes = t.date || '', efAntes = plClone(t.effortBy);
   try{ fn(t); }catch(e){ toast('Não foi possível alocar: ' + e.message, 'error'); console.error('[planejar]', e); return false; }
-  const depois = plClone(t.alocacao);
-  if(plIgual(antes, depois)){ renderPlanejar(); return false; }
-  plUndo.push({ pid: pid, tid: tid, antes: antes, depois: depois, quemAntes: quemAntes });
+  const depois = plClone(t.alocacao), quemDepois = whoArr(t).slice(), dateDepois = t.date || '';
+  if(plIgual(antes, depois) && plIgual(quemAntes, quemDepois) && dateAntes === dateDepois){ renderPlanejar(); return false; }
+  plUndo.push({ pid: pid, tid: tid, antes: antes, depois: depois, quemAntes: quemAntes, quemDepois: quemDepois, dateAntes: dateAntes, dateDepois: dateDepois, efAntes: efAntes, exato: !!exato });
   if(plUndo.length > 20) plUndo.shift();
   saveProject(pid); renderPlanejar();
   return true;
@@ -3823,9 +3875,13 @@ function plDesfazer(){
   if(_readOnly){ toast('Modo leitura', 'warn'); return; }
   const t = plTask(e.pid, e.tid); if(!t){ toast('A task não existe mais', 'warn'); return; }
   t.alocacao = plClone(e.antes);
-  // a sigla que o chip desfeito havia posto em who sai junto, se não sobrou chip dela
-  const resta = PlannerCarga.esforcoAlocado(t);
-  t.who = whoArr(t).filter(function(s){ return e.quemAntes.indexOf(s) >= 0 || resta[s]; });
+  if(e.exato){
+    t.who = e.quemAntes.slice(); t.date = e.dateAntes; t.effortBy = plClone(e.efAntes);
+  }else{
+    // a sigla que o chip desfeito havia posto em who sai junto, se não sobrou chip dela
+    const resta = PlannerCarga.esforcoAlocado(t);
+    t.who = whoArr(t).filter(function(s){ return e.quemAntes.indexOf(s) >= 0 || resta[s]; });
+  }
   saveProject(e.pid); renderPlanejar(); toast('Desfeito');
 }
 function plChip(pid, tid, iso, sigla, fr){ return plAplicar(pid, tid, function(t){ PlannerCarga.setChip(t, iso, sigla, fr); }); }
@@ -3845,14 +3901,65 @@ function plPickerHtml(t, p, iso){
   const blocos = [grupo(quem), grupo(team), grupo(resto)].filter(Boolean);
   return '<div class="pl-picker-titulo">' + escHtml(formatDateShort(iso) + ' · ' + plDiaNome(iso)) + '</div>' + blocos.join('<div class="pl-picker-sep"></div>');
 }
+// Picker de responsáveis (coluna Quem): marca quem está em task.who; clicar adiciona/remove.
+function plQuemHtml(t, p){
+  const quem = whoArr(t), team = (p.team || []).filter(function(s){ return quem.indexOf(s) < 0; });
+  const resto = TEAM_OPTIONS.filter(function(s){ return quem.indexOf(s) < 0 && team.indexOf(s) < 0; }), mine = minhaSigla();
+  const btn = function(s){ const on = quem.indexOf(s) >= 0; return '<button class="person-option' + (on ? ' selected' : '') + '" onclick="plQuemEscolhe(\'' + s + '\')" title="' + (on ? 'Remover ' : 'Adicionar ') + escHtml(s) + '">' + escHtml(s) + (s === mine ? '<span class="person-option-tag">Você</span>' : '') + '</button>'; };
+  const grupo = function(arr){ return arr.length ? '<div class="pl-picker-grupo">' + arr.map(btn).join('') + '</div>' : ''; };
+  return '<div class="pl-picker-titulo">Responsáveis · ' + escHtml((t.desc || '(sem descrição)').slice(0, 40)) + '</div>' + [grupo(quem), grupo(team), grupo(resto)].filter(Boolean).join('<div class="pl-picker-sep"></div>');
+}
+function plAbrePickerQuem(cell, pid, tid){
+  if(_readOnly) return;
+  const p = findProject(pid), t = plTask(pid, tid); if(!p || !t) return;
+  plMontaPicker(cell, plQuemHtml(t, p), { pid: pid, tid: tid, modo: 'quem' });
+}
+function plQuemEscolhe(sigla){
+  const pk = plPicker; if(!pk || pk.modo !== 'quem' || _readOnly) return;
+  const pid = pk.pid, tid = pk.tid, t = plTask(pid, tid); if(!t){ plFechaPicker(); return; }
+  const tem = whoArr(t).indexOf(sigla) >= 0;
+  let dias = [];
+  if(tem){
+    dias = PlannerCarga.diasAlocacao(t).filter(function(iso){ return t.alocacao[iso][sigla] != null; });
+    // cancelar mantém a pessoa (e o picker aberto): alocação nunca some em silêncio
+    if(dias.length && !confirm('Remover também ' + (dias.length === 1 ? 'o 1 dia alocado' : 'os ' + dias.length + ' dias alocados') + ' de ' + sigla + '?')) return;
+  }
+  plAplicar(pid, tid, function(x){
+    if(tem){
+      dias.forEach(function(iso){ PlannerCarga.setChip(x, iso, sigla, null); });
+      x.who = whoArr(x).filter(function(s){ return s !== sigla; });
+      if(x.effortBy && typeof x.effortBy === 'object'){ x.effortBy = plClone(x.effortBy); delete x.effortBy[sigla]; if(!Object.keys(x.effortBy).length) x.effortBy = null; }
+    }else x.who = whoArr(x).concat([sigla]);
+  }, true);
+  // o re-render fecha o picker; reabre na célula nova para marcar vários de uma vez
+  const tr = [].slice.call(document.querySelectorAll('#planejarRoot tr.pl-task')).find(function(r){ return r.dataset.pid === pid && r.dataset.tid === tid; });
+  const td = tr && tr.querySelector('td.pl-c-quem'); if(td) plAbrePickerQuem(td, pid, tid);
+}
+function plEditaPrazo(td){
+  if(_readOnly) return;
+  const tr = td.closest('tr.pl-task'); if(!tr) return;
+  const t = plTask(tr.dataset.pid, tr.dataset.tid); if(!t) return;
+  plFechaPicker();
+  td.innerHTML = '<input type="date" class="pl-prazo-input" value="' + escHtml(t.date || '') + '" onchange="plSetPrazo(\'' + tr.dataset.pid + '\',\'' + tr.dataset.tid + '\',this.value)" onkeydown="if(event.key===\'Escape\'){event.stopPropagation();renderPlanejar();}"/>';
+  const inp = td.querySelector('input'); inp.focus();
+}
+function plSetPrazo(pid, tid, val){
+  if(_readOnly) return;
+  const t = plTask(pid, tid); if(!t) return;
+  if(t.start && val && t.start > val){ toast('O início não pode ser depois do prazo interno'); renderPlanejar(); return; }
+  plAplicar(pid, tid, function(x){ x.date = val || ''; }, true);
+}
 function plAbrePicker(cell, pid, tid, iso){
   if(_readOnly) return;
   const p = findProject(pid), t = plTask(pid, tid); if(!p || !t) return;
+  plMontaPicker(cell, plPickerHtml(t, p, iso), { pid: pid, tid: tid, iso: iso });
+}
+function plMontaPicker(cell, html, estado){
   plFechaPicker();
-  plPicker = { pid: pid, tid: tid, iso: iso };
+  plPicker = estado;
   const el = document.createElement('div');
   el.id = 'plPickerEl'; el.className = 'pl-picker person-picker-dropdown open';
-  el.innerHTML = plPickerHtml(t, p, iso);
+  el.innerHTML = html;
   document.body.appendChild(el);
   const r = cell.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight;
   let left = Math.min(r.left, window.innerWidth - w - 8), top = r.bottom + 4;
@@ -3861,7 +3968,7 @@ function plAbrePicker(cell, pid, tid, iso){
 }
 function plFechaPicker(){ const el = document.getElementById('plPickerEl'); if(el) el.remove(); plPicker = null; }
 function plPickerEscolhe(sigla){
-  const pk = plPicker; if(!pk) return;
+  const pk = plPicker; if(!pk || pk.modo) return;
   const t = plTask(pk.pid, pk.tid); if(!t){ plFechaPicker(); return; }
   const tem = plChipsDe(t, pk.iso).indexOf(sigla) >= 0;
   if(!tem && !plPassadoConfirma([pk.iso])){ plFechaPicker(); return; }
@@ -3927,7 +4034,13 @@ function plLigaEventos(){
   });
 
   root.addEventListener('click', function(e){
-    if(plSuprimeClick) return;
+    if(plSuprimeClick || _readOnly) return;
+    if(e.target.closest('.pl-prazo-input')) return;
+    const ed = e.target.closest('tr.pl-task td.pl-c-quem, tr.pl-task td.pl-c-prazo');
+    if(ed){
+      if(ed.classList.contains('pl-c-prazo')){ plEditaPrazo(ed); return; }
+      const tr = ed.closest('tr.pl-task'); plAbrePickerQuem(ed, tr.dataset.pid, tr.dataset.tid); e.plAbriu = true; return;
+    }
     const cell = e.target.closest('td.pl-cell'); if(!cell) return;
     if(_readOnly) return;
     const pid = cell.dataset.pid, tid = cell.dataset.tid, iso = cell.dataset.iso, t = plTask(pid, tid); if(!t) return;
@@ -4066,7 +4179,8 @@ function openNewProjectModal(){
   const alvo = frenteAlvoPadrao();
   if(isMulti() && !alvo){
     row.style.display = 'flex';
-    sel.innerHTML = FRENTES.map(function(f){ return '<option value="' + f.id + '">' + escHtml(f.nome) + '</option>'; }).join('');
+    // Com 2+ frentes no filtro, oferece só as selecionadas (todas em "Nodian").
+    sel.innerHTML = frentesNoEscopo().map(function(f){ return '<option value="' + f.id + '">' + escHtml(f.nome) + '</option>'; }).join('');
     renderNewProjectStatusOptions(sel.value);
   }else{
     row.style.display = 'none';
@@ -4525,16 +4639,18 @@ function toggleSubtask(ti, si){ const p = findProject(currentProjectId); p.tasks
 function closeTaskModal(e){ if(!e || e.target === document.getElementById('taskOverlay')){ document.getElementById('taskOverlay').classList.remove('open'); _fimEditorStandalone(); } }
 // ══ IMPORT / EXPORT ══
 // Escopo único: exporta o documento da frente (compatível com o formato legado e com
-// sql/gera_sql_restauracao.py). ESCOPO_TODOS: um arquivo com todas as frentes.
+// sql/gera_sql_restauracao.py). Várias frentes no escopo: um arquivo multi-frente só com elas.
 function _download(nome, texto, mime){ const blob = new Blob([texto], { type: mime || 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nome; a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000); }
 function exportData(){
   const data = hojeISO();
   const f = frenteAtiva();
   if(f){ _download(f.id + '-planner-' + data + '.json', JSON.stringify(docOf(f.id), null, 2)); toast('Exportado — ' + f.nome); return; }
   const out = { formato: 'multi-frente', exportado_em: new Date().toISOString(), frentes: {} };
-  FRENTES.forEach(function(fr){ out.frentes[fr.id] = docOf(fr.id); });
-  _download((CFG.theme.marca.nome_curto || 'planner').toLowerCase() + '-planner-' + data + '.json', JSON.stringify(out, null, 2));
-  toast('Exportado — todas as frentes');
+  const frentes = frentesNoEscopo();
+  frentes.forEach(function(fr){ out.frentes[fr.id] = docOf(fr.id); });
+  const slug = escopoSlug();
+  _download((slug || (CFG.theme.marca.nome_curto || 'planner').toLowerCase()) + '-planner-' + data + '.json', JSON.stringify(out, null, 2));
+  toast('Exportado — ' + (slug ? frentes.map(function(fr){ return fr.nome; }).join(' + ') : 'todas as frentes'));
 }
 function importData(e){
   const file = e.target.files[0]; if(!file) return;
@@ -4551,7 +4667,7 @@ function importData(e){
       }
       if(!d || !d.projects) throw new Error('arquivo sem "projects"');
       const alvo = frenteAlvoPadrao();
-      if(!alvo){ toast('Selecione UMA frente (não o consolidado) para importar um arquivo de frente única.'); return; }
+      if(!alvo){ toast('Deixe só UMA frente marcada no filtro para importar um arquivo de frente única.'); return; }
       if(!confirm('Substituir TODOS os dados de ' + frenteById(alvo).nome + ' pelo arquivo?')) return;
       DOCS[alvo] = d; reindexProjects(); saveFrente(alvo); renderCurrentView(); toast('Importado — ' + frenteById(alvo).nome, 'success');
     }catch(err){ console.error(err); toast('Erro ao importar: ' + err.message); }
@@ -4620,7 +4736,7 @@ function printSummary(){ setView('summary'); setTimeout(function(){ window.print
 
 function captureCurrentViewPng(){
   const alvo = { board: 'board', planner: 'plannerGrid', week: 'taskKanbanBoard', summary: 'summaryContent', list: 'planningList', carga: 'cargaRoot', timeline: 'timelineRoot', cal: 'calRoot' }[currentView];
-  if(alvo) captureAsPng(alvo, 'planner-' + currentView + (frenteAtiva() ? '-' + frenteAtiva().id : ''));
+  if(alvo) captureAsPng(alvo, 'planner-' + currentView + (escopoSlug() ? '-' + escopoSlug() : ''));
 }
 function captureAsPng(elementId, filename){
   const el = document.getElementById(elementId);
@@ -4689,7 +4805,7 @@ function exportMarkdown(){
   }).join('');
   md += '> ' + total + ' projetos ativos · Gerado pelo ' + (CFG.data.tela.nome || 'Planner') + '\n\n---\n' + corpo;
   md += '---\n*Exportado em ' + now.toLocaleString('pt-BR') + '*\n';
-  _download('planning-' + (frenteAtiva() ? frenteAtiva().id + '-' : '') + hojeISO() + '.md', md, 'text/markdown;charset=utf-8');
+  _download('planning-' + (escopoSlug() ? escopoSlug() + '-' : '') + hojeISO() + '.md', md, 'text/markdown;charset=utf-8');
   toast('Exportado como .md', 'success');
 }
 // ══════════════════════════════════════════════════════════
