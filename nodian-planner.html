@@ -896,7 +896,7 @@ table.pl thead th.pl-c-nome,table.pl thead th.pl-c-prazo,table.pl thead th.pl-c-
 .pl-dia{min-width:44px;width:44px}
 .pl-dia-sub{font-weight:400;font-size:9px}
 .pl-dia.hoje div:first-child{color:var(--color-black);font-weight:800}
-.pl-dia.hoje{box-shadow:inset 0 -2px 0 var(--color-red)}
+.pl-dia.hoje{box-shadow:inset 0 -2px 0 var(--color-black)}
 .pl-fds{background:var(--color-bg)!important}
 
 /* linha do projeto */
@@ -935,7 +935,7 @@ tr.pl-focus td{box-shadow:inset 0 0 0 2px var(--color-blue)}
 .pl-cell:hover{background:rgba(var(--ink-rgb),.05)}
 .pl-cell.pl-ro{cursor:default}
 .pl-cell.pl-ro:hover{background:var(--color-white)}
-.pl-cell.hoje{box-shadow:inset 2px 0 0 var(--color-red)}
+.pl-cell.hoje,.pl-cell-ro.hoje{background:rgba(var(--ink-rgb),.04)}
 .pl-cell.prazo{border-right:2px solid var(--color-black)}
 .pl-cell.cliente::after{content:'⚑';position:absolute;top:0;right:2px;font-size:8px;color:var(--color-black)}
 .pl-cell.estouro{background:rgba(var(--red-rgb),.18)}
@@ -955,7 +955,7 @@ table.pl tfoot td{font-weight:600;text-align:center;font-variant-numeric:tabular
 table.pl tfoot td.pl-c-nome,table.pl tfoot td.pl-c-prazo,table.pl tfoot td.pl-c-quem{z-index:6;text-align:left}
 td.pl-sum{cursor:pointer;min-width:44px;height:22px;padding:0}
 table.pl tfoot td.pl-c-nome,table.pl tfoot td.pl-c-prazo,table.pl tfoot td.pl-c-quem{padding-top:1px;padding-bottom:1px}
-td.pl-sum.hoje{box-shadow:inset 2px 0 0 var(--color-red)}
+td.pl-sum.hoje{background:rgba(var(--ink-rgb),.04)}
 td.pl-sum.sel{box-shadow:inset 0 0 0 2px var(--color-blue)}
 table.pl td.pl-sum.cl-baixo{background:rgba(114,149,205,.22)}
 table.pl td.pl-sum.cl-ok{background:rgba(114,149,205,.55)}
@@ -966,7 +966,7 @@ table.pl td.pl-sum.cl-fds-extra{background:var(--color-amber-50);color:var(--col
 tr.pl-carga .avatar{display:inline-flex;vertical-align:middle}
 
 /* picker */
-.pl-picker{position:fixed;top:auto;left:auto;z-index:400;min-width:150px;max-width:260px}
+.pl-picker{display:block;position:fixed;top:auto;left:auto;z-index:400;min-width:150px;max-width:260px;background:var(--color-white);border-radius:var(--radius-md);box-shadow:var(--shadow-md);border:1px solid var(--border-c);padding:6px}
 .pl-picker-titulo{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--color-gray);padding:2px 4px 6px}
 .pl-picker-grupo{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
 .pl-picker-grupo .person-option{display:flex;flex-direction:column;align-items:center;justify-content:center;height:34px;line-height:1.1}
@@ -3958,7 +3958,7 @@ function plMontaPicker(cell, html, estado){
   plFechaPicker();
   plPicker = estado;
   const el = document.createElement('div');
-  el.id = 'plPickerEl'; el.className = 'pl-picker person-picker-dropdown open';
+  el.id = 'plPickerEl'; el.className = 'pl-picker';
   el.innerHTML = html;
   document.body.appendChild(el);
   const r = cell.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight;
