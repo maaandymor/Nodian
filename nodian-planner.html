@@ -946,6 +946,7 @@ tr.pl-focus td{box-shadow:inset 0 0 0 2px var(--color-blue)}
 .pl-chip{display:inline-flex;align-items:center;justify-content:center;height:18px;min-width:20px;padding:0 5px;margin:1px;border-radius:99px;font-size:10px;font-weight:700;line-height:1;cursor:pointer;user-select:none;vertical-align:top}
 .pl-chip.meio{box-shadow:inset 0 0 0 1.5px var(--color-white);opacity:.85}
 .pl-cell.pl-ro .pl-chip{cursor:default}
+.pl-ghost{display:inline-flex;align-items:center;justify-content:center;height:18px;min-width:20px;padding:0 5px;margin:1px;border-radius:99px;font-size:10px;font-weight:600;line-height:1;vertical-align:top;background:transparent !important;color:var(--color-gray) !important;border:1px dashed var(--color-gray);opacity:.7;cursor:inherit;user-select:none}
 .pl-legenda .pl-chip{cursor:default;background:var(--color-coral);color:var(--on-accent)}
 
 /* rodapé de carga */
@@ -3749,6 +3750,14 @@ function renderPlanejar(){
   const sc = antes ? { x: antes.scrollLeft, y: antes.scrollTop } : null, scG = antesG ? antesG.scrollTop : 0;
 
   const dados = plColeta(per);
+  // carga do rodapé (todas as frentes); dela sai também a carga implícita (janela início→prazo) das tasks sem chip
+  const R = C.alocar(cargaTasks(false), { hoje: hoje, de: per.de, ate: per.ate });
+  const implicita = {};
+  Object.keys(R.detalhe).forEach(function(s){ Object.keys(R.detalhe[s]).forEach(function(d){ R.detalhe[s][d].forEach(function(it){
+    if(it.explicita || !(it.dias > 0.001)) return;
+    const m = implicita[it.id] || (implicita[it.id] = {}), dm = m[d] || (m[d] = {});
+    dm[s] = (dm[s] || 0) + it.dias;
+  }); }); });
   const dias = plFds ? (function(){ const o = []; let d = per.de, g = 0; while(d <= per.ate && g++ < 400){ o.push(d); d = C.addDias(d, 1); } return o; })() : C.listaDiasUteis(per.de, per.ate);
   const nCol = dias.length;
   _plProjsAbertos = {}; dados.com.forEach(function(x){ _plProjsAbertos[x.p.id] = true; });
@@ -3765,7 +3774,7 @@ function renderPlanejar(){
     + '<button class="filter-chip' + (plDone ? ' active' : '') + '" onclick="togglePlDone()">' + (plDone ? '☑' : '☐') + ' Mostrar concluídas</button>'
     + '<button class="filter-chip' + (plGaveta && dados.gaveta.length ? ' active' : '') + '" onclick="togglePlGaveta()"' + (dados.gaveta.length ? '' : ' disabled') + ' title="Tasks abertas sem data e sem chip">Fora da sprint (' + dados.gaveta.length + ')</button>'
     + (fdsOcultos ? '<button class="filter-chip pl-aviso" onclick="togglePlFds()">' + fdsOcultos + ' chip' + (fdsOcultos !== 1 ? 's' : '') + ' em fim de semana oculto' + (fdsOcultos !== 1 ? 's' : '') + ' · mostrar</button>' : '')
-    + '<div class="pl-legenda"><span class="pl-chip">AC</span>1,0 <span class="pl-chip meio">AC½</span>0,5 <span class="pl-lg-prazo"></span>prazo <span>⚑</span>cliente <span class="pl-lg-estouro"></span>depois do prazo</div>'
+    + '<div class="pl-legenda"><span class="pl-chip">AC</span>1,0 <span class="pl-chip meio">AC½</span>0,5 <span class="pl-ghost" title="Carga calculada pela janela início→prazo de tasks sem chip; clique na célula para virar chip">AC 0,8</span>estimado (sem chip) <span class="pl-lg-prazo"></span>prazo <span>⚑</span>cliente <span class="pl-lg-estouro"></span>depois do prazo</div>'
     + '</div>';
 
   // ── tabela ──
@@ -3790,19 +3799,23 @@ function renderPlanejar(){
   const linhaTask = function(p, t){
     const quem = whoArr(t), chipsQuem = {};
     C.diasAlocacao(t).forEach(function(d){ plChipsDe(t, d).forEach(function(s){ chipsQuem[s] = true; }); });
+    const imp = C.temAlocacao(t) ? null : implicita[t.id], temImp = !!imp;
     const feita = t.status === TASK_DONE_ID, atrasada = !feita && !!t.date && t.date < hoje, ed = ro ? '' : ' pl-edit';
     const cel = dias.map(function(iso){
       const dia = (t.alocacao && t.alocacao[iso]) || {}, sig = Object.keys(dia).filter(function(s){ return dia[s]; });
       let c = 'pl-cell' + cls(iso) + (t.date && iso === t.date ? ' prazo' : '') + (t.dateClient && iso === t.dateClient ? ' cliente' : '') + (t.date && iso > t.date && sig.length ? ' estouro' : '')
         + (plHl && plHl.iso === iso && sig.indexOf(plHl.sigla) >= 0 ? ' pl-hl' : '') + (ro ? ' pl-ro' : '');
-      const tt = p.name + ' · ' + (t.desc || '') + ' · ' + formatDateShort(iso) + (sig.length ? ' · ' + sig.map(function(s){ return s + ' ' + plFracTxt(dia[s]); }).join(' · ') : '');
+      const gh = imp && imp[iso] ? Object.keys(imp[iso]).sort() : [];
+      const tt = p.name + ' · ' + (t.desc || '') + ' · ' + formatDateShort(iso) + (sig.length ? ' · ' + sig.map(function(s){ return s + ' ' + plFracTxt(dia[s]); }).join(' · ') : '')
+        + (gh.length ? ' · estimado pela janela início→prazo: ' + gh.map(function(s){ return s + ' ' + plFmt(imp[iso][s]); }).join(', ') : '');
       return '<td class="' + c + '" data-pid="' + escHtml(p.id) + '" data-tid="' + escHtml(t.id) + '" data-iso="' + iso + '" title="' + escHtml(tt) + '">'
-        + sig.map(function(s){ const meio = dia[s] === 0.5; return '<span class="pl-chip' + (meio ? ' meio' : '') + '" data-sigla="' + escHtml(s) + '" style="' + avatarStyle(s) + '">' + escHtml(s) + (meio ? '½' : '') + '</span>'; }).join('') + '</td>';
+        + sig.map(function(s){ const meio = dia[s] === 0.5; return '<span class="pl-chip' + (meio ? ' meio' : '') + '" data-sigla="' + escHtml(s) + '" style="' + avatarStyle(s) + '">' + escHtml(s) + (meio ? '½' : '') + '</span>'; }).join('')
+        + gh.map(function(s){ return '<span class="pl-ghost" data-sigla="' + escHtml(s) + '" style="' + avatarStyle(s) + '">' + escHtml(s) + ' ' + plFmt(imp[iso][s]) + '</span>'; }).join('') + '</td>';
     }).join('');
     return '<tr class="pl-task' + (feita ? ' feita' : '') + (atrasada ? ' pl-atrasada' : '') + (plFocoTid === t.id ? ' pl-focus' : '') + '" data-pid="' + escHtml(p.id) + '" data-tid="' + escHtml(t.id) + '">'
       + '<td class="pl-c-nome pl-desc" title="Editar task" onclick="openTaskEditor(\'' + p.id + '\',\'' + t.id + '\')">' + escHtml(t.desc || '(sem descrição)') + '</td>'
       + '<td class="pl-c-prazo' + ed + (t.date ? ' ' + deadlineClass(t.date, feita) : '') + '"' + (ro ? '' : ' title="Editar o prazo"') + '>' + (t.date ? formatDateShort(t.date) : '—') + (t.dateClient ? ' <span class="pl-cli" title="Prazo do cliente: ' + escHtml(formatDateShort(t.dateClient)) + '">⚑</span>' : '') + '</td>'
-      + '<td class="pl-c-quem' + ed + '"' + (ro ? '' : ' title="Editar responsáveis"') + '>' + (quem.length ? quem.map(function(s){ return '<span class="pl-q' + (chipsQuem[s] ? '' : ' sem') + '" style="' + avatarStyle(s) + '" title="' + (chipsQuem[s] ? '' : 'sem dias alocados') + '">' + escHtml(s) + '</span>'; }).join('') : '<span class="pl-n">—</span>') + '</td>'
+      + '<td class="pl-c-quem' + ed + '"' + (ro ? '' : ' title="Editar responsáveis"') + '>' + (quem.length ? quem.map(function(s){ return '<span class="pl-q' + (chipsQuem[s] ? '' : ' sem') + '" style="' + avatarStyle(s) + '" title="' + (chipsQuem[s] ? '' : (temImp ? 'sem chip; carga estimada pela janela' : 'sem dias alocados')) + '">' + escHtml(s) + '</span>'; }).join('') : '<span class="pl-n">—</span>') + '</td>'
       + cel + '</tr>';
   };
   dados.com.forEach(function(x){
@@ -3813,7 +3826,6 @@ function renderPlanejar(){
   if(!dados.com.length && !dados.vazios.length) corpo = '<tr><td class="pl-c-nome pl-vazia" colspan="' + (3 + nCol) + '">Nenhuma task neste período. Ajuste o período ou o filtro.</td></tr>';
 
   // ── rodapé de carga (todas as frentes) ──
-  const R = C.alocar(cargaTasks(false), { hoje: hoje, de: per.de, ate: per.ate });
   const nUteis = C.listaDiasUteis(per.de, per.ate).length, capPeriodo = cap / 5 * nUteis, capDia = cap / 5;
   const pessoas = TEAM_OPTIONS.filter(function(p){ return pessoaNoFiltro(p); }).sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); });
   const rodape = pessoas.map(function(s){
