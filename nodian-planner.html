@@ -993,6 +993,8 @@ tr.pl-carga .avatar{display:inline-flex;vertical-align:middle}
   .pl-c-quem{display:none}
   .pl-gaveta{position:fixed;right:8px;top:80px;bottom:8px;width:min(300px,90vw);flex:none;z-index:200}
 }
+.pl-ghost.pl-ghost-conv{cursor:pointer}
+.pl-ghost.pl-ghost-conv:hover{opacity:1;border-style:solid}
 </style>
 </head>
 <body>
@@ -1821,6 +1823,33 @@ window.CONFIG = CONFIG;
     return { parouEm: null, inseridos: inseridos };
   }
 
+  // Converte a estimativa (esforço + janela) de uma task SEM chips em chips reais (1,0 / 0,5),
+  // sem mutar a task. Devolve {alocacao|null, sobra:{sigla: dias}}. Só vale para task aberta,
+  // com esforço, responsáveis e alguma data. Para cada sigla preenche dia útil a dia útil, do
+  // início ao fim da janela (a mesma de `janela`), com 1,0 enquanto o restante ≥ 1 e depois 0,5
+  // se o restante ≥ 0,5; o que não cabe em frações de 0,5 ou não cabe na janela vai para `sobra`.
+  // Task atrasada (prazo no passado) começa em `hoje` e não tem fim: preenche os dias úteis
+  // seguintes até esgotar. Nunca grava em sáb/dom nem passa de 1,0 por sigla/dia.
+  function chipsDaEstimativa(t, hoje, feriados){
+    const vazio = { alocacao: null, sobra: {} };
+    if(!t || t.done || !temEsforco(t) || !pessoasDe(t).length || temAlocacao(t)) return vazio;
+    const j = janela(t, hoje, feriados); if(!j) return vazio;
+    const por = esforcoPorPessoa(t), alocacao = {}, sobra = {};
+    const r2 = function(n){ return Math.round(n * 1000) / 1000; };
+    Object.keys(por).forEach(function(s){
+      let rest = r2(por[s]); if(!(rest > 0)) return;
+      const fim = j.atrasada ? addDias(j.inicio, Math.ceil(rest * 2) * 2 + 7) : j.fim;
+      const dias = listaDiasUteis(j.inicio, fim, feriados);
+      for(let i = 0; i < dias.length && rest >= 0.5; i++){
+        const v = rest >= 1 ? 1 : 0.5;
+        if(!alocacao[dias[i]]) alocacao[dias[i]] = {};
+        alocacao[dias[i]][s] = v; rest = r2(rest - v);
+      }
+      if(rest > 0) sobra[s] = rest;
+    });
+    return { alocacao: Object.keys(alocacao).length ? alocacao : null, sobra: sobra };
+  }
+
   // tasks: [{id, who, effort, effortBy?, start, date, status, done(bool), alocacao?, projectName?, frente?}]
   // opts: {hoje, de, ate, feriados, incluirFds}  → só dias dentro de [de, ate] entram em porPessoaDia.
   // incluirFds (default false) NÃO filtra nada aqui: alocar grava todo dia que tem carga,
@@ -1937,7 +1966,7 @@ window.CONFIG = CONFIG;
 
   const api = { parse: parse, fmt: fmt, addDias: addDias, ehDiaUtil: ehDiaUtil, listaDiasUteis: listaDiasUteis, diasUteisEntre: diasUteisEntre, addDiasUteis: addDiasUteis, subDiasUteis: subDiasUteis,
     inicioSemana: inicioSemana, fimSemana: fimSemana, janela: janela, temEsforco: temEsforco, esforcoPorPessoa: esforcoPorPessoa, alocar: alocar,
-    temAlocacao: temAlocacao, diasAlocacao: diasAlocacao, esforcoAlocado: esforcoAlocado, saldoAlocacao: saldoAlocacao, setChip: setChip, segmentos: segmentos, preencherAte: preencherAte, agregarSemanas: agregarSemanas, nivel: nivel, arred: arred };
+    temAlocacao: temAlocacao, diasAlocacao: diasAlocacao, esforcoAlocado: esforcoAlocado, saldoAlocacao: saldoAlocacao, setChip: setChip, segmentos: segmentos, preencherAte: preencherAte, chipsDaEstimativa: chipsDaEstimativa, agregarSemanas: agregarSemanas, nivel: nivel, arred: arred };
   if(typeof module !== 'undefined' && module.exports) module.exports = api;
   root.PlannerCarga = api;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -3429,7 +3458,9 @@ function cargaEditTask(pid, tid, campo, val){
   const p = findProject(pid); if(!p) return; const t = (p.tasks || []).find(function(x){ return x.id === tid; }); if(!t) return;
   if(campo === 'effort'){ const n = parseFloat(val); t.effort = (val === '' || isNaN(n) || n < 0) ? null : n; }
   else t[campo] = val;
-  saveProject(pid); renderCarga(); toast('Task atualizada', 'success');
+  // esforço ou prazo que fecham esforço + responsáveis + data numa task sem chips: a estimativa vira chips
+  const sobra = (campo === 'effort' || campo === 'date') ? aplicaChipsDaEstimativa(t) : {};
+  saveProject(pid); renderCarga(); toast('Task atualizada', 'success'); avisaSobraEstimativa(sobra);
 }
 
 // Badge de capacidade no cabeçalho de pessoa do Planner: SEMPRE sobre todas as frentes,
@@ -3664,6 +3695,7 @@ function calShowDay(iso){
 //  candidatas do mini-picker priorizadas pelo dono (who → team → demais).
 // ══════════════════════════════
 let plPreset = '2sem', plDe = '', plAte = '', plFds = false, plDone = false, plExpand = {}, plUndo = [], plDrag = null, plPicker = null;
+let plConvertiveis = [];   // [{pid, tid}] das tasks com fantasma que viram chips (recalculado a cada render)
 let plGaveta = false, plHl = null, plPassadoOk = false, plSuprimeClick = false, plFocoTid = null;
 
 function plPeriodo(){
@@ -3758,6 +3790,12 @@ function renderPlanejar(){
     const m = implicita[it.id] || (implicita[it.id] = {}), dm = m[d] || (m[d] = {});
     dm[s] = (dm[s] || 0) + it.dias;
   }); }); });
+  // tasks da grade com fantasma que a conversão consegue transformar em chips
+  const conv = {}; plConvertiveis = [];
+  dados.com.forEach(function(x){ x.tasks.forEach(function(t){
+    if(!implicita[t.id] || C.temAlocacao(t) || !plEstimativa(t, hoje).alocacao) return;
+    conv[t.id] = true; plConvertiveis.push({ pid: x.p.id, tid: t.id });
+  }); });
   const dias = plFds ? (function(){ const o = []; let d = per.de, g = 0; while(d <= per.ate && g++ < 400){ o.push(d); d = C.addDias(d, 1); } return o; })() : C.listaDiasUteis(per.de, per.ate);
   const nCol = dias.length;
   _plProjsAbertos = {}; dados.com.forEach(function(x){ _plProjsAbertos[x.p.id] = true; });
@@ -3773,8 +3811,9 @@ function renderPlanejar(){
     + '<div class="filter-sep"></div><button class="filter-chip' + (plFds ? ' active' : '') + '" onclick="togglePlFds()" title="Chip em sábado ou domingo conta como carga extra; a capacidade não muda">' + (plFds ? '☑' : '☐') + ' Mostrar fim de semana</button>'
     + '<button class="filter-chip' + (plDone ? ' active' : '') + '" onclick="togglePlDone()">' + (plDone ? '☑' : '☐') + ' Mostrar concluídas</button>'
     + '<button class="filter-chip' + (plGaveta && dados.gaveta.length ? ' active' : '') + '" onclick="togglePlGaveta()"' + (dados.gaveta.length ? '' : ' disabled') + ' title="Tasks abertas sem data e sem chip">Fora da sprint (' + dados.gaveta.length + ')</button>'
+    + (ro ? '' : '<button class="filter-chip" id="plConverter" onclick="plConverterTodas()"' + (plConvertiveis.length ? '' : ' disabled') + ' title="Transforma a carga estimada (fantasmas) das tasks da grade em chips de 1,0 e 0,5">Converter estimativas em chips (' + plConvertiveis.length + ')</button>')
     + (fdsOcultos ? '<button class="filter-chip pl-aviso" onclick="togglePlFds()">' + fdsOcultos + ' chip' + (fdsOcultos !== 1 ? 's' : '') + ' em fim de semana oculto' + (fdsOcultos !== 1 ? 's' : '') + ' · mostrar</button>' : '')
-    + '<div class="pl-legenda"><span class="pl-chip">AC</span>1,0 <span class="pl-chip meio">AC½</span>0,5 <span class="pl-ghost" title="Carga calculada pela janela início→prazo de tasks sem chip; clique na célula para virar chip">AC 0,8</span>estimado (sem chip) <span class="pl-lg-prazo"></span>prazo <span>⚑</span>cliente <span class="pl-lg-estouro"></span>depois do prazo</div>'
+    + '<div class="pl-legenda"><span class="pl-chip">AC</span>1,0 <span class="pl-chip meio">AC½</span>0,5 <span class="pl-ghost" title="Carga calculada pela janela início→prazo de tasks sem chip; clique no fantasma para converter a estimativa em chips">AC 0,8</span>estimado (sem chip) <span class="pl-lg-prazo"></span>prazo <span>⚑</span>cliente <span class="pl-lg-estouro"></span>depois do prazo</div>'
     + '</div>';
 
   // ── tabela ──
@@ -3810,7 +3849,7 @@ function renderPlanejar(){
         + (gh.length ? ' · estimado pela janela início→prazo: ' + gh.map(function(s){ return s + ' ' + plFmt(imp[iso][s]); }).join(', ') : '');
       return '<td class="' + c + '" data-pid="' + escHtml(p.id) + '" data-tid="' + escHtml(t.id) + '" data-iso="' + iso + '" title="' + escHtml(tt) + '">'
         + sig.map(function(s){ const meio = dia[s] === 0.5; return '<span class="pl-chip' + (meio ? ' meio' : '') + '" data-sigla="' + escHtml(s) + '" style="' + avatarStyle(s) + '">' + escHtml(s) + (meio ? '½' : '') + '</span>'; }).join('')
-        + gh.map(function(s){ return '<span class="pl-ghost" data-sigla="' + escHtml(s) + '" style="' + avatarStyle(s) + '">' + escHtml(s) + ' ' + plFmt(imp[iso][s]) + '</span>'; }).join('') + '</td>';
+        + gh.map(function(s){ return '<span class="pl-ghost' + (conv[t.id] && !ro ? ' pl-ghost-conv' : '') + '" data-sigla="' + escHtml(s) + '"' + (conv[t.id] && !ro ? ' title="clique para converter a estimativa em chips"' : '') + ' style="' + avatarStyle(s) + '">' + escHtml(s) + ' ' + plFmt(imp[iso][s]) + '</span>'; }).join('') + '</td>';
     }).join('');
     return '<tr class="pl-task' + (feita ? ' feita' : '') + (atrasada ? ' pl-atrasada' : '') + (plFocoTid === t.id ? ' pl-focus' : '') + '" data-pid="' + escHtml(p.id) + '" data-tid="' + escHtml(t.id) + '">'
       + '<td class="pl-c-nome pl-desc" title="Editar task" onclick="openTaskEditor(\'' + p.id + '\',\'' + t.id + '\')">' + escHtml(t.desc || '(sem descrição)') + '</td>'
@@ -3895,6 +3934,24 @@ function plDesfazer(){
     t.who = whoArr(t).filter(function(s){ return e.quemAntes.indexOf(s) >= 0 || resta[s]; });
   }
   saveProject(e.pid); renderPlanejar(); toast('Desfeito');
+}
+// Estimativa → chips: a task é vista como aberta (status → done) para o motor; ver aplicaChipsDaEstimativa.
+function plEstimativa(t, hoje){ return PlannerCarga.chipsDaEstimativa(Object.assign({}, t, { done: t.status === TASK_DONE_ID }), hoje); }
+// Converte UMA task (uma entrada de Ctrl+Z). Devolve a sobra {sigla: dias} ou null se nada mudou.
+function plConverter(pid, tid, quieto){
+  let sobra = {};
+  const ok = plAplicar(pid, tid, function(t){ const r = plEstimativa(t, hojeISO()); if(r.alocacao){ t.alocacao = r.alocacao; sobra = r.sobra; } });
+  if(!ok) return null;
+  if(!quieto) avisaSobraEstimativa(sobra);
+  return sobra;
+}
+function plConverterTodas(){
+  if(_readOnly) return;
+  const lista = plConvertiveis.slice(), n = lista.length; if(!n) return;
+  if(!confirm('Converter ' + n + ' task' + (n !== 1 ? 's' : '') + '? Cada uma vira uma entrada de Ctrl+Z.')) return;
+  let feitas = 0, comSobra = 0;
+  lista.forEach(function(x){ const r = plConverter(x.pid, x.tid, true); if(r){ feitas++; if(Object.keys(r).length) comSobra++; } });
+  toast(feitas + ' convertida' + (feitas !== 1 ? 's' : '') + (comSobra ? ' · ' + comSobra + ' com esforço que não coube na janela; confira na grade' : ''), comSobra ? 'warn' : 'success');
 }
 function plChip(pid, tid, iso, sigla, fr){ return plAplicar(pid, tid, function(t){ PlannerCarga.setChip(t, iso, sigla, fr); }); }
 
@@ -4055,6 +4112,8 @@ function plLigaEventos(){
     }
     const cell = e.target.closest('td.pl-cell'); if(!cell) return;
     if(_readOnly) return;
+    const gh = e.target.closest('.pl-ghost');
+    if(gh){ plConverter(cell.dataset.pid, cell.dataset.tid); return; }
     const pid = cell.dataset.pid, tid = cell.dataset.tid, iso = cell.dataset.iso, t = plTask(pid, tid); if(!t) return;
     const chip = e.target.closest('.pl-chip[data-sigla]');
     if(chip && !e.shiftKey){
@@ -4383,6 +4442,20 @@ function applyTaskStatus(t, novo){
   if(novo === TASK_DONE_ID){ if(!t.doneAt) t.doneAt = hojeISO(); podaAlocacaoFutura(t); }
   else t.doneAt = null;
 }
+// Estimativa → chips reais (SPEC: a carga lançada no editor aparece como chips na grade Planejar).
+// Se a task aberta tem esforço, responsáveis, alguma data e ainda NÃO tem alocação, grava
+// t.alocacao a partir de PlannerCarga.chipsDaEstimativa (muta t). Quem já tem chips não é
+// tocado: os chips são a fonte e o esforço vira estimativa. Devolve a sobra {sigla: dias}.
+function aplicaChipsDaEstimativa(t){
+  if(typeof PlannerCarga === 'undefined' || t.status === TASK_DONE_ID) return {};
+  const r = PlannerCarga.chipsDaEstimativa(Object.assign({}, t, { done: false }), hojeISO());
+  if(r.alocacao) t.alocacao = r.alocacao;
+  return r.sobra;
+}
+function avisaSobraEstimativa(sobra){
+  const ks = Object.keys(sobra || {}); if(!ks.length) return;
+  toast(ks.map(function(k){ return fmtDias(sobra[k]) + ' d de ' + k; }).join(', ') + ' não couberam na janela; ajuste na grade', 'warn');
+}
 // Ao concluir, os chips depois de hoje saem; os passados ficam como histórico de carga
 // (equivalente à janela [start, doneAt] de quem não tem alocação). Objeto novo, não mutação.
 function podaAlocacaoFutura(t){
@@ -4642,9 +4715,11 @@ function saveTask(){
   task.subtasks = subtasks; task.dealId = dealId || null; task.origem = prev ? (prev.origem || null) : null;
   tiraAloc.forEach(function(x){ x.dias.forEach(function(iso){ PlannerCarga.setChip(task, iso, x.sigla, null); }); });
   applyTaskStatus(task, document.getElementById('taskStatus').value);
+  // task que já tinha chips não é tocada (nem se a edição os esvaziou); sem chips, a estimativa vira chips
+  const sobra = (prev && PlannerCarga.temAlocacao(prev)) ? {} : aplicaChipsDaEstimativa(task);
   if(!p.tasks) p.tasks = [];
   if(prev) p.tasks[editingTaskIdx] = task; else p.tasks.push(task);
-  saveProject(p.id); if(!_taskEditorStandalone) renderTasks(p); closeTaskModal(); toast('Task salva');
+  saveProject(p.id); if(!_taskEditorStandalone) renderTasks(p); closeTaskModal(); toast('Task salva'); avisaSobraEstimativa(sobra);
 }
 function removeTask(idx){ const p = findProject(currentProjectId); p.tasks.splice(idx, 1); saveProject(p.id); renderTasks(p); }
 function toggleSubtask(ti, si){ const p = findProject(currentProjectId); p.tasks[ti].subtasks[si].done = !p.tasks[ti].subtasks[si].done; saveProject(p.id); renderTasks(p); }
