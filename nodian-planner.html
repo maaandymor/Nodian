@@ -669,6 +669,20 @@ body.tem-aviso-topo #logout-btn{top:41px}
 .board-view{padding-bottom:16px}
 .carga-view,.timeline-view,.cal-view{padding-bottom:24px}
 
+/* coluna "alocado" do editor de task: só existe quando a task tem alocação por dia */
+.esforco-tabela.com-aloc .esforco-head,.esforco-tabela.com-aloc .esforco-item{grid-template-columns:1fr 92px 108px 26px}
+.esforco-aloc-h{text-align:right}
+.esforco-aloc{display:flex;flex-direction:column;align-items:flex-end;line-height:1.25;font-size:11px;font-variant-numeric:tabular-nums;color:var(--color-black)}
+.esforco-aloc small{font-size:9px;font-weight:700}
+.aloc-ok{color:var(--color-green)}
+.aloc-mais{color:var(--color-blue)}
+.aloc-neg{color:var(--color-red)}
+.esforco-aloc-rodape{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 10px;border-top:1px solid var(--border-c);font-size:11px;color:var(--color-gray)}
+.esforco-aloc-rodape b{font-variant-numeric:tabular-nums}
+.esforco-grade{padding:6px 10px 8px;border-top:1px solid var(--border-c)}
+.esforco-aloc-h{display:none}
+.esforco-tabela.com-aloc .esforco-aloc-h{display:block}
+
 /* ══ CARGA DE TRABALHO ══ */
 .carga-view{padding:0 28px 40px}
 .carga-toolbar{padding:0 0 14px}
@@ -776,6 +790,15 @@ body.tem-aviso-topo #logout-btn{top:41px}
 .carga-done-sub{font-size:9px;font-weight:600;color:var(--color-gray);margin-left:5px;white-space:nowrap}
 .carga-tot-ok{color:var(--color-gray)}
 
+/* ══ Reflexos da alocação por dia (Modo Planejar) ══ */
+/* sáb/dom com carga: coluna extra, sem percentual (a capacidade nunca muda por causa de fim de semana) */
+.cl-fds-extra{background:var(--color-amber-50)}
+.heat-cell.cl-fds-extra{color:var(--color-black);border-color:var(--color-amber)}
+.heat-col.fds div:first-child{color:var(--color-amber)}
+.carga-fds-sub{font-size:9px;font-weight:600;color:var(--color-amber);margin-left:5px;white-space:nowrap}
+.carga-explicita{color:var(--color-blue);font-weight:800;cursor:help}
+.carga-alocado{font-size:10px;font-weight:700;color:var(--color-blue);white-space:nowrap}
+
 /* ══ TIMELINE ══ */
 .timeline-view,.cal-view{padding:0 28px 40px}
 .tl-legend{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--color-gray)}
@@ -841,6 +864,125 @@ body.tem-aviso-topo #logout-btn{top:41px}
 .cal-chip:hover{filter:brightness(.95)}
 .cal-more{font-size:9px;color:var(--color-gray);cursor:pointer;padding:1px 4px}
 .cal-more:hover{color:var(--color-black)}
+
+/* alocação por dia: uma barra por bloco de dias seguidos, na mesma lane e cor */
+.tl-bar.tl-seg{padding:0 4px}
+.tl-bar.tl-seg.tl-seg-cont .tl-bar-label{display:none}
+.cal-chip.cal-alocado{border-left-style:solid;font-weight:500}
+.cal-aloc-sig{display:inline-block;font-weight:800;font-size:9px;letter-spacing:.04em;padding:0 4px;margin-right:3px;border-radius:3px;background:var(--c);color:#fff}
+
+/* ══ PLANEJAR (grade task × dia) — só variáveis de tema; reaproveita .cl-* da Carga ══ */
+/* a grade rola dentro de .pl-wrap (cabeçalho e rodapé grudam nela), não a visão inteira */
+#planejarView{padding:0 0 12px;overflow:hidden}
+#planejarRoot{height:100%;display:flex;flex-direction:column;min-height:0}
+.pl-toolbar{padding:0 28px 12px;flex:0 0 auto}
+.pl-toolbar .filter-chip[disabled]{opacity:.45;cursor:default}
+.pl-toolbar .pl-aviso{border-color:var(--color-amber);color:var(--color-black);background:var(--color-amber-25)}
+.pl-legenda{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--color-gray);margin-left:auto}
+.pl-lg-prazo{display:inline-block;width:12px;height:12px;border-right:2px solid var(--color-black);background:var(--color-bg)}
+.pl-lg-estouro{display:inline-block;width:12px;height:12px;background:rgba(var(--red-rgb),.18);border:1px solid var(--border-c)}
+.pl-body{flex:1 1 auto;min-height:0;display:flex;gap:12px;padding:0 28px}
+.pl-wrap{flex:1 1 auto;min-width:0;overflow:auto;background:var(--color-white);border:1px solid var(--border-c);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+
+table.pl{border-collapse:separate;border-spacing:0;font-size:11px;width:max-content;min-width:100%}
+table.pl th,table.pl td{border-bottom:1px solid var(--border-c);border-right:1px solid var(--border-c);background:var(--color-white)}
+/* colunas fixas: nome 260 + prazo 80 + quem 90 */
+.pl-c-nome,.pl-c-prazo,.pl-c-quem{position:sticky;z-index:3;text-align:left;padding:4px 8px;vertical-align:middle}
+.pl-c-nome{left:0;width:260px;min-width:260px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-c-prazo{left:260px;width:80px;min-width:80px;max-width:80px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pl-c-quem{left:340px;width:90px;min-width:90px;max-width:90px;border-right:2px solid var(--border-c)}
+table.pl thead th{position:sticky;top:0;z-index:5;font-size:10px;font-weight:600;color:var(--color-gray);padding:4px 2px;text-align:center;white-space:nowrap}
+table.pl thead th.pl-c-nome,table.pl thead th.pl-c-prazo,table.pl thead th.pl-c-quem{z-index:7;text-transform:uppercase;letter-spacing:.08em;font-size:10px;text-align:left;padding:4px 8px}
+.pl-dia{min-width:44px;width:44px}
+.pl-dia-sub{font-weight:400;font-size:9px}
+.pl-dia.hoje div:first-child{color:var(--color-black);font-weight:800}
+.pl-dia.hoje{box-shadow:inset 0 -2px 0 var(--color-red)}
+.pl-fds{background:var(--color-bg)!important}
+
+/* linha do projeto */
+tr.pl-proj{cursor:pointer}
+tr.pl-proj td{background:var(--color-bg);font-weight:600}
+tr.pl-proj:hover td{filter:brightness(.97)}
+tr.pl-proj.vazio td{opacity:.7}
+.pl-seta{display:inline-block;width:10px;color:var(--color-gray)}
+.pl-n{font-size:10px;font-weight:500;color:var(--color-gray)}
+.pl-nova{height:18px;padding:0 8px;border-radius:99px;border:1px dashed var(--color-gray);background:transparent;color:var(--color-gray);font-family:var(--font);font-size:9px;font-weight:600;cursor:pointer;margin-left:4px}
+.pl-nova:hover{border-color:var(--color-coral);color:var(--color-black)}
+.pl-cell-ro{text-align:center;font-size:9px;font-weight:700;color:var(--color-gray);padding:2px;min-width:44px;line-height:1.2;overflow:hidden}
+
+/* linha da task */
+tr.pl-task td.pl-c-nome{font-weight:500}
+.pl-desc{cursor:pointer}
+.pl-desc:hover{text-decoration:underline}
+tr.pl-task.feita td.pl-desc{text-decoration:line-through;color:var(--color-gray)}
+.pl-cli{color:var(--color-black)}
+.pl-q{display:inline-flex;align-items:center;justify-content:center;height:16px;min-width:20px;padding:0 4px;margin-right:2px;border-radius:99px;font-size:9px;font-weight:700}
+.pl-q.sem{opacity:.35;filter:grayscale(1)}
+.pl-vazia{padding:24px 12px!important;white-space:normal!important;max-width:none!important;color:var(--color-gray);font-style:italic}
+tr.pl-focus td{box-shadow:inset 0 0 0 2px var(--color-blue)}
+
+/* célula editável */
+.pl-cell{position:relative;text-align:center;vertical-align:top;padding:2px;min-width:44px;height:26px;cursor:pointer;line-height:1}
+.pl-cell:hover{background:rgba(var(--ink-rgb),.05)}
+.pl-cell.pl-ro{cursor:default}
+.pl-cell.pl-ro:hover{background:var(--color-white)}
+.pl-cell.hoje{box-shadow:inset 2px 0 0 var(--color-red)}
+.pl-cell.prazo{border-right:2px solid var(--color-black)}
+.pl-cell.cliente::after{content:'⚑';position:absolute;top:0;right:2px;font-size:8px;color:var(--color-black)}
+.pl-cell.estouro{background:rgba(var(--red-rgb),.18)}
+.pl-cell.passado .pl-chip{opacity:.7}
+.pl-cell.pl-prev{outline:2px dashed var(--color-blue);outline-offset:-2px}
+.pl-cell.pl-hl{outline:2px solid var(--color-blue);outline-offset:-2px}
+.pl-cell.pl-drop,.pl-cell-ro.pl-drop{outline:2px dashed var(--color-coral);outline-offset:-2px}
+.pl-chip{display:inline-flex;align-items:center;justify-content:center;height:18px;min-width:20px;padding:0 5px;margin:1px;border-radius:99px;font-size:10px;font-weight:700;line-height:1;cursor:pointer;user-select:none;vertical-align:top}
+.pl-chip.meio{box-shadow:inset 0 0 0 1.5px var(--color-white);opacity:.85}
+.pl-cell.pl-ro .pl-chip{cursor:default}
+.pl-legenda .pl-chip{cursor:default;background:var(--color-coral);color:var(--on-accent)}
+
+/* rodapé de carga */
+/* com poucas pessoas (filtro) o rodapé gruda na base; com o time todo (10 linhas) ele ocuparia meia tela, então fica no fim da tabela */
+table.pl tfoot.pl-foot-sticky{position:sticky;bottom:0;z-index:4}
+table.pl tfoot td{font-weight:600;text-align:center;font-variant-numeric:tabular-nums;border-top:1px solid var(--border-c)}
+table.pl tfoot td.pl-c-nome,table.pl tfoot td.pl-c-prazo,table.pl tfoot td.pl-c-quem{z-index:6;text-align:left}
+td.pl-sum{cursor:pointer;min-width:44px;height:22px;padding:0}
+table.pl tfoot td.pl-c-nome,table.pl tfoot td.pl-c-prazo,table.pl tfoot td.pl-c-quem{padding-top:1px;padding-bottom:1px}
+td.pl-sum.hoje{box-shadow:inset 2px 0 0 var(--color-red)}
+td.pl-sum.sel{box-shadow:inset 0 0 0 2px var(--color-blue)}
+table.pl td.pl-sum.cl-baixo{background:rgba(114,149,205,.22)}
+table.pl td.pl-sum.cl-ok{background:rgba(114,149,205,.55)}
+table.pl td.pl-sum.cl-cheio{background:var(--color-amber)}
+table.pl td.pl-sum.cl-estourado{background:var(--color-red);color:#fff}
+table.pl td.pl-sum.cl-fds-extra{background:var(--color-amber-50);color:var(--color-black)}
+.pl-extra{font-size:10px;font-weight:700;color:#8a5a00}
+tr.pl-carga .avatar{display:inline-flex;vertical-align:middle}
+
+/* picker */
+.pl-picker{position:fixed;top:auto;left:auto;z-index:400;min-width:150px;max-width:260px}
+.pl-picker-titulo{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--color-gray);padding:2px 4px 6px}
+.pl-picker-grupo{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.pl-picker-grupo .person-option{display:flex;flex-direction:column;align-items:center;justify-content:center;height:34px;line-height:1.1}
+.pl-picker-sep{height:1px;background:var(--border-c);margin:6px 0}
+
+/* gaveta "Fora da sprint" */
+.pl-gaveta{flex:0 0 280px;display:flex;flex-direction:column;min-height:0;background:var(--color-white);border:1px solid var(--border-c);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:10px 12px}
+.pl-gaveta-head{display:flex;align-items:center;gap:6px;font-size:12px}
+.pl-gaveta-head .icon-btn{margin-left:auto}
+.pl-gaveta-sub{font-size:10px;color:var(--color-gray);margin:2px 0 8px}
+.pl-gaveta-lista{overflow-y:auto;min-height:0;flex:1}
+.pl-gaveta-proj{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--color-gray);margin:8px 0 3px}
+.pl-gaveta-item{display:flex;align-items:center;gap:6px;padding:5px 8px;margin-bottom:3px;border-radius:var(--radius-sm);background:var(--color-bg);font-size:11px;cursor:grab}
+.pl-gaveta-item[draggable="true"]:active{cursor:grabbing}
+.pl-gaveta-desc{flex:1;min-width:0}
+.pl-gaveta-quem{font-size:9px;font-weight:700;color:var(--color-gray);white-space:nowrap}
+
+@media (max-width:900px){
+  .pl-body{padding:0 12px}
+  .pl-toolbar{padding:0 12px 12px}
+  .pl-c-nome{width:160px;min-width:160px;max-width:160px}
+  .pl-c-prazo{left:160px}
+  .pl-c-quem{display:none}
+  .pl-gaveta{position:fixed;right:8px;top:80px;bottom:8px;width:min(300px,90vw);flex:none;z-index:200}
+}
 </style>
 </head>
 <body>
@@ -935,6 +1077,7 @@ body.tem-aviso-topo #logout-btn{top:41px}
 
 <!-- CARGA / TIMELINE / CALENDÁRIO: conteúdo gerado em 54/55/56-view-*.js -->
 <div id="cargaView" class="carga-view" style="display:none"><div id="cargaRoot"></div></div>
+<div id="planejarView" class="planejar-view" style="display:none"><div id="planejarRoot"></div></div>
 <div id="timelineView" class="timeline-view" style="display:none"><div id="timelineRoot"></div></div>
 <div id="calView" class="cal-view" style="display:none"><div id="calRoot"></div></div>
 
@@ -1247,7 +1390,7 @@ body.tem-aviso-topo #logout-btn{top:41px}
             </div>
             <div class="form-row">
               <label class="form-label">Prazo interno</label>
-              <input class="form-input" id="taskDate" type="date" onchange="atualizaFolgaTask()" title="Quando NÓS queremos terminar. É esta data que alimenta a visão de Carga: o esforço é distribuído entre o início e ela."/>
+              <input class="form-input" id="taskDate" type="date" onchange="atualizaFolgaTask()" title="Quando NÓS queremos terminar. É esta data que alimenta a visão de Carga: o esforço é distribuído entre o início e ela. Quando há alocação por dia, a carga vem dela e não deste intervalo."/>
               <span class="campo-legenda"><span id="taskDateFds"></span>queremos terminar <b>· conta na Carga</b></span>
             </div>
           </div>
@@ -1258,7 +1401,7 @@ body.tem-aviso-topo #logout-btn{top:41px}
       <!-- Quem faz + quanto cada um faz: uma linha por responsável, o esforço colado na sigla -->
       <div class="form-row">
         <div class="esforco-tabela">
-          <div class="esforco-head"><span>Responsáveis</span><span title="Esforço: dias úteis de trabalho, não duração">Dias úteis</span><span></span></div>
+          <div class="esforco-head"><span>Responsáveis</span><span title="Esforço: dias úteis de trabalho, não duração">Dias úteis</span><span class="esforco-aloc-h" title="Dias já alocados na grade Planejar e o saldo em relação à estimativa">Alocado · saldo</span><span></span></div>
           <div id="taskEffortFields"></div>
           <div class="esforco-rodape">
             <div class="person-picker">
@@ -1272,6 +1415,8 @@ body.tem-aviso-topo #logout-btn{top:41px}
             </div>
             <span class="campo-legenda-inline" id="taskEffortTotal"></span>
           </div>
+          <div class="esforco-aloc-rodape" id="taskAlocRodape" style="display:none"></div>
+          <div class="esforco-grade" id="taskGradeWrap" style="display:none"><button class="btn btn-sm btn-secondary" type="button" onclick="taskAbrirNaGrade()" title="Fecha este editor e abre a grade Planejar no período da task, com a linha dela destacada">Abrir na grade</button></div>
         </div>
       </div>
 
@@ -1455,7 +1600,7 @@ body.tem-aviso-topo #logout-btn{top:41px}
 // ══════════════════════════════════════════════════════════
 //  CONFIG — único bloco que muda por empresa (TEMA + DADOS)
 // ══════════════════════════════════════════════════════════
-const CONFIG = {"theme": {"marca": {"nome_curto": "Nodian", "nome_produto": "Nodian Planner", "logo_texto": "N"}, "modo": "light", "logo_bg": "#f6b359", "logo_fg": "#161616", "cores": {"bg": "#f5f5f5", "surface": "#ffffff", "surface_2": "#f5f5f5", "border": "rgba(22,22,22,.10)", "text": "#161616", "text_muted": "#676767", "accent": "#161616", "accent_2": "#ab87bd", "accent_3": "#7295cd", "danger": "#e3404a", "success": "#55b583", "warning": "#f6b359"}, "tipografia": {"fonte_titulos": "Poppins", "fonte_corpo": "Poppins", "google_fonts_url": "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"}, "cores_avatar": {"default_paleta": ["#7295cd", "#e07b5a", "#ab87bd", "#55b583", "#f6b359", "#e23f4a", "#c6b198", "#161616", "#5a8a6a", "#8ab4a0"], "por_sigla": {"AM": "#7295cd", "AC": "#e07b5a", "ML": "#ab87bd", "BL": "#55b583", "FA": "#f6b359", "DS": "#e23f4a", "GC": "#c6b198", "HM": "#161616", "VM": "#5a8a6a", "VD": "#8ab4a0"}}}, "data": {"ambiente": "prod", "supabase": {"project_ref": "ovktfqdcnlakopeiuaec", "url": "https://ovktfqdcnlakopeiuaec.supabase.co", "publishable_key": "sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ", "row_id": "main"}, "tela": {"nome": "Nodian", "subtitulo": "Planner das frentes RWE Powerhouse, Atlas e Data Products"}, "usuarios": [{"sigla": "AM", "nome": "Amanda Moraes", "email": "amoraes@nodian.com.br", "role": "editor"}, {"sigla": "AC", "nome": "Achiode", "email": "achiode@nodian.com.br", "role": "editor"}, {"sigla": "ML", "nome": "M. Longato", "email": "mlongato@nodian.com.br", "role": "editor"}, {"sigla": "BL", "nome": "BL", "email": "", "role": "editor"}, {"sigla": "FA", "nome": "FA", "email": "", "role": "editor"}, {"sigla": "DS", "nome": "DS", "email": "", "role": "editor"}, {"sigla": "GC", "nome": "GC", "email": "", "role": "editor"}, {"sigla": "HM", "nome": "HM", "email": "", "role": "editor"}, {"sigla": "VM", "nome": "VM", "email": "", "role": "editor"}, {"sigla": "VD", "nome": "VD", "email": "", "role": "editor"}], "colunas_status": [{"id": "PENDENTE", "label": "Pendente", "cls": "pendente", "cor": "#9a9a9a"}, {"id": "ANDAMENTO", "label": "Em andamento", "cls": "andamento", "cor": "#e07b5a"}, {"id": "DADOS", "label": "Dados", "cls": "dados", "cor": "#7295cd"}, {"id": "DADOS+ESCRITA", "label": "Dados + Escrita", "cls": "dados-escrita", "cor": "#f6b359"}, {"id": "ESCRITA", "label": "Escrita", "cls": "escrita", "cor": "#ab87bd"}, {"id": "PUBLICACAO", "label": "Em publicação", "cls": "publicacao", "cor": "#55b583"}, {"id": "BLOQUEADO", "label": "Bloqueado", "cls": "bloqueado", "cor": "#e3404a"}, {"id": "INTERROMPIDO", "label": "Interrompido", "cls": "interrompido", "cor": "#c6b198"}, {"id": "FINALIZADO", "label": "Finalizado", "cls": "finalizado", "cor": "#676767", "done": true}], "presets_marcos": [{"label": "Kickoff", "icon": "🚀"}, {"label": "Recebimento One Page SDC", "icon": "📄"}, {"label": "Escrita SDC", "icon": "✍️"}, {"label": "Escrita Protocolo", "icon": "📋"}, {"label": "Escrita Abstract", "icon": "📝"}, {"label": "Escrita Manuscrito", "icon": "📖"}, {"label": "Organização para Submissão", "icon": "📦"}, {"label": "Submissão do Artigo", "icon": "🎯"}], "colunas_status_projetos": [{"id": "PENDENTE", "label": "Pendente", "cls": "pendente", "cor": "#9a9a9a"}, {"id": "ANDAMENTO", "label": "Em andamento", "cls": "andamento", "cor": "#e07b5a"}, {"id": "DADOS", "label": "Dados", "cls": "dados", "cor": "#7295cd"}, {"id": "DADOS+ESCRITA", "label": "Dados + Escrita", "cls": "dados-escrita", "cor": "#f6b359"}, {"id": "ESCRITA", "label": "Escrita", "cls": "escrita", "cor": "#ab87bd"}, {"id": "PUBLICACAO", "label": "Em publicação", "cls": "publicacao", "cor": "#55b583"}, {"id": "BLOQUEADO", "label": "Bloqueado", "cls": "bloqueado", "cor": "#e3404a"}, {"id": "INTERROMPIDO", "label": "Interrompido", "cls": "interrompido", "cor": "#c6b198"}, {"id": "FINALIZADO", "label": "Finalizado", "cls": "finalizado", "cor": "#676767", "done": true}], "colunas_status_tasks": [{"id": "todo", "label": "A fazer", "cls": "todo", "cor": "#676767"}, {"id": "doing", "label": "Em andamento", "cls": "doing", "cor": "#f6b359"}, {"id": "done", "label": "Concluído", "cls": "done", "cor": "#55b583"}], "modulos": {"projetos": true, "kanban_tasks": false, "planning": true, "resumo": true, "crm": false, "admin": false, "planner": true, "carga": true, "timeline": true, "calendario": true}, "frentes": [{"id": "rwe", "row_id": "main", "nome": "RWE Powerhouse", "curto": "RWE", "cor": "#55b583", "colunas_status": [{"id": "PENDENTE", "label": "Pendente", "cls": "pendente", "cor": "#9a9a9a"}, {"id": "ANDAMENTO", "label": "Em andamento", "cls": "andamento", "cor": "#e07b5a"}, {"id": "DADOS", "label": "Dados", "cls": "dados", "cor": "#7295cd"}, {"id": "DADOS+ESCRITA", "label": "Dados + Escrita", "cls": "dados-escrita", "cor": "#f6b359"}, {"id": "ESCRITA", "label": "Escrita", "cls": "escrita", "cor": "#ab87bd"}, {"id": "PUBLICACAO", "label": "Em publicação", "cls": "publicacao", "cor": "#55b583"}, {"id": "BLOQUEADO", "label": "Bloqueado", "cls": "bloqueado", "cor": "#e3404a"}, {"id": "INTERROMPIDO", "label": "Interrompido", "cls": "interrompido", "cor": "#c6b198"}, {"id": "FINALIZADO", "label": "Finalizado", "cls": "finalizado", "cor": "#676767", "done": true}], "presets_marcos": [{"label": "Kickoff", "icon": "🚀"}, {"label": "Recebimento One Page SDC", "icon": "📄"}, {"label": "Escrita SDC", "icon": "✍️"}, {"label": "Escrita Protocolo", "icon": "📋"}, {"label": "Escrita Abstract", "icon": "📝"}, {"label": "Escrita Manuscrito", "icon": "📖"}, {"label": "Organização para Submissão", "icon": "📦"}, {"label": "Submissão do Artigo", "icon": "🎯"}]}, {"id": "atlas", "row_id": "atlas", "nome": "Atlas", "curto": "Atlas", "cor": "#7295cd", "colunas_status": [{"id": "PENDENTE", "label": "Pendente", "cls": "pendente", "cor": "#9a9a9a"}, {"id": "ANDAMENTO", "label": "Em andamento", "cls": "andamento", "cor": "#e07b5a"}, {"id": "DADOS", "label": "Dados", "cls": "dados", "cor": "#7295cd"}, {"id": "DADOS+ESCRITA", "label": "Dados + Escrita", "cls": "dados-escrita", "cor": "#f6b359"}, {"id": "ESCRITA", "label": "Escrita", "cls": "escrita", "cor": "#ab87bd"}, {"id": "PUBLICACAO", "label": "Em publicação", "cls": "publicacao", "cor": "#55b583"}, {"id": "BLOQUEADO", "label": "Bloqueado", "cls": "bloqueado", "cor": "#e3404a"}, {"id": "INTERROMPIDO", "label": "Interrompido", "cls": "interrompido", "cor": "#c6b198"}, {"id": "FINALIZADO", "label": "Finalizado", "cls": "finalizado", "cor": "#676767", "done": true}], "presets_marcos": [{"label": "Kickoff", "icon": "🚀", "parent": null}, {"label": "Definição de métricas", "icon": "📐", "parent": null}, {"label": "Pipeline de dados", "icon": "🔧", "parent": null}, {"label": "Deck de dados", "icon": "📊", "parent": "Pipeline de dados"}, {"label": "Pré-processamento fato", "icon": "⚙️", "parent": "Pipeline de dados"}, {"label": "Pré-processamento feature", "icon": "⚙️", "parent": "Pipeline de dados"}, {"label": "Pré-processamento incidence", "icon": "⚙️", "parent": "Pipeline de dados"}, {"label": "Pré-processamento mortality", "icon": "⚙️", "parent": "Pipeline de dados"}, {"label": "Criação dos dashboards", "icon": "🖥️", "parent": null}, {"label": "Publicação", "icon": "🚢", "parent": null}, {"label": "Validação", "icon": "✅", "parent": null}, {"label": "Go-live", "icon": "🎯", "parent": null}]}, {"id": "dp", "row_id": "dp", "nome": "Data Products", "curto": "Data P.", "cor": "#f6b359", "colunas_status": [{"id": "PENDENTE", "label": "Pendente", "cls": "pendente", "cor": "#9a9a9a"}, {"id": "ANDAMENTO", "label": "Em andamento", "cls": "andamento", "cor": "#e07b5a"}, {"id": "DADOS", "label": "Dados", "cls": "dados", "cor": "#7295cd"}, {"id": "DADOS+ESCRITA", "label": "Dados + Escrita", "cls": "dados-escrita", "cor": "#f6b359"}, {"id": "ESCRITA", "label": "Escrita", "cls": "escrita", "cor": "#ab87bd"}, {"id": "PUBLICACAO", "label": "Em publicação", "cls": "publicacao", "cor": "#55b583"}, {"id": "BLOQUEADO", "label": "Bloqueado", "cls": "bloqueado", "cor": "#e3404a"}, {"id": "INTERROMPIDO", "label": "Interrompido", "cls": "interrompido", "cor": "#c6b198"}, {"id": "FINALIZADO", "label": "Finalizado", "cls": "finalizado", "cor": "#676767", "done": true}], "presets_marcos": [{"label": "Kickoff", "icon": "🚀", "parent": null}, {"label": "Definição de métricas", "icon": "📐", "parent": null}, {"label": "Pipeline de dados", "icon": "🔧", "parent": null}, {"label": "Criação dos dashboards", "icon": "🖥️", "parent": null}, {"label": "Publicação", "icon": "🚢", "parent": null}, {"label": "Validação", "icon": "✅", "parent": null}, {"label": "Go-live", "icon": "🎯", "parent": null}]}], "capacidade": {"dias_uteis_semana": 5.0, "unidade": "dias"}}};
+const CONFIG = {"theme": {"marca": {"nome_curto": "Nodian", "nome_produto": "Nodian Planner", "logo_texto": "N"}, "modo": "light", "logo_bg": "#f6b359", "logo_fg": "#161616", "cores": {"bg": "#f5f5f5", "surface": "#ffffff", "surface_2": "#f5f5f5", "border": "rgba(22,22,22,.10)", "text": "#161616", "text_muted": "#676767", "accent": "#161616", "accent_2": "#ab87bd", "accent_3": "#7295cd", "danger": "#e3404a", "success": "#55b583", "warning": "#f6b359"}, "tipografia": {"fonte_titulos": "Poppins", "fonte_corpo": "Poppins", "google_fonts_url": "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"}, "cores_avatar": {"default_paleta": ["#7295cd", "#e07b5a", "#ab87bd", "#55b583", "#f6b359", "#e23f4a", "#c6b198", "#161616", "#5a8a6a", "#8ab4a0"], "por_sigla": {"AM": "#7295cd", "AC": "#e07b5a", "ML": "#ab87bd", "BL": "#55b583", "FA": "#f6b359", "DS": "#e23f4a", "GC": "#c6b198", "HM": "#161616", "VM": "#5a8a6a", "VD": "#8ab4a0"}}}, "data": {"ambiente": "prod", "supabase": {"project_ref": "ovktfqdcnlakopeiuaec", "url": "https://ovktfqdcnlakopeiuaec.supabase.co", "publishable_key": "sb_publishable_gl8jE6_3uT3nic2aPhy81Q_w9kNJMzQ", "row_id": "main"}, "tela": {"nome": "Nodian", "subtitulo": "Planner das frentes RWE Powerhouse, Atlas e Data Products"}, "usuarios": [{"sigla": "AM", "nome": "Amanda Moraes", "email": "amoraes@nodian.com.br", "role": "editor"}, {"sigla": "AC", "nome": "Achiode", "email": "achiode@nodian.com.br", "role": "editor"}, {"sigla": "ML", "nome": "M. Longato", "email": "mlongato@nodian.com.br", "role": "editor"}, {"sigla": "BL", "nome": "BL", "email": "", "role": "editor"}, {"sigla": "FA", "nome": "FA", "email": "", "role": "editor"}, {"sigla": "DS", "nome": "DS", "email": "", "role": "editor"}, {"sigla": "GC", "nome": "GC", "email": "", "role": "editor"}, {"sigla": "HM", "nome": "HM", "email": "", "role": "editor"}, {"sigla": "VM", "nome": "VM", "email": "", "role": "editor"}, {"sigla": "VD", "nome": "VD", "email": "", "role": "editor"}], "colunas_status": [{"id": "PENDENTE", "label": "Pendente", "cls": "pendente", "cor": "#9a9a9a"}, {"id": "ANDAMENTO", "label": "Em andamento", "cls": "andamento", "cor": "#e07b5a"}, {"id": "DADOS", "label": "Dados", "cls": "dados", "cor": "#7295cd"}, {"id": "DADOS+ESCRITA", "label": "Dados + Escrita", "cls": "dados-escrita", "cor": "#f6b359"}, {"id": "ESCRITA", "label": "Escrita", "cls": "escrita", "cor": "#ab87bd"}, {"id": "PUBLICACAO", "label": "Em publicação", "cls": "publicacao", "cor": "#55b583"}, {"id": "BLOQUEADO", "label": "Bloqueado", "cls": "bloqueado", "cor": "#e3404a"}, {"id": "INTERROMPIDO", "label": "Interrompido", "cls": "interrompido", "cor": "#c6b198"}, {"id": "FINALIZADO", "label": "Finalizado", "cls": "finalizado", "cor": "#676767", "done": true}], "presets_marcos": [{"label": "Kickoff", "icon": "🚀"}, {"label": "Recebimento One Page SDC", "icon": "📄"}, {"label": "Escrita SDC", "icon": "✍️"}, {"label": "Escrita Protocolo", "icon": "📋"}, {"label": "Escrita Abstract", "icon": "📝"}, {"label": "Escrita Manuscrito", "icon": "📖"}, {"label": "Organização para Submissão", "icon": "📦"}, {"label": "Submissão do Artigo", "icon": "🎯"}], "colunas_status_projetos": [{"id": "PENDENTE", "label": "Pendente", "cls": "pendente", "cor": "#9a9a9a"}, {"id": "ANDAMENTO", "label": "Em andamento", "cls": "andamento", "cor": "#e07b5a"}, {"id": "DADOS", "label": "Dados", "cls": "dados", "cor": "#7295cd"}, {"id": "DADOS+ESCRITA", "label": "Dados + Escrita", "cls": "dados-escrita", "cor": "#f6b359"}, {"id": "ESCRITA", "label": "Escrita", "cls": "escrita", "cor": "#ab87bd"}, {"id": "PUBLICACAO", "label": "Em publicação", "cls": "publicacao", "cor": "#55b583"}, {"id": "BLOQUEADO", "label": "Bloqueado", "cls": "bloqueado", "cor": "#e3404a"}, {"id": "INTERROMPIDO", "label": "Interrompido", "cls": "interrompido", "cor": "#c6b198"}, {"id": "FINALIZADO", "label": "Finalizado", "cls": "finalizado", "cor": "#676767", "done": true}], "colunas_status_tasks": [{"id": "todo", "label": "A fazer", "cls": "todo", "cor": "#676767"}, {"id": "doing", "label": "Em andamento", "cls": "doing", "cor": "#f6b359"}, {"id": "done", "label": "Concluído", "cls": "done", "cor": "#55b583"}], "modulos": {"projetos": true, "kanban_tasks": false, "planning": true, "resumo": true, "crm": false, "admin": false, "planner": true, "carga": true, "planejar": true, "timeline": true, "calendario": true}, "frentes": [{"id": "rwe", "row_id": "main", "nome": "RWE Powerhouse", "curto": "RWE", "cor": "#55b583", "colunas_status": [{"id": "PENDENTE", "label": "Pendente", "cls": "pendente", "cor": "#9a9a9a"}, {"id": "ANDAMENTO", "label": "Em andamento", "cls": "andamento", "cor": "#e07b5a"}, {"id": "DADOS", "label": "Dados", "cls": "dados", "cor": "#7295cd"}, {"id": "DADOS+ESCRITA", "label": "Dados + Escrita", "cls": "dados-escrita", "cor": "#f6b359"}, {"id": "ESCRITA", "label": "Escrita", "cls": "escrita", "cor": "#ab87bd"}, {"id": "PUBLICACAO", "label": "Em publicação", "cls": "publicacao", "cor": "#55b583"}, {"id": "BLOQUEADO", "label": "Bloqueado", "cls": "bloqueado", "cor": "#e3404a"}, {"id": "INTERROMPIDO", "label": "Interrompido", "cls": "interrompido", "cor": "#c6b198"}, {"id": "FINALIZADO", "label": "Finalizado", "cls": "finalizado", "cor": "#676767", "done": true}], "presets_marcos": [{"label": "Kickoff", "icon": "🚀"}, {"label": "Recebimento One Page SDC", "icon": "📄"}, {"label": "Escrita SDC", "icon": "✍️"}, {"label": "Escrita Protocolo", "icon": "📋"}, {"label": "Escrita Abstract", "icon": "📝"}, {"label": "Escrita Manuscrito", "icon": "📖"}, {"label": "Organização para Submissão", "icon": "📦"}, {"label": "Submissão do Artigo", "icon": "🎯"}]}, {"id": "atlas", "row_id": "atlas", "nome": "Atlas", "curto": "Atlas", "cor": "#7295cd", "colunas_status": [{"id": "PENDENTE", "label": "Pendente", "cls": "pendente", "cor": "#9a9a9a"}, {"id": "ANDAMENTO", "label": "Em andamento", "cls": "andamento", "cor": "#e07b5a"}, {"id": "DADOS", "label": "Dados", "cls": "dados", "cor": "#7295cd"}, {"id": "DADOS+ESCRITA", "label": "Dados + Escrita", "cls": "dados-escrita", "cor": "#f6b359"}, {"id": "ESCRITA", "label": "Escrita", "cls": "escrita", "cor": "#ab87bd"}, {"id": "PUBLICACAO", "label": "Em publicação", "cls": "publicacao", "cor": "#55b583"}, {"id": "BLOQUEADO", "label": "Bloqueado", "cls": "bloqueado", "cor": "#e3404a"}, {"id": "INTERROMPIDO", "label": "Interrompido", "cls": "interrompido", "cor": "#c6b198"}, {"id": "FINALIZADO", "label": "Finalizado", "cls": "finalizado", "cor": "#676767", "done": true}], "presets_marcos": [{"label": "Kickoff", "icon": "🚀", "parent": null}, {"label": "Definição de métricas", "icon": "📐", "parent": null}, {"label": "Pipeline de dados", "icon": "🔧", "parent": null}, {"label": "Deck de dados", "icon": "📊", "parent": "Pipeline de dados"}, {"label": "Pré-processamento fato", "icon": "⚙️", "parent": "Pipeline de dados"}, {"label": "Pré-processamento feature", "icon": "⚙️", "parent": "Pipeline de dados"}, {"label": "Pré-processamento incidence", "icon": "⚙️", "parent": "Pipeline de dados"}, {"label": "Pré-processamento mortality", "icon": "⚙️", "parent": "Pipeline de dados"}, {"label": "Criação dos dashboards", "icon": "🖥️", "parent": null}, {"label": "Publicação", "icon": "🚢", "parent": null}, {"label": "Validação", "icon": "✅", "parent": null}, {"label": "Go-live", "icon": "🎯", "parent": null}]}, {"id": "dp", "row_id": "dp", "nome": "Data Products", "curto": "Data P.", "cor": "#f6b359", "colunas_status": [{"id": "PENDENTE", "label": "Pendente", "cls": "pendente", "cor": "#9a9a9a"}, {"id": "ANDAMENTO", "label": "Em andamento", "cls": "andamento", "cor": "#e07b5a"}, {"id": "DADOS", "label": "Dados", "cls": "dados", "cor": "#7295cd"}, {"id": "DADOS+ESCRITA", "label": "Dados + Escrita", "cls": "dados-escrita", "cor": "#f6b359"}, {"id": "ESCRITA", "label": "Escrita", "cls": "escrita", "cor": "#ab87bd"}, {"id": "PUBLICACAO", "label": "Em publicação", "cls": "publicacao", "cor": "#55b583"}, {"id": "BLOQUEADO", "label": "Bloqueado", "cls": "bloqueado", "cor": "#e3404a"}, {"id": "INTERROMPIDO", "label": "Interrompido", "cls": "interrompido", "cor": "#c6b198"}, {"id": "FINALIZADO", "label": "Finalizado", "cls": "finalizado", "cor": "#676767", "done": true}], "presets_marcos": [{"label": "Kickoff", "icon": "🚀", "parent": null}, {"label": "Definição de métricas", "icon": "📐", "parent": null}, {"label": "Pipeline de dados", "icon": "🔧", "parent": null}, {"label": "Criação dos dashboards", "icon": "🖥️", "parent": null}, {"label": "Publicação", "icon": "🚢", "parent": null}, {"label": "Validação", "icon": "✅", "parent": null}, {"label": "Go-live", "icon": "🎯", "parent": null}]}], "capacidade": {"dias_uteis_semana": 5.0, "unidade": "dias"}}};
 window.CONFIG = CONFIG;
 
 // ══════════════════════════════════════════════════════════
@@ -1476,6 +1621,12 @@ window.CONFIG = CONFIG;
 //                       fica de fora. Não conta como task aberta.
 //  Esforço dividido igualmente entre os responsáveis (ou por task.effortBy), espalhado
 //  uniformemente pelos dias úteis da janela.
+//
+//  ALOCAÇÃO EXPLÍCITA (05/10/2026, SPEC-MODO-PLANEJAR): task.alocacao = {iso: {sigla: 1|0.5}}.
+//  Com ao menos um dia, a carga da task vem SÓ dela — start/date/effort não espalham nada;
+//  effort vira a estimativa (saldo = estimado − alocado). Frações só 1,0 e 0,5; nunca se divide
+//  automaticamente (duas tasks a 1,0 no mesmo dia = 200%). Chip em sáb/dom é carga EXTRA:
+//  entra em porPessoaDia e na soma da semana, mas não altera a capacidade.
 // ══════════════════════════════════════════════════════════
 (function(root){
   function parse(iso){ const p = String(iso || '').split('-'); if(p.length < 3) return null; return new Date(+p[0], +p[1] - 1, +p[2]); }
@@ -1516,6 +1667,12 @@ window.CONFIG = CONFIG;
   function fimSemana(iso){ return addDias(inicioSemana(iso), 6); } // domingo
 
   function janela(task, hoje, feriados){
+    // Alocação explícita: a janela é do primeiro ao último chip, com os blocos contíguos em
+    // `segmentos`. Atraso continua sendo medido pelo prazo interno, mas nada cai em hoje.
+    if(temAlocacao(task)){
+      const dias = diasAlocacao(task);
+      return { inicio: dias[0], fim: dias[dias.length - 1], atrasada: !task.done && !!task.date && task.date < hoje, concluida: !!task.done, segmentos: segmentos(task) };
+    }
     const start = task.start || '', fim = task.date || '';
     const eff = temEsforco(task) ? Number(task.effort) : null;
     // Concluída: a carga ficou nos dias em que a task esteve em curso, até `doneAt`.
@@ -1566,28 +1723,154 @@ window.CONFIG = CONFIG;
     return out;
   }
 
-  // tasks: [{id, who, effort, effortBy?, start, date, status, done(bool), projectName?, frente?}]
-  // opts: {hoje, de, ate, feriados}  → só dias dentro de [de, ate] entram em porPessoaDia
+  // ── Alocação explícita por dia ──
+  const FRACOES = [1, 0.5];
+  function temAlocacao(t){ const a = t && t.alocacao; return !!a && typeof a === 'object' && !Array.isArray(a) && Object.keys(a).length > 0; }
+  function diasAlocacao(t){ return temAlocacao(t) ? Object.keys(t.alocacao).sort() : []; }
+  // {sigla: soma} sobre todos os dias da alocação.
+  function esforcoAlocado(t){
+    const out = {};
+    diasAlocacao(t).forEach(function(iso){
+      const dia = t.alocacao[iso] || {};
+      Object.keys(dia).forEach(function(p){ const v = Number(dia[p]); if(!v) return; out[p] = (out[p] || 0) + v; });
+    });
+    return out;
+  }
+  // {sigla: estimado − alocado}. Sigla alocada sem estimativa tem estimado 0 (saldo negativo
+  // é permitido). Task sem effort não tem saldo: null.
+  function saldoAlocacao(t){
+    if(!temEsforco(t)) return null;
+    const est = esforcoPorPessoa(t), alo = esforcoAlocado(t), out = {};
+    Object.keys(est).concat(Object.keys(alo)).forEach(function(p){ if(!(p in out)) out[p] = (est[p] || 0) - (alo[p] || 0); });
+    return out;
+  }
+  // Grava (1 | 0.5) ou remove (null) o chip de `sigla` em `iso`. Muta e devolve t.
+  // Copy-on-write: t.alocacao recebe um objeto NOVO, para não alterar por referência uma cópia
+  // rasa da task (o saveTask parte de Object.assign({}, prev)) nem a base do merge 3-way.
+  function setChip(t, iso, sigla, fracao){
+    if(fracao !== null && FRACOES.indexOf(fracao) < 0) throw new Error('fração inválida: ' + fracao + ' (só 1, 0.5 ou null)');
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ''))) throw new Error('dia inválido: ' + iso);
+    if(!sigla) throw new Error('sigla vazia');
+    const velha = (t.alocacao && typeof t.alocacao === 'object' && !Array.isArray(t.alocacao)) ? t.alocacao : {};
+    const nova = {};
+    Object.keys(velha).forEach(function(d){ nova[d] = Object.assign({}, velha[d]); });
+    if(fracao === null){
+      if(nova[iso]){ delete nova[iso][sigla]; if(!Object.keys(nova[iso]).length) delete nova[iso]; }
+    }else{
+      if(!nova[iso]) nova[iso] = {};
+      nova[iso][sigla] = fracao;
+      const quem = pessoasDe(t);
+      if(quem.indexOf(sigla) < 0) t.who = quem.concat([sigla]);
+    }
+    t.alocacao = Object.keys(nova).length ? nova : null;
+    return t;
+  }
+  function diasCorridos(a, b){ return Math.round((parse(b) - parse(a)) / 86400000); }
+  // Blocos [ini, fim] de chips contíguos. Dois dias seguidos da lista são do mesmo bloco se
+  // distam ≤ 1 dia corrido, ou ≤ 3 com só sáb/dom (sem chip) entre eles — sexta→segunda
+  // não quebra a barra; quinta→segunda quebra.
+  function segmentos(t){
+    const dias = diasAlocacao(t), out = [];
+    dias.forEach(function(d){
+      const seg = out[out.length - 1];
+      if(seg){
+        const n = diasCorridos(seg[1], d);
+        let junta = n <= 1;
+        if(!junta && n <= 3){
+          junta = true;
+          for(let k = 1; k < n; k++){ if(ehDiaUtil(addDias(seg[1], k))){ junta = false; break; } }
+        }
+        if(junta){ seg[1] = d; return; }
+      }
+      out.push([d, d]);
+    });
+    return out;
+  }
+  // Preenche `sigla` dia útil a dia útil de `de` a `ate` conforme o residual livre da pessoa
+  // ({iso: dias livres}): ≥1 → chip 1,0; ≥0,5 → 0,5; menos que isso → PARA e devolve o dia.
+  // Nunca insere em sáb/dom. Dia em que a sigla já tem chip é pulado (não sobrescreve, não
+  // para). Com estimativa, não passa do saldo da pessoa: o último chip pode ser 0,5 para
+  // fechar; saldo < 0,5 encerra (parouEm null — terminou, não faltou espaço).
+  function preencherAte(t, sigla, de, ate, residual){
+    residual = residual || {};
+    const saldo = saldoAlocacao(t);
+    let restante = saldo ? (saldo[sigla] != null ? saldo[sigla] : 0) : Infinity;
+    let inseridos = 0;
+    const dias = listaDiasUteis(de, ate);
+    for(let i = 0; i < dias.length; i++){
+      const iso = dias[i];
+      if(restante < 0.5) break;
+      if(t.alocacao && t.alocacao[iso] && t.alocacao[iso][sigla] != null) continue;
+      const livre = Number(residual[iso]) || 0;
+      let v = livre >= 1 ? 1 : (livre >= 0.5 ? 0.5 : 0);
+      if(!v) return { parouEm: iso, inseridos: inseridos };
+      if(v > restante) v = 0.5;
+      setChip(t, iso, sigla, v);
+      inseridos++; restante -= v;
+    }
+    return { parouEm: null, inseridos: inseridos };
+  }
+
+  // tasks: [{id, who, effort, effortBy?, start, date, status, done(bool), alocacao?, projectName?, frente?}]
+  // opts: {hoje, de, ate, feriados, incluirFds}  → só dias dentro de [de, ate] entram em porPessoaDia.
+  // incluirFds (default false) NÃO filtra nada aqui: alocar grava todo dia que tem carga,
+  // inclusive sáb/dom de alocação explícita; quem monta as colunas decide se os mostra.
   function alocar(tasks, opts){
     opts = opts || {};
     const hoje = opts.hoje || fmt(new Date());
     const de = opts.de || null, ate = opts.ate || null, fer = opts.feriados || null;
-    const R = { porPessoaDia: {}, porPessoaDiaDone: {}, porPessoa: {}, naoEstimadas: [], semJanela: [], semDono: [], atrasadas: [], concluidas: [], detalhe: {} };
+    const R = { porPessoaDia: {}, porPessoaDiaDone: {}, porPessoa: {}, naoEstimadas: [], semJanela: [], semDono: [], atrasadas: [], concluidas: [], detalhe: {}, incluirFds: !!opts.incluirFds };
     const acc = function(p){ if(!R.porPessoa[p]) R.porPessoa[p] = { alocado: 0, alocadoPeriodo: 0, concluido: 0, concluidoPeriodo: 0, tasks: 0, naoEstimadas: 0, atrasadas: 0 }; return R.porPessoa[p]; };
+    // Soma v na pessoa p no dia d (já dentro do período).
+    const soma = function(p, d, v, t, j, feita, explicita){
+      if(!R.porPessoaDia[p]) R.porPessoaDia[p] = {};
+      R.porPessoaDia[p][d] = (R.porPessoaDia[p][d] || 0) + v;
+      acc(p).alocadoPeriodo += v;
+      if(feita){
+        if(!R.porPessoaDiaDone[p]) R.porPessoaDiaDone[p] = {};
+        R.porPessoaDiaDone[p][d] = (R.porPessoaDiaDone[p][d] || 0) + v;
+        acc(p).concluidoPeriodo += v;
+      }
+      if(!R.detalhe[p]) R.detalhe[p] = {};
+      if(!R.detalhe[p][d]) R.detalhe[p][d] = [];
+      const item = { id: t.id, desc: t.desc, projectName: t.projectName, dias: v, atrasada: !!j.atrasada, concluida: feita };
+      if(explicita) item.explicita = true;
+      R.detalhe[p][d].push(item);
+    };
     tasks.forEach(function(t){
       const feita = !!t.done;
+      const explicita = temAlocacao(t);
+      // Com alocação explícita, quem tem chip também é responsável (setChip garante isso
+      // no who; a união cobre dado legado/inconsistente sem perder carga).
       const pessoas = pessoasDe(t);
+      if(explicita) Object.keys(esforcoAlocado(t)).forEach(function(p){ if(pessoas.indexOf(p) < 0) pessoas.push(p); });
       if(!pessoas.length){ if(!feita) R.semDono.push(t); return; }
       const j = janela(t, hoje, fer);
       if(feita){
         // Só histórico: não conta como task aberta nem entra nas listas de ação.
-        if(!j || !temEsforco(t)) return;
+        if(!j || (!explicita && !temEsforco(t))) return;
         R.concluidas.push(t);
       }else{
         pessoas.forEach(function(p){ acc(p).tasks++; });
         if(!j){ R.semJanela.push(t); if(!temEsforco(t)){ R.naoEstimadas.push(t); pessoas.forEach(function(p){ acc(p).naoEstimadas++; }); } return; }
         if(j.atrasada){ R.atrasadas.push(t); pessoas.forEach(function(p){ acc(p).atrasadas++; }); }
-        if(!temEsforco(t)){ R.naoEstimadas.push(t); pessoas.forEach(function(p){ acc(p).naoEstimadas++; }); return; }
+        // Sem estimativa continua "não estimada"; com alocação a carga conta mesmo assim.
+        if(!temEsforco(t)){ R.naoEstimadas.push(t); pessoas.forEach(function(p){ acc(p).naoEstimadas++; }); if(!explicita) return; }
+      }
+      if(explicita){
+        // Não espalha: cada chip é a carga daquele dia (sáb/dom inclusive). Atrasada não
+        // empurra nada para hoje.
+        diasAlocacao(t).forEach(function(d){
+          const dia = t.alocacao[d] || {};
+          Object.keys(dia).forEach(function(p){
+            const v = Number(dia[p]); if(!v) return;
+            acc(p).alocado += v;
+            if(feita) acc(p).concluido += v;
+            if(de && d < de) return; if(ate && d > ate) return;
+            soma(p, d, v, t, j, feita, true);
+          });
+        });
+        return;
       }
       const porPessoa = esforcoPorPessoa(t);
       let dias = listaDiasUteis(j.inicio, j.fim, fer);
@@ -1600,17 +1883,7 @@ window.CONFIG = CONFIG;
         dias.forEach(function(d){
           const v = e * porDia;
           if(de && d < de) return; if(ate && d > ate) return;
-          if(!R.porPessoaDia[p]) R.porPessoaDia[p] = {};
-          R.porPessoaDia[p][d] = (R.porPessoaDia[p][d] || 0) + v;
-          acc(p).alocadoPeriodo += v;
-          if(feita){
-            if(!R.porPessoaDiaDone[p]) R.porPessoaDiaDone[p] = {};
-            R.porPessoaDiaDone[p][d] = (R.porPessoaDiaDone[p][d] || 0) + v;
-            acc(p).concluidoPeriodo += v;
-          }
-          if(!R.detalhe[p]) R.detalhe[p] = {};
-          if(!R.detalhe[p][d]) R.detalhe[p][d] = [];
-          R.detalhe[p][d].push({ id: t.id, desc: t.desc, projectName: t.projectName, dias: v, atrasada: !!j.atrasada, concluida: feita });
+          soma(p, d, v, t, j, feita, false);
         });
       });
     });
@@ -1618,7 +1891,8 @@ window.CONFIG = CONFIG;
   }
 
   // Semanas (seg–dom) que cobrem [de, ate]; soma por pessoa e capacidade da semana
-  // proporcional aos dias úteis que caem dentro do período.
+  // proporcional aos dias úteis que caem dentro do período. extraFds = parte da soma que caiu
+  // em dia não útil (chip de sáb/dom) — já está em porPessoa; a capacidade NÃO muda.
   function agregarSemanas(porPessoaDia, de, ate, capDiasSemana, feriados){
     const semanas = [];
     let ini = inicioSemana(de);
@@ -1627,12 +1901,16 @@ window.CONFIG = CONFIG;
       const fim = addDias(ini, 6);
       const uteis = listaDiasUteis(ini < de ? de : ini, fim > ate ? ate : fim, feriados).length;
       const cap = (capDiasSemana || 5) * (uteis / 5);
-      const porPessoa = {};
+      const porPessoa = {}, extraFds = {};
       Object.keys(porPessoaDia).forEach(function(p){
-        let s = 0; Object.keys(porPessoaDia[p]).forEach(function(d){ if(d >= ini && d <= fim && d >= de && d <= ate) s += porPessoaDia[p][d]; });
+        let s = 0, x = 0;
+        Object.keys(porPessoaDia[p]).forEach(function(d){
+          if(d >= ini && d <= fim && d >= de && d <= ate){ s += porPessoaDia[p][d]; if(!ehDiaUtil(d, feriados)) x += porPessoaDia[p][d]; }
+        });
         if(s > 0) porPessoa[p] = s;
+        if(x > 0) extraFds[p] = x;
       });
-      semanas.push({ inicio: ini, fim: fim, diasUteis: uteis, capacidade: cap, porPessoa: porPessoa });
+      semanas.push({ inicio: ini, fim: fim, diasUteis: uteis, capacidade: cap, porPessoa: porPessoa, extraFds: extraFds });
       ini = addDias(ini, 7);
     }
     return semanas;
@@ -1648,7 +1926,8 @@ window.CONFIG = CONFIG;
   function arred(n, casas){ const f = Math.pow(10, casas == null ? 1 : casas); return Math.round(n * f) / f; }
 
   const api = { parse: parse, fmt: fmt, addDias: addDias, ehDiaUtil: ehDiaUtil, listaDiasUteis: listaDiasUteis, diasUteisEntre: diasUteisEntre, addDiasUteis: addDiasUteis, subDiasUteis: subDiasUteis,
-    inicioSemana: inicioSemana, fimSemana: fimSemana, janela: janela, temEsforco: temEsforco, esforcoPorPessoa: esforcoPorPessoa, alocar: alocar, agregarSemanas: agregarSemanas, nivel: nivel, arred: arred };
+    inicioSemana: inicioSemana, fimSemana: fimSemana, janela: janela, temEsforco: temEsforco, esforcoPorPessoa: esforcoPorPessoa, alocar: alocar,
+    temAlocacao: temAlocacao, diasAlocacao: diasAlocacao, esforcoAlocado: esforcoAlocado, saldoAlocacao: saldoAlocacao, setChip: setChip, segmentos: segmentos, preencherAte: preencherAte, agregarSemanas: agregarSemanas, nivel: nivel, arred: arred };
   if(typeof module !== 'undefined' && module.exports) module.exports = api;
   root.PlannerCarga = api;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2384,6 +2663,7 @@ const VIEWS = [
   { id: 'list',     tab: 'Projetos',        mod: 'planning',     el: 'listView',     title: 'Projetos' },
   { id: 'planner',  tab: 'Planner',         mod: 'planner',      el: 'plannerView',  title: 'Planner' },
   { id: 'carga',    tab: 'Carga',           mod: 'carga',        el: 'cargaView',    title: 'Carga de trabalho' },
+  { id: 'planejar', tab: 'Planejar',        mod: 'planejar',     el: 'planejarView', title: 'Planejar sprint' },
   { id: 'timeline', tab: 'Timeline',        mod: 'timeline',     el: 'timelineView', title: 'Timeline' },
   { id: 'cal',      tab: 'Calendário',      mod: 'calendario',   el: 'calView',      title: 'Calendário' },
   { id: 'week',     tab: 'Kanban de Tasks', mod: 'kanban_tasks', el: 'weekView',     title: 'Kanban de tasks' },
@@ -2425,6 +2705,7 @@ function renderCurrentView(){
   else if(currentView === 'list') renderPlanningList();
   else if(currentView === 'planner') renderPlanner();
   else if(currentView === 'carga' && typeof renderCarga === 'function') renderCarga();
+  else if(currentView === 'planejar' && typeof renderPlanejar === 'function') renderPlanejar();
   else if(currentView === 'timeline' && typeof renderTimeline === 'function') renderTimeline();
   else if(currentView === 'cal' && typeof renderCalendar === 'function') renderCalendar();
   else if(currentView === 'week') renderWeekView();
@@ -2944,7 +3225,7 @@ function cargaTasks(soEscopo){
         if(!algumaNoFiltro(whoArr(t))) return;
         // As concluídas vêm junto: o motor as usa só para os dias em que estiveram em curso
         // (até doneAt). Sem isso, concluir uma task apagava a carga do passado dela.
-        out.push({ id: t.id, desc: t.desc, who: whoArr(t), effort: t.effort, effortBy: t.effortBy, start: t.start, date: t.date, status: t.status, done: t.status === TASK_DONE_ID, doneAt: t.doneAt, projectName: p.name, projectId: p.id, frente: f });
+        out.push({ id: t.id, desc: t.desc, who: whoArr(t), effort: t.effort, effortBy: t.effortBy, start: t.start, date: t.date, status: t.status, done: t.status === TASK_DONE_ID, doneAt: t.doneAt, alocacao: t.alocacao, projectName: p.name, projectId: p.id, frente: f });
       });
     });
   });
@@ -2979,11 +3260,14 @@ function renderCarga(){
   // uma frente filtrada, mostramos a parcela dela numa coluna extra.
   const fAtiva = frenteAtiva();
   const Rf = fAtiva ? C.alocar(cargaTasks(true), { hoje: hoje, de: per.de, ate: per.ate }) : null;
+  // Carga de sáb/dom (chip de alocação explícita): já está em `alocado`; aqui só vira o "(+X fds)".
+  const extraFds = {};
+  C.agregarSemanas(R.porPessoaDia, per.de, per.ate, cap).forEach(function(w){ Object.keys(w.extraFds || {}).forEach(function(p){ extraFds[p] = (extraFds[p] || 0) + w.extraFds[p]; }); });
   const linhas = pessoas.map(function(p){
     const s = R.porPessoa[p] || { alocado: 0, alocadoPeriodo: 0, tasks: 0, naoEstimadas: 0, atrasadas: 0 };
     const pct = capPeriodo > 0 ? s.alocadoPeriodo / capPeriodo : 0;
     const naFrente = Rf ? ((Rf.porPessoa[p] || { alocadoPeriodo: 0 }).alocadoPeriodo) : null;
-    return { p: p, s: s, pct: pct, saldo: capPeriodo - s.alocadoPeriodo, naFrente: naFrente };
+    return { p: p, s: s, pct: pct, saldo: capPeriodo - s.alocadoPeriodo, naFrente: naFrente, fds: extraFds[p] || 0 };
   });  // já vem em ordem alfabética de `pessoas` — ver comentário acima
   const totAloc = linhas.reduce(function(a, l){ return a + l.s.alocadoPeriodo; }, 0), totCap = capPeriodo * linhas.length;
   const totFeito = linhas.reduce(function(a, l){ return a + l.s.concluidoPeriodo; }, 0);
@@ -3001,12 +3285,19 @@ function renderCarga(){
         // sem este <td> o corpo fica com uma coluna a menos que o cabeçalho e a tabela
         // inteira escorrega para a esquerda (a coluna da frente mostrava o total)
         + (fAtiva ? '<td class="num col-frente" title="Parcela desta frente no total alocado">' + fmtD(l.naFrente || 0) + '</td>' : '')
-        + '<td class="num">' + fmtD(l.s.alocadoPeriodo) + (l.s.concluidoPeriodo > .05 ? '<span class="carga-done-sub" title="Destes, já concluídos">' + fmtD(l.s.concluidoPeriodo) + '✓</span>' : '') + '</td><td class="num">' + fmtD(capPeriodo) + '</td><td class="num ' + (l.saldo < 0 ? 'neg' : '') + '">' + (l.saldo < 0 ? '−' : '') + fmtD(Math.abs(l.saldo)) + '</td><td class="num">' + (l.s.naoEstimadas ? '<span class="ne-chip">' + l.s.naoEstimadas + '</span>' : '—') + '</td><td class="num">' + (l.s.atrasadas ? '<span class="atr-chip">' + l.s.atrasadas + '</span>' : '—') + '</td><td class="num">' + l.s.tasks + '</td></tr>';
+        + '<td class="num">' + fmtD(l.s.alocadoPeriodo) + (l.fds > .001 ? '<span class="carga-fds-sub" title="Carga em sábado/domingo (alocação explícita): já está no alocado; a capacidade não muda">(+' + fmtD(l.fds) + ' fds)</span>' : '') + (l.s.concluidoPeriodo > .05 ? '<span class="carga-done-sub" title="Destes, já concluídos">' + fmtD(l.s.concluidoPeriodo) + '✓</span>' : '') + '</td><td class="num">' + fmtD(capPeriodo) + '</td><td class="num ' + (l.saldo < 0 ? 'neg' : '') + '">' + (l.saldo < 0 ? '−' : '') + fmtD(Math.abs(l.saldo)) + '</td><td class="num">' + (l.s.naoEstimadas ? '<span class="ne-chip">' + l.s.naoEstimadas + '</span>' : '—') + '</td><td class="num">' + (l.s.atrasadas ? '<span class="atr-chip">' + l.s.atrasadas + '</span>' : '—') + '</td><td class="num">' + l.s.tasks + '</td></tr>';
     }).join('') + '</tbody></table></div>';
 
   // ── heatmap ──
   let cols, capCel;
-  if(cargaGran === 'dia'){ cols = diasUteis.map(function(d){ return { key: d, label: formatDateShort(d), sub: ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][parseISO(d).getDay()], hoje: d === hoje }; }); capCel = cap / 5; }
+  if(cargaGran === 'dia'){
+    // Dias úteis, mais os sáb/dom em que há carga (chip de alocação explícita). Sem carga no fim
+    // de semana, as colunas não existem — a grade continua a de sempre.
+    const temCarga = function(d){ return pessoas.some(function(p){ return ((R.porPessoaDia[p] && R.porPessoaDia[p][d]) || 0) > 0; }); };
+    const dd = []; let cur = per.de, guard = 0;
+    while(cur <= per.ate && guard++ < 400){ if(C.ehDiaUtil(cur) || temCarga(cur)) dd.push(cur); cur = C.addDias(cur, 1); }
+    cols = dd.map(function(d){ return { key: d, label: formatDateShort(d), sub: ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][parseISO(d).getDay()], hoje: d === hoje, fds: !C.ehDiaUtil(d) }; }); capCel = cap / 5;
+  }
   else{
     const S = C.agregarSemanas(R.porPessoaDia, per.de, per.ate, cap);
     const SD = C.agregarSemanas(R.porPessoaDiaDone, per.de, per.ate, cap);
@@ -3015,16 +3306,16 @@ function renderCarga(){
   const valor = function(p, col){ if(cargaGran === 'dia') return (R.porPessoaDia[p] && R.porPessoaDia[p][col.key]) || 0; return (col.porPessoa && col.porPessoa[p]) || 0; };
   const feito = function(p, col){ if(cargaGran === 'dia') return (R.porPessoaDiaDone[p] && R.porPessoaDiaDone[p][col.key]) || 0; return (col.porPessoaDone && col.porPessoaDone[p]) || 0; };
   const capDe = function(col){ return cargaGran === 'dia' ? capCel : col.cap; };
-  html += '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">Mapa de calor — ' + (cargaGran === 'dia' ? 'por dia útil' : 'por semana') + '</div><div class="carga-card-sub">célula = dias alocados ÷ capacidade da célula (' + (cargaGran === 'dia' ? fmtD(capCel) + ' d/dia' : fmtD(cap) + ' d/semana cheia') + '). Clique numa célula para ver as tasks. Task concluída continua nos dias em que esteve em curso (até a data de conclusão), em verde.</div></div>'
-    + '<div class="carga-legend"><span class="cl-swatch cl-vazio"></span>0<span class="cl-swatch cl-baixo"></span>&lt;60%<span class="cl-swatch cl-ok"></span>60–100%<span class="cl-swatch cl-cheio"></span>100–120%<span class="cl-swatch cl-estourado"></span>&gt;120%<span class="cl-swatch cl-ne"></span>não estimada<span class="cl-swatch cl-feito"></span>concluída</div></div>'
-    + '<div class="heat-scroll"><table class="heat"><thead><tr><th class="heat-corner"></th>' + cols.map(function(c){ return '<th class="heat-col' + (c.hoje ? ' hoje' : '') + '"><div>' + c.label + '</div><div class="heat-sub">' + c.sub + '</div></th>'; }).join('') + '<th class="heat-col heat-ne-col" title="Tasks abertas sem estimativa (não entram nas células)">não est.</th></tr></thead><tbody>'
+  html += '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">Mapa de calor — ' + (cargaGran === 'dia' ? 'por dia útil' : 'por semana') + '</div><div class="carga-card-sub">célula = dias alocados ÷ capacidade da célula (' + (cargaGran === 'dia' ? fmtD(capCel) + ' d/dia' : fmtD(cap) + ' d/semana cheia') + '). Clique numa célula para ver as tasks. Task concluída continua nos dias em que esteve em curso (até a data de conclusão), em verde. Sábado e domingo só aparecem quando há alocação neles (carga extra, sem percentual).</div></div>'
+    + '<div class="carga-legend"><span class="cl-swatch cl-vazio"></span>0<span class="cl-swatch cl-baixo"></span>&lt;60%<span class="cl-swatch cl-ok"></span>60–100%<span class="cl-swatch cl-cheio"></span>100–120%<span class="cl-swatch cl-estourado"></span>&gt;120%<span class="cl-swatch cl-ne"></span>não estimada<span class="cl-swatch cl-feito"></span>concluída<span class="cl-swatch cl-fds-extra"></span>fim de semana</div></div>'
+    + '<div class="heat-scroll"><table class="heat"><thead><tr><th class="heat-corner"></th>' + cols.map(function(c){ return '<th class="heat-col' + (c.hoje ? ' hoje' : '') + (c.fds ? ' fds' : '') + '"><div>' + c.label + '</div><div class="heat-sub">' + c.sub + '</div></th>'; }).join('') + '<th class="heat-col heat-ne-col" title="Tasks abertas sem estimativa (não entram nas células)">não est.</th></tr></thead><tbody>'
     + pessoas.map(function(p){
       const s = R.porPessoa[p] || { naoEstimadas: 0 };
       return '<tr><th class="heat-row"><div class="avatar" style="' + avatarStyle(p) + '">' + p + '</div></th>' + cols.map(function(c){
-        const v = valor(p, c), pct = capDe(c) > 0 ? v / capDe(c) : 0, nv = C.nivel(pct);
+        const v = valor(p, c), fdsCel = !!c.fds, pct = (!fdsCel && capDe(c) > 0) ? v / capDe(c) : 0, nv = fdsCel ? (v > 0 ? 'fds-extra' : 'vazio') : C.nivel(pct);
         const vf = feito(p, c), tudoFeito = v > 0 && vf >= v - 0.001;
         const sel = cargaDetalhe && cargaDetalhe.p === p && cargaDetalhe.key === c.key;
-        return '<td class="heat-cell cl-' + nv + (c.hoje ? ' hoje' : '') + (sel ? ' sel' : '') + (tudoFeito ? ' feito' : '') + '" onclick="cargaToggleDetalhe(\'' + p + '\',\'' + c.key + '\')" title="' + p + ' · ' + c.label + ' · ' + fmtD(v) + ' d (' + Math.round(pct * 100) + '%)' + (vf > .001 ? ' · ' + fmtD(vf) + ' d já concluídos' : '') + '">' + (v > 0 ? fmtD(v) : '') + (pct > 1.2 && !tudoFeito ? '<span class="heat-alert">!</span>' : '') + '</td>';
+        return '<td class="heat-cell cl-' + nv + (c.hoje ? ' hoje' : '') + (sel ? ' sel' : '') + (tudoFeito ? ' feito' : '') + '" onclick="cargaToggleDetalhe(\'' + p + '\',\'' + c.key + '\')" title="' + p + ' · ' + c.label + ' · ' + fmtD(v) + ' d' + (fdsCel ? ' (extra de fim de semana; a capacidade não muda)' : ' (' + Math.round(pct * 100) + '%)') + (vf > .001 ? ' · ' + fmtD(vf) + ' d já concluídos' : '') + '">' + (v > 0 ? fmtD(v) : '') + (!fdsCel && pct > 1.2 && !tudoFeito ? '<span class="heat-alert">!</span>' : '') + '</td>';
       }).join('') + '<td class="heat-cell cl-ne">' + (s.naoEstimadas || '') + '</td></tr>';
     }).join('') + '</tbody></table></div>';
   // detalhe da célula
@@ -3033,8 +3324,10 @@ function renderCarga(){
     if(cargaGran === 'dia') itens = (R.detalhe[cargaDetalhe.p] && R.detalhe[cargaDetalhe.p][cargaDetalhe.key]) || [];
     else{ const col = cols.find(function(c){ return c.key === cargaDetalhe.key; }); if(col){ const agg = {}; Object.keys(R.detalhe[cargaDetalhe.p] || {}).forEach(function(d){ if(d >= col.key && d <= C.addDias(col.key, 6)) R.detalhe[cargaDetalhe.p][d].forEach(function(it){ const k = it.id; if(!agg[k]) agg[k] = Object.assign({}, it, { dias: 0 }); agg[k].dias += it.dias; }); }); itens = Object.keys(agg).map(function(k){ return agg[k]; }); } }
     const byId = {}; tasks.forEach(function(t){ byId[t.id] = t; });
-    html += '<div class="carga-detalhe"><div class="carga-detalhe-head"><b>' + escHtml(cargaDetalhe.p) + '</b> · ' + escHtml((cols.find(function(c){ return c.key === cargaDetalhe.key; }) || {}).label || '') + ' · ' + itens.length + ' task' + (itens.length !== 1 ? 's' : '') + '<button class="icon-btn" onclick="cargaToggleDetalhe(null)">✕</button></div>'
-      + (itens.length ? itens.sort(function(a, b){ return b.dias - a.dias; }).map(function(it){ const t = byId[it.id]; return '<div class="carga-item" onclick="openProject(\'' + (t ? t.projectId : '') + '\')">' + (t && t.frente && isMulti() ? '<span class="frente-badge" style="' + frenteStyle(t.frente.cor) + '">' + escHtml(t.frente.curto) + '</span>' : '') + '<span class="carga-item-proj">' + escHtml(it.projectName || '') + '</span><span class="carga-item-desc' + (it.concluida ? ' feita' : '') + '">' + escHtml(it.desc || '') + '</span>' + (it.concluida ? '<span class="done-chip">✓ concluída</span>' : '') + (it.atrasada ? '<span class="atr-chip">atrasada</span>' : '') + '<span class="carga-item-val">' + fmtD(it.dias) + ' d</span></div>'; }).join('') : '<div class="carga-vazio">Nada alocado.</div>')
+    html += '<div class="carga-detalhe"><div class="carga-detalhe-head"><b>' + escHtml(cargaDetalhe.p) + '</b> · ' + escHtml((cols.find(function(c){ return c.key === cargaDetalhe.key; }) || {}).label || '') + ' · ' + itens.length + ' task' + (itens.length !== 1 ? 's' : '') + ''
+      + (!_readOnly && moduleEnabled('planejar') ? '<button class="btn btn-secondary btn-sm" onclick="cargaPlanejarPessoa(\'' + cargaDetalhe.p + '\')" title="Abre a grade Planejar só com esta pessoa, no mesmo período">Planejar esta pessoa</button>' : '')
+      + '<button class="icon-btn" onclick="cargaToggleDetalhe(null)">✕</button></div>'
+      + (itens.length ? itens.sort(function(a, b){ return b.dias - a.dias; }).map(function(it){ const t = byId[it.id]; return '<div class="carga-item" onclick="openProject(\'' + (t ? t.projectId : '') + '\')">' + (t && t.frente && isMulti() ? '<span class="frente-badge" style="' + frenteStyle(t.frente.cor) + '">' + escHtml(t.frente.curto) + '</span>' : '') + '<span class="carga-item-proj">' + escHtml(it.projectName || '') + '</span><span class="carga-item-desc' + (it.concluida ? ' feita' : '') + '">' + (it.explicita ? '<span class="carga-explicita" title="alocação explícita">•</span> ' : '') + escHtml(it.desc || '') + '</span>' + (it.concluida ? '<span class="done-chip">✓ concluída</span>' : '') + (it.atrasada ? '<span class="atr-chip">atrasada</span>' : '') + '<span class="carga-item-val">' + fmtD(it.dias) + ' d</span></div>'; }).join('') : '<div class="carga-vazio">Nada alocado.</div>')
       + '</div>';
   }
   html += '</div></div>'; // fecha o card do mapa + a linha .carga-topo
@@ -3068,9 +3361,18 @@ function cargaHistoricoHtml(){
 function cargaLista(titulo, itens, sub, editavel, tasks){
   return '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">' + titulo + ' <span class="carga-count">' + itens.length + '</span></div><div class="carga-card-sub">' + sub + '</div></div></div>'
     + (itens.length ? '<div class="carga-lista">' + itens.map(function(t){
-      const edit = editavel ? '<input class="form-input carga-inline" type="date" value="' + (t.date || '') + '" title="Nosso prazo" onchange="cargaEditTask(\'' + t.projectId + '\',\'' + t.id + '\',\'date\',this.value)"/><input class="form-input carga-inline carga-inline-eff" type="number" min="0" step="0.5" placeholder="dias" value="' + (t.effort == null ? '' : t.effort) + '" title="Esforço (dias úteis)" onchange="cargaEditTask(\'' + t.projectId + '\',\'' + t.id + '\',\'effort\',this.value)"/>' : (t.date ? '<span class="carga-item-val ' + deadlineClass(t.date) + '">' + formatDateShort(t.date) + '</span>' : '');
+      const aloc = (typeof PlannerCarga !== 'undefined' && PlannerCarga.temAlocacao(t)) ? (function(){ const m = PlannerCarga.esforcoAlocado(t); const tot = Object.keys(m).reduce(function(a, k){ return a + m[k]; }, 0); return '<span class="carga-alocado" title="Soma dos chips da grade Planejar; a estimativa continua em branco">alocado ' + fmtDias(tot) + ' d</span>'; })() : '';
+      const edit = editavel ? aloc + '<input class="form-input carga-inline" type="date" value="' + (t.date || '') + '" title="Nosso prazo" onchange="cargaEditTask(\'' + t.projectId + '\',\'' + t.id + '\',\'date\',this.value)"/><input class="form-input carga-inline carga-inline-eff" type="number" min="0" step="0.5" placeholder="dias" value="' + (t.effort == null ? '' : t.effort) + '" title="Esforço (dias úteis)" onchange="cargaEditTask(\'' + t.projectId + '\',\'' + t.id + '\',\'effort\',this.value)"/>' : (t.date ? '<span class="carga-item-val ' + deadlineClass(t.date) + '">' + formatDateShort(t.date) + '</span>' : '');
       return '<div class="carga-item">' + (t.frente && isMulti() ? '<span class="frente-badge" style="' + frenteStyle(t.frente.cor) + '">' + escHtml(t.frente.curto) + '</span>' : '') + '<span class="carga-item-proj" onclick="openProject(\'' + t.projectId + '\')">' + escHtml(t.projectName) + '</span><span class="carga-item-desc" onclick="openTaskEditor(\'' + t.projectId + '\',\'' + t.id + '\')" title="Editar task">' + escHtml(t.desc) + '</span><span class="carga-item-who">' + (t.who.length ? t.who.join(', ') : '—') + '</span>' + edit + '<button class="icon-btn" title="Editar task" onclick="openTaskEditor(\'' + t.projectId + '\',\'' + t.id + '\')">✎</button></div>';
     }).join('') + '</div>' : '<div class="carga-vazio">Nenhuma. 👌</div>') + '</div>';
+}
+// "Planejar esta pessoa": abre a grade Planejar só com a pessoa e no período que a Carga está mostrando.
+function cargaPlanejarPessoa(sigla){
+  const per = cargaPeriodo();
+  plPreset = cargaPreset; plDe = per.de; plAte = per.ate;
+  filterPessoas = [sigla];
+  document.querySelectorAll('[data-filter]').forEach(function(b){ const f = b.getAttribute('data-filter'); b.classList.toggle('active', f === 'all' ? false : filterPessoas.indexOf(f) >= 0); });
+  setView('planejar');
 }
 function cargaToggleDetalhe(p, key){ cargaDetalhe = (p && !(cargaDetalhe && cargaDetalhe.p === p && cargaDetalhe.key === key)) ? { p: p, key: key } : null; renderCarga(); }
 function cargaEditTask(pid, tid, campo, val){
@@ -3123,13 +3425,16 @@ function tlItens(per){
       const done = t.status === TASK_DONE_ID;
       if(!algumaNoFiltro(whoArr(t))) return;
       if(done && (!tlMostrarDone || !t.doneAt)) return;
-      let ini, fim;
-      if(done){ ini = t.start || t.date || t.doneAt; fim = t.doneAt; }
+      let ini, fim, segs = null;
+      // Com alocação por dia a barra vem dos chips (um segmento por bloco de dias seguidos); start/date
+      // não desenham mais nada. Sem alocação, tudo como sempre.
+      if(C.temAlocacao(t)){ const ja = C.janela(t, hoje); ini = ja.inicio; fim = ja.fim; segs = ja.segmentos || null; }
+      else if(done){ ini = t.start || t.date || t.doneAt; fim = t.doneAt; }
       else{ const j = C.janela(t, hoje); if(!j) return; ini = t.start || j.inicio; fim = j.fim; if(t.start && t.date && t.start <= t.date){ ini = t.start; fim = t.date; } }
-      const cli = (!done && t.dateClient) ? t.dateClient : '';
+      const cli = (!done && t.dateClient) ? t.dateClient : '';   // com alocação, `fim` = último chip: a folga parte do último segmento
       const fimTotal = cli && cli > fim ? cli : fim;
       if(fimTotal < per.de || ini > per.ate) return;
-      out.push({ tipo: 'task', id: t.id, desc: t.desc, ini: ini, fim: fim, cli: cli, estouro: !!(cli && fim > cli), atrasada: !done && t.date && t.date < hoje, done: done, who: whoArr(t), effort: t.effort, p: p, frente: f, cor: cor, status: t.status });
+      out.push({ tipo: 'task', id: t.id, desc: t.desc, ini: ini, fim: fim, cli: cli, estouro: !!(cli && fim > cli), atrasada: !done && t.date && t.date < hoje, segs: segs, done: done, who: whoArr(t), effort: t.effort, p: p, frente: f, cor: cor, status: t.status });
     });
     (p.milestones || []).forEach(function(m){
       if(!m.date) return;
@@ -3194,10 +3499,20 @@ function renderTimeline(){
         return '<div class="tl-ms' + (it.done ? ' done' : '') + (it.msStatus === 'blocked' ? ' blocked' : '') + '" style="left:' + (pos(it.ini) + pctDia / 2) + '%;top:' + top + 'px;--c:' + it.cor + '" title="◆ ' + escHtml(it.desc) + ' · ' + formatDate(it.ini) + (it.who.length ? ' · ' + it.who.join(', ') : '') + '" onclick="openProject(\'' + it.p.id + '\')"><span class="tl-ms-label">' + escHtml(it.desc) + '</span></div>';
       }
       const left = pos(a), width = Math.max(pctDia, pos(b) + pctDia - left);
+      const sg = it.segs && it.segs.length ? it.segs.filter(function(x){ return x[1] >= per.de && x[0] <= per.ate; }) : null;
       let folga = '';
       if(it.cli && it.cli > it.fim){ const fa = C.addDias(it.fim, 1), fb = it.cli > per.ate ? per.ate : it.cli; if(fa <= fb) folga = '<div class="tl-folga" style="left:' + pos(fa) + '%;width:' + (pos(fb) + pctDia - pos(fa)) + '%;top:' + top + 'px" title="Folga até o prazo do cliente (' + formatDate(it.cli) + ')"></div>'; }
       const cliMark = it.cli && it.cli >= per.de && it.cli <= per.ate ? '<div class="tl-cli' + (it.estouro ? ' estouro' : '') + '" style="left:' + (pos(it.cli) + pctDia / 2) + '%;top:' + top + 'px" title="Prazo cliente ' + formatDate(it.cli) + (it.estouro ? ' — ALVO DEPOIS DO PRAZO' : '') + '">◇</div>' : '';
-      const tip = escHtml(it.desc) + ' · ' + formatDate(it.ini) + ' → ' + formatDate(it.fim) + (it.who.length ? ' · ' + it.who.join(', ') : '') + (it.effort ? ' · ' + it.effort + 'd' : ' · sem estimativa') + (it.atrasada ? ' · ATRASADA' : '');
+      const tip = escHtml(it.desc) + ' · ' + formatDate(it.ini) + ' → ' + formatDate(it.fim) + (it.who.length ? ' · ' + it.who.join(', ') : '') + (it.effort ? ' · ' + it.effort + 'd' : ' · sem estimativa') + (it.atrasada ? ' · ATRASADA' : '') + (it.segs ? ' · alocação por dia' : '');
+      const cls = 'tl-bar' + (it.done ? ' done' : '') + (it.atrasada ? ' atrasada' : '') + (it.estouro ? ' estouro' : '') + (!it.effort && !it.done ? ' sem-est' : '');
+      if(sg){
+        // uma barra por segmento, mesma lane e cor; rótulo e responsáveis só no primeiro visível
+        const barras = sg.map(function(x, k){
+          const sa = x[0] < per.de ? per.de : x[0], sb = x[1] > per.ate ? per.ate : x[1], sl = pos(sa), sw = Math.max(pctDia, pos(sb) + pctDia - sl);
+          return '<div class="' + cls + ' tl-seg' + (k ? ' tl-seg-cont' : '') + '" style="left:' + sl + '%;width:' + sw + '%;top:' + top + 'px;--c:' + it.cor + '" title="' + tip + '" onclick="openProject(\'' + it.p.id + '\')"><span class="tl-bar-label">' + escHtml(it.desc) + '</span>' + (!k && it.who.length && tlGrupo === 'projeto' ? '<span class="tl-bar-who">' + escHtml(it.who.join(', ')) + '</span>' : '') + '</div>';
+        }).join('');
+        return folga + barras + cliMark;
+      }
       return folga + '<div class="tl-bar' + (it.done ? ' done' : '') + (it.atrasada ? ' atrasada' : '') + (it.estouro ? ' estouro' : '') + (!it.effort && !it.done ? ' sem-est' : '') + '" style="left:' + left + '%;width:' + width + '%;top:' + top + 'px;--c:' + it.cor + '" title="' + tip + '" onclick="openProject(\'' + it.p.id + '\')"><span class="tl-bar-label">' + escHtml(it.desc) + '</span>' + (it.who.length && tlGrupo === 'projeto' ? '<span class="tl-bar-who">' + escHtml(it.who.join(', ')) + '</span>' : '') + '</div>' + cliMark;
     }).join('');
     const label = g.pessoa
@@ -3214,7 +3529,7 @@ function renderTimeline(){
 //  Sem eventos manuais (aposentados): o trabalho em andamento vive na Timeline.
 // ══════════════════════════════
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
-let calTipos = { marcos: true, cliente: true, alvo: false };
+let calTipos = { marcos: true, cliente: true, alvo: false, alocado: true };
 const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 function calPrev(){ calMonth--; if(calMonth < 0){ calMonth = 11; calYear--; } renderCalendar(); }
 function calNext(){ calMonth++; if(calMonth > 11){ calMonth = 0; calYear++; } renderCalendar(); }
@@ -3231,6 +3546,13 @@ function calItens(){
       const done = t.status === TASK_DONE_ID;
       if(calTipos.cliente && t.dateClient) add(t.dateClient, { tipo: 'cliente', label: t.desc, p: p, cor: cor, done: done, who: whoArr(t), frente: f });
       if(calTipos.alvo && t.date && !done) add(t.date, { tipo: 'alvo', label: t.desc, p: p, cor: cor, done: false, who: whoArr(t), frente: f });
+      // alocação por dia (Modo Planejar): uma pílula por dia alocado, com as siglas daquele dia
+      if(calTipos.alocado && PlannerCarga.temAlocacao(t) && algumaNoFiltro(whoArr(t).concat(Object.keys(PlannerCarga.esforcoAlocado(t))))){
+        PlannerCarga.diasAlocacao(t).forEach(function(iso){
+          const sig = Object.keys(t.alocacao[iso]).filter(function(x){ return t.alocacao[iso][x]; }); if(!sig.length) return;
+          add(iso, { tipo: 'alocado', tid: t.id, label: t.desc, p: p, cor: cor, done: done, who: sig, frente: f });
+        });
+      }
     });
   });
   return out;
@@ -3245,14 +3567,19 @@ function renderCalendar(){
   for(let i = 0; i < startDow; i++) days.push({ date: new Date(calYear, calMonth, 1 - startDow + i), cur: false });
   for(let d = 1; d <= last.getDate(); d++) days.push({ date: new Date(calYear, calMonth, d), cur: true });
   while(days.length % 7 !== 0) days.push({ date: new Date(calYear, calMonth + 1, days.length - startDow - last.getDate() + 1), cur: false });
-  const totalMes = Object.keys(itens).filter(function(k){ return k.slice(0, 7) === toISO(first).slice(0, 7); }).reduce(function(a, k){ return a + itens[k].length; }, 0);
+  const mesKey = toISO(first).slice(0, 7);
+  const noMes = Object.keys(itens).filter(function(k){ return k.slice(0, 7) === mesKey; });
+  // alocações não são compromissos: contadas à parte
+  const totalMes = noMes.reduce(function(a, k){ return a + itens[k].filter(function(i){ return i.tipo !== 'alocado'; }).length; }, 0);
+  const totalAloc = noMes.reduce(function(a, k){ return a + itens[k].filter(function(i){ return i.tipo === 'alocado'; }).length; }, 0);
 
   let html = '<div class="filter-bar carga-toolbar"><button class="btn btn-secondary btn-sm" onclick="calPrev()">‹</button><span class="cal-title">' + MONTH_NAMES[calMonth] + ' ' + calYear + '</span><button class="btn btn-secondary btn-sm" onclick="calNext()">›</button><button class="btn btn-ghost btn-sm" onclick="calGoToday()">Hoje</button>'
     + '<div class="filter-sep"></div><span class="filter-label">Mostrar</span>'
     + '<button class="filter-chip' + (calTipos.marcos ? ' active' : '') + '" onclick="toggleCalTipo(\'marcos\',this)">◆ Marcos</button>'
     + '<button class="filter-chip' + (calTipos.cliente ? ' active' : '') + '" onclick="toggleCalTipo(\'cliente\',this)">◇ Prazos cliente</button>'
     + '<button class="filter-chip' + (calTipos.alvo ? ' active' : '') + '" onclick="toggleCalTipo(\'alvo\',this)">▸ Nossos prazos</button>'
-    + '<span class="cal-count">' + totalMes + ' compromisso' + (totalMes !== 1 ? 's' : '') + ' no mês</span></div>';
+    + '<button class="filter-chip' + (calTipos.alocado ? ' active' : '') + '" onclick="toggleCalTipo(\'alocado\',this)" title="Dias alocados na grade Planejar, com as siglas de quem está alocado">▪ Alocado</button>'
+    + '<span class="cal-count">' + totalMes + ' compromisso' + (totalMes !== 1 ? 's' : '') + ' no mês' + (calTipos.alocado && totalAloc ? ' · ' + totalAloc + ' dia' + (totalAloc !== 1 ? 's' : '') + ' alocado' + (totalAloc !== 1 ? 's' : '') : '') + '</span></div>';
   html += '<div class="cal"><div class="cal-dow-row">' + ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(function(d, i){ return '<div class="cal-dow' + (i === 0 || i === 6 ? ' fds' : '') + '">' + d + '</div>'; }).join('') + '</div><div class="cal-grid">';
   const MAX = 4;
   days.forEach(function(day, idx){
@@ -3263,6 +3590,9 @@ function renderCalendar(){
       + vis.map(function(it){
         const ico = it.tipo === 'marco' ? '◆' : it.tipo === 'cliente' ? '◇' : '▸';
         const dc = it.done ? '' : deadlineClass(iso);
+        if(it.tipo === 'alocado'){
+          return '<div class="cal-chip cal-alocado' + (it.done ? ' done' : '') + '" style="--c:' + it.cor + ';--c-bg:' + hexToRgba(it.cor, .16) + '" title="' + escHtml('Alocado · ' + it.p.name + ' · ' + it.label + ' · ' + it.who.join(', ')) + '" onclick="openTaskEditor(\'' + it.p.id + '\',\'' + it.tid + '\')"><span class="cal-aloc-sig">' + escHtml(it.who.join(' ')) + '</span>' + escHtml(it.label) + '</div>';
+        }
         return '<div class="cal-chip cal-' + it.tipo + (it.done ? ' done' : '') + (dc === 'overdue' ? ' overdue' : '') + '" style="--c:' + it.cor + ';--c-bg:' + hexToRgba(it.cor, .16) + '" title="' + escHtml(it.p.name + ' · ' + it.label + (it.who.length ? ' · ' + it.who.join(', ') : '')) + '" onclick="openProject(\'' + it.p.id + '\')">' + ico + ' <span class="cal-chip-proj">' + escHtml(it.p.name) + '</span> ' + escHtml(it.label) + '</div>';
       }).join('')
       + (over > 0 ? '<div class="cal-more" onclick="calShowDay(\'' + iso + '\')">+' + over + '</div>' : '') + '</div>';
@@ -3273,7 +3603,405 @@ function renderCalendar(){
 function calShowDay(iso){
   const lista = calItens()[iso] || [];
   document.getElementById('calDayDetail').innerHTML = '<div class="carga-card" style="margin-top:12px"><div class="carga-card-head"><div class="carga-card-title">' + formatDate(iso) + ' · ' + lista.length + ' compromissos</div><button class="icon-btn" onclick="document.getElementById(\'calDayDetail\').innerHTML=\'\'">✕</button></div><div class="carga-lista">'
-    + lista.map(function(it){ return '<div class="carga-item" onclick="openProject(\'' + it.p.id + '\')">' + (it.frente && isMulti() ? '<span class="frente-badge" style="' + frenteStyle(it.frente.cor) + '">' + escHtml(it.frente.curto) + '</span>' : '') + '<span class="carga-item-proj">' + escHtml(it.p.name) + '</span><span class="carga-item-desc">' + (it.tipo === 'marco' ? '◆ ' : it.tipo === 'cliente' ? '◇ ' : '▸ ') + escHtml(it.label) + '</span><span class="carga-item-who">' + (it.who.length ? it.who.join(', ') : '—') + '</span></div>'; }).join('') + '</div></div>';
+    + lista.map(function(it){ return '<div class="carga-item" onclick="' + (it.tipo === 'alocado' ? 'openTaskEditor(\'' + it.p.id + '\',\'' + it.tid + '\')' : 'openProject(\'' + it.p.id + '\')') + '">' + (it.frente && isMulti() ? '<span class="frente-badge" style="' + frenteStyle(it.frente.cor) + '">' + escHtml(it.frente.curto) + '</span>' : '') + '<span class="carga-item-proj">' + escHtml(it.p.name) + '</span><span class="carga-item-desc">' + (it.tipo === 'marco' ? '◆ ' : it.tipo === 'cliente' ? '◇ ' : it.tipo === 'alocado' ? '▪ ' : '▸ ') + escHtml(it.label) + '</span><span class="carga-item-who">' + (it.who.length ? it.who.join(', ') : '—') + '</span></div>'; }).join('') + '</div></div>';
+}
+// ══════════════════════════════
+//  VIEW: PLANEJAR (grade task × dia com chips de alocação) — SPEC-MODO-PLANEJAR, seção 6
+//  Cada chip é uma sigla numa célula task × dia (1,0 ou 0,5). A carga das tasks com chip vem
+//  só deles (lib/carga.js: task.alocacao). O rodapé soma TODAS as frentes, como a Carga.
+//  Decisões travadas: chip só em task (a linha do projeto é só leitura); frações 1,0 e 0,5;
+//  nunca dividir automaticamente; fim de semana só com toggle (e conta como carga extra);
+//  candidatas do mini-picker priorizadas pelo dono (who → team → demais).
+// ══════════════════════════════
+let plPreset = '2sem', plDe = '', plAte = '', plFds = false, plDone = false, plExpand = {}, plUndo = [], plDrag = null, plPicker = null;
+let plGaveta = false, plHl = null, plPassadoOk = false, plSuprimeClick = false, plFocoTid = null;
+
+function plPeriodo(){
+  const hoje = hojeISO(), C = PlannerCarga;
+  if(plPreset === 'custom' && plDe && plAte && plDe <= plAte) return { de: plDe, ate: plAte };
+  const ini = C.inicioSemana(hoje);
+  if(plPreset === 'semana') return { de: ini, ate: C.addDias(ini, 6) };
+  if(plPreset === '4sem') return { de: ini, ate: C.addDias(ini, 27) };
+  if(plPreset === 'mes'){ const d = parseISO(hoje); return { de: toISO(new Date(d.getFullYear(), d.getMonth(), 1)), ate: toISO(new Date(d.getFullYear(), d.getMonth() + 1, 0)) }; }
+  return { de: ini, ate: C.addDias(ini, 13) };
+}
+function setPlPreset(p){ plPreset = p; renderPlanejar(); }
+function setPlCustom(){ plDe = document.getElementById('plDe').value; plAte = document.getElementById('plAte').value; if(plDe && plAte){ plPreset = 'custom'; renderPlanejar(); } }
+function togglePlFds(){ plFds = !plFds; renderPlanejar(); }
+function togglePlDone(){ plDone = !plDone; renderPlanejar(); }
+function togglePlGaveta(){ plGaveta = !plGaveta; renderPlanejar(); }
+function plToggleProj(pid){ plExpand[pid] = !plProjAberto(pid); renderPlanejar(); }
+let _plProjsAbertos = {};   // default calculado a cada render: aberto se tem task elegível
+function plProjAberto(pid){ return plExpand[pid] !== undefined ? !!plExpand[pid] : !!_plProjsAbertos[pid]; }
+
+// ── helpers ──
+function plFmt(n){ return PlannerCarga.arred(n, 1).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+function plClone(a){ return a ? JSON.parse(JSON.stringify(a)) : null; }
+function plIgual(a, b){ return JSON.stringify(a || null) === JSON.stringify(b || null); }
+function plTask(pid, tid){ const p = findProject(pid); if(!p) return null; return (p.tasks || []).find(function(t){ return t.id === tid; }) || null; }
+function plDiaNome(iso){ return ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][parseISO(iso).getDay()]; }
+function plFdsIso(iso){ return !PlannerCarga.ehDiaUtil(iso); }
+function plChipsDe(t, iso){ const d = t.alocacao && t.alocacao[iso]; return d ? Object.keys(d).filter(function(s){ return d[s]; }) : []; }
+function plFracTxt(v){ return v === 0.5 ? '0,5' : '1,0'; }
+
+// Tasks que entram na grade, gaveta e projetos vazios (6.3).
+function plColeta(per){
+  const C = PlannerCarga, hoje = hojeISO();
+  const search = (document.getElementById('searchInput').value || '').toLowerCase();
+  const lo = C.addDias(per.de, -14), hi = C.addDias(per.ate, 14);
+  const dentro = function(d, a, b){ return !!d && d >= a && d <= b; };
+  const projs = [], gaveta = [];
+  frentesNoEscopo().forEach(function(f){
+    (docOf(f.id).projects || []).forEach(function(p){
+      if(search && !(p.name || '').toLowerCase().includes(search)) return;
+      const itens = [];
+      (p.tasks || []).forEach(function(t){
+        const feita = t.status === TASK_DONE_ID;
+        if(feita && !plDone) return;
+        const quem = whoArr(t);
+        if(filtroPessoaAtivo()){
+          const al = Object.keys(C.esforcoAlocado(t));
+          if(!algumaNoFiltro(quem) && !al.some(function(s){ return filterPessoas.indexOf(s) >= 0; })) return;
+        }
+        const dias = C.diasAlocacao(t);
+        const chipNoPeriodo = dias.some(function(d){ return d >= per.de && d <= per.ate; });
+        const semData = !t.date && !t.dateClient && !t.start && !dias.length;
+        if(semData){ if(!feita) gaveta.push({ p: p, t: t, f: f }); return; }
+        if(dentro(t.date, lo, hi) || dentro(t.dateClient, lo, hi) || chipNoPeriodo || dentro(t.start, per.de, per.ate)) itens.push(t);
+      });
+      itens.sort(function(a, b){
+        if(a.date && b.date && a.date !== b.date) return a.date < b.date ? -1 : 1;
+        if(a.date && !b.date) return -1; if(!a.date && b.date) return 1;
+        return String(a.desc || '').localeCompare(String(b.desc || ''), 'pt-BR');
+      });
+      projs.push({ p: p, f: f, tasks: itens });
+    });
+  });
+  const cmp = function(a, b){ return String(a.p.name || '').localeCompare(String(b.p.name || ''), 'pt-BR'); };
+  const com = projs.filter(function(x){ return x.tasks.length; }).sort(cmp);
+  // Projeto sem task elegível: recolhido, no fim, só para ter onde criar a primeira task.
+  // Com filtro de pessoa, só os projetos em que ela está no time (senão viram ruído).
+  const vazios = projs.filter(function(x){ return !x.tasks.length; }).filter(function(x){
+    return !filtroPessoaAtivo() || filterPessoas.some(function(s){ return (x.p.team || []).indexOf(s) >= 0; });
+  }).sort(cmp);
+  gaveta.sort(function(a, b){ return String(a.p.name || '').localeCompare(String(b.p.name || ''), 'pt-BR') || String(a.t.desc || '').localeCompare(String(b.t.desc || ''), 'pt-BR'); });
+  return { com: com, vazios: vazios, gaveta: gaveta };
+}
+
+// ── render ──
+function renderPlanejar(){
+  const root = document.getElementById('planejarRoot'); if(!root) return;
+  plFechaPicker();
+  const C = PlannerCarga, per = plPeriodo(), hoje = hojeISO(), ro = !!_readOnly, cap = cargaCapSemana();
+  // preserva a rolagem: o re-render troca todo o innerHTML a cada gesto
+  const antes = root.querySelector('.pl-wrap'), antesG = root.querySelector('.pl-gaveta-lista');
+  const sc = antes ? { x: antes.scrollLeft, y: antes.scrollTop } : null, scG = antesG ? antesG.scrollTop : 0;
+
+  const dados = plColeta(per);
+  const dias = plFds ? (function(){ const o = []; let d = per.de, g = 0; while(d <= per.ate && g++ < 400){ o.push(d); d = C.addDias(d, 1); } return o; })() : C.listaDiasUteis(per.de, per.ate);
+  const nCol = dias.length;
+  _plProjsAbertos = {}; dados.com.forEach(function(x){ _plProjsAbertos[x.p.id] = true; });
+
+  // chips de fim de semana ocultos (avisa, nunca liga sozinho)
+  let fdsOcultos = 0;
+  if(!plFds) dados.com.forEach(function(x){ x.tasks.forEach(function(t){ C.diasAlocacao(t).forEach(function(d){ if(d >= per.de && d <= per.ate && plFdsIso(d)) fdsOcultos += plChipsDe(t, d).length; }); }); });
+
+  const presets = [['semana', 'Esta semana'], ['2sem', '2 semanas'], ['4sem', '4 semanas'], ['mes', 'Este mês']];
+  let html = '<div class="filter-bar carga-toolbar pl-toolbar">'
+    + '<span class="filter-label">Período</span>' + presets.map(function(x){ return '<button class="filter-chip' + (plPreset === x[0] ? ' active' : '') + '" onclick="setPlPreset(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('')
+    + '<input class="form-input date-chip" type="date" id="plDe" value="' + (plPreset === 'custom' ? plDe : per.de) + '" onchange="setPlCustom()"/><span style="font-size:10px;color:var(--color-gray)">até</span><input class="form-input date-chip" type="date" id="plAte" value="' + (plPreset === 'custom' ? plAte : per.ate) + '" onchange="setPlCustom()"/>'
+    + '<div class="filter-sep"></div><button class="filter-chip' + (plFds ? ' active' : '') + '" onclick="togglePlFds()" title="Chip em sábado ou domingo conta como carga extra; a capacidade não muda">' + (plFds ? '☑' : '☐') + ' Mostrar fim de semana</button>'
+    + '<button class="filter-chip' + (plDone ? ' active' : '') + '" onclick="togglePlDone()">' + (plDone ? '☑' : '☐') + ' Mostrar concluídas</button>'
+    + '<button class="filter-chip' + (plGaveta && dados.gaveta.length ? ' active' : '') + '" onclick="togglePlGaveta()"' + (dados.gaveta.length ? '' : ' disabled') + ' title="Tasks abertas sem data e sem chip">Fora da sprint (' + dados.gaveta.length + ')</button>'
+    + (fdsOcultos ? '<button class="filter-chip pl-aviso" onclick="togglePlFds()">' + fdsOcultos + ' chip' + (fdsOcultos !== 1 ? 's' : '') + ' em fim de semana oculto' + (fdsOcultos !== 1 ? 's' : '') + ' · mostrar</button>' : '')
+    + '<div class="pl-legenda"><span class="pl-chip">AC</span>1,0 <span class="pl-chip meio">AC½</span>0,5 <span class="pl-lg-prazo"></span>prazo <span>⚑</span>cliente <span class="pl-lg-estouro"></span>depois do prazo</div>'
+    + '</div>';
+
+  // ── tabela ──
+  const th = function(iso, i){
+    const d = parseISO(iso), dd = d.getDate(), lab = (i === 0 || dd === 1) ? String(dd).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') : String(dd);
+    return '<th class="pl-dia' + (iso === hoje ? ' hoje' : '') + (plFdsIso(iso) ? ' pl-fds' : '') + '" title="' + escHtml(formatDateShort(iso) + '/' + d.getFullYear()) + '"><div>' + lab + '</div><div class="pl-dia-sub">' + plDiaNome(iso) + '</div></th>';
+  };
+  const cls = function(iso){ return (iso === hoje ? ' hoje' : '') + (plFdsIso(iso) ? ' pl-fds' : '') + (iso < hoje ? ' passado' : ''); };
+  let corpo = '';
+  const linhaProj = function(x, vazio){
+    const p = x.p, aberto = plProjAberto(p.id), prazos = x.tasks.map(function(t){ return t.date; }).filter(Boolean).sort();
+    const nome = '<td class="pl-c-nome"><span class="pl-seta">' + (aberto ? '▾' : '▸') + '</span> <b>' + escHtml(p.name) + '</b> <span class="pl-n">(' + x.tasks.length + ' task' + (x.tasks.length !== 1 ? 's' : '') + ')</span>'
+      + (isMulti() && x.f ? ' <span class="frente-badge" style="' + frenteStyle(x.f.cor) + '">' + escHtml(x.f.curto) + '</span>' : '')
+      + (ro ? '' : ' <button class="pl-nova" onclick="event.stopPropagation();plNovaTask(\'' + p.id + '\')" title="Criar task neste projeto">+ nova task</button>') + '</td>';
+    const cel = dias.map(function(iso){
+      const u = []; x.tasks.forEach(function(t){ plChipsDe(t, iso).forEach(function(s){ if(u.indexOf(s) < 0) u.push(s); }); });
+      return '<td class="pl-cell-ro' + cls(iso) + '" data-pid="' + escHtml(p.id) + '" data-iso="' + iso + '">' + escHtml(u.join(' ')) + '</td>';
+    }).join('');
+    return '<tr class="pl-proj' + (vazio ? ' vazio' : '') + '" data-pid="' + escHtml(p.id) + '" onclick="plToggleProj(\'' + p.id + '\')">' + nome
+      + '<td class="pl-c-prazo">' + (prazos.length ? formatDateShort(prazos[0]) : '') + '</td><td class="pl-c-quem"></td>' + cel + '</tr>';
+  };
+  const linhaTask = function(p, t){
+    const quem = whoArr(t), chipsQuem = {};
+    C.diasAlocacao(t).forEach(function(d){ plChipsDe(t, d).forEach(function(s){ chipsQuem[s] = true; }); });
+    const feita = t.status === TASK_DONE_ID;
+    const cel = dias.map(function(iso){
+      const dia = (t.alocacao && t.alocacao[iso]) || {}, sig = Object.keys(dia).filter(function(s){ return dia[s]; });
+      let c = 'pl-cell' + cls(iso) + (t.date && iso === t.date ? ' prazo' : '') + (t.dateClient && iso === t.dateClient ? ' cliente' : '') + (t.date && iso > t.date && sig.length ? ' estouro' : '')
+        + (plHl && plHl.iso === iso && sig.indexOf(plHl.sigla) >= 0 ? ' pl-hl' : '') + (ro ? ' pl-ro' : '');
+      const tt = p.name + ' · ' + (t.desc || '') + ' · ' + formatDateShort(iso) + (sig.length ? ' · ' + sig.map(function(s){ return s + ' ' + plFracTxt(dia[s]); }).join(' · ') : '');
+      return '<td class="' + c + '" data-pid="' + escHtml(p.id) + '" data-tid="' + escHtml(t.id) + '" data-iso="' + iso + '" title="' + escHtml(tt) + '">'
+        + sig.map(function(s){ const meio = dia[s] === 0.5; return '<span class="pl-chip' + (meio ? ' meio' : '') + '" data-sigla="' + escHtml(s) + '" style="' + avatarStyle(s) + '">' + escHtml(s) + (meio ? '½' : '') + '</span>'; }).join('') + '</td>';
+    }).join('');
+    return '<tr class="pl-task' + (feita ? ' feita' : '') + (plFocoTid === t.id ? ' pl-focus' : '') + '" data-pid="' + escHtml(p.id) + '" data-tid="' + escHtml(t.id) + '">'
+      + '<td class="pl-c-nome pl-desc" title="Editar task" onclick="openTaskEditor(\'' + p.id + '\',\'' + t.id + '\')">' + escHtml(t.desc || '(sem descrição)') + '</td>'
+      + '<td class="pl-c-prazo' + (t.date ? ' ' + deadlineClass(t.date) : '') + '">' + (t.date ? formatDateShort(t.date) : '—') + (t.dateClient ? ' <span class="pl-cli" title="Prazo do cliente: ' + escHtml(formatDateShort(t.dateClient)) + '">⚑</span>' : '') + '</td>'
+      + '<td class="pl-c-quem">' + (quem.length ? quem.map(function(s){ return '<span class="pl-q' + (chipsQuem[s] ? '' : ' sem') + '" style="' + avatarStyle(s) + '" title="' + (chipsQuem[s] ? '' : 'sem dias alocados') + '">' + escHtml(s) + '</span>'; }).join('') : '<span class="pl-n">—</span>') + '</td>'
+      + cel + '</tr>';
+  };
+  dados.com.forEach(function(x){
+    corpo += linhaProj(x, false);
+    if(plProjAberto(x.p.id)) x.tasks.forEach(function(t){ corpo += linhaTask(x.p, t); });
+  });
+  dados.vazios.forEach(function(x){ corpo += linhaProj(x, true); });
+  if(!dados.com.length && !dados.vazios.length) corpo = '<tr><td class="pl-c-nome pl-vazia" colspan="' + (3 + nCol) + '">Nenhuma task neste período. Ajuste o período ou o filtro.</td></tr>';
+
+  // ── rodapé de carga (todas as frentes) ──
+  const R = C.alocar(cargaTasks(false), { hoje: hoje, de: per.de, ate: per.ate });
+  const nUteis = C.listaDiasUteis(per.de, per.ate).length, capPeriodo = cap / 5 * nUteis, capDia = cap / 5;
+  const pessoas = TEAM_OPTIONS.filter(function(p){ return pessoaNoFiltro(p); }).sort(function(a, b){ return a.localeCompare(b, 'pt-BR'); });
+  const rodape = pessoas.map(function(s){
+    const st = R.porPessoa[s] || { alocadoPeriodo: 0 }, pd = R.porPessoaDia[s] || {};
+    let extra = 0; Object.keys(pd).forEach(function(d){ if(d >= per.de && d <= per.ate && plFdsIso(d)) extra += pd[d]; });
+    const celulas = dias.map(function(iso){
+      const v = pd[iso] || 0, fds = plFdsIso(iso);
+      const nv = fds ? (v > 0 ? 'fds-extra' : 'vazio') : C.nivel(capDia > 0 ? v / capDia : 0);
+      return '<td class="pl-sum cl-' + nv + (iso === hoje ? ' hoje' : '') + (fds ? ' pl-fds' : '') + (plHl && plHl.sigla === s && plHl.iso === iso ? ' sel' : '') + '" data-sigla="' + escHtml(s) + '" data-iso="' + iso + '" data-v="' + C.arred(v, 2) + '" title="' + escHtml(s + ' · ' + formatDateShort(iso) + ' · ' + plFmt(v) + ' d' + (fds ? ' (extra de fim de semana)' : '')) + '">' + (v > 0 ? plFmt(v) : '') + '</td>';
+    }).join('');
+    return '<tr class="pl-carga" data-sigla="' + escHtml(s) + '"><td class="pl-c-nome"><span class="avatar" style="' + avatarStyle(s) + '">' + escHtml(s) + '</span> <span class="pl-n">carga (todas as frentes)</span></td>'
+      + '<td class="pl-c-prazo"><b>' + plFmt(st.alocadoPeriodo) + '</b> / ' + plFmt(capPeriodo) + '</td><td class="pl-c-quem">' + (extra > 0.001 ? '<span class="pl-extra" title="Carga extra em sábado/domingo; não altera a capacidade">+ ' + plFmt(extra) + ' fds</span>' : '') + '</td>' + celulas + '</tr>';
+  }).join('');
+
+  html += '<div class="pl-body"><div class="pl-wrap"><table class="pl"><thead><tr><th class="pl-c-nome">Projeto / Task</th><th class="pl-c-prazo">Prazo</th><th class="pl-c-quem">Quem</th>' + dias.map(th).join('') + '</tr></thead>'
+    + '<tbody>' + corpo + '</tbody><tfoot' + (pessoas.length <= 4 ? ' class="pl-foot-sticky"' : '') + '>' + rodape + '</tfoot></table></div>'
+    + (plGaveta && dados.gaveta.length ? plGavetaHtml(dados.gaveta, ro) : '') + '</div>';
+  root.innerHTML = html;
+  plLigaEventos();
+  const w = root.querySelector('.pl-wrap'); if(w && sc){ w.scrollLeft = sc.x; w.scrollTop = sc.y; }
+  const g = root.querySelector('.pl-gaveta-lista'); if(g) g.scrollTop = scG;
+}
+function plGavetaHtml(itens, ro){
+  const grupos = []; itens.forEach(function(x){ let g = grupos.find(function(y){ return y.p.id === x.p.id; }); if(!g){ g = { p: x.p, its: [] }; grupos.push(g); } g.its.push(x); });
+  return '<aside class="pl-gaveta"><div class="pl-gaveta-head"><b>Fora da sprint</b> <span class="pl-n">' + itens.length + '</span><button class="icon-btn" onclick="togglePlGaveta()" title="Fechar">✕</button></div>'
+    + '<div class="pl-gaveta-sub">' + (ro ? 'Tasks abertas sem data e sem chip.' : 'Arraste uma task para um dia da grade, em qualquer linha do mesmo projeto.') + '</div><div class="pl-gaveta-lista">'
+    + grupos.map(function(g){
+      return '<div class="pl-gaveta-proj">' + escHtml(g.p.name) + '</div>' + g.its.map(function(x){
+        const quem = whoArr(x.t);
+        return '<div class="pl-gaveta-item" data-pid="' + escHtml(x.p.id) + '" data-tid="' + escHtml(x.t.id) + '"' + (ro ? '' : ' draggable="true"') + '><span class="pl-gaveta-desc">' + escHtml(x.t.desc || '(sem descrição)') + '</span>'
+          + '<span class="pl-gaveta-quem">' + (quem.length ? quem.map(escHtml).join(' ') : '—') + '</span><button class="icon-btn" title="Editar task" onclick="openTaskEditor(\'' + x.p.id + '\',\'' + x.t.id + '\')">✎</button></div>';
+      }).join('');
+    }).join('') + '</div></aside>';
+}
+
+// ── gravação (6.5) ──
+function plPassadoConfirma(isos){
+  const hoje = hojeISO();
+  if(plPassadoOk || !isos.some(function(d){ return d < hoje; })) return true;
+  if(!confirm('Alocar no passado?')) return false;
+  plPassadoOk = true; return true;
+}
+// Aplica fn(task) (uma ou mais chamadas a PlannerCarga.setChip), registra undo e grava.
+function plAplicar(pid, tid, fn){
+  if(_readOnly){ toast('Modo leitura', 'warn'); return false; }
+  const t = plTask(pid, tid); if(!t) return false;
+  const antes = plClone(t.alocacao), quemAntes = whoArr(t).slice();
+  try{ fn(t); }catch(e){ toast('Não foi possível alocar: ' + e.message, 'error'); console.error('[planejar]', e); return false; }
+  const depois = plClone(t.alocacao);
+  if(plIgual(antes, depois)){ renderPlanejar(); return false; }
+  plUndo.push({ pid: pid, tid: tid, antes: antes, depois: depois, quemAntes: quemAntes });
+  if(plUndo.length > 20) plUndo.shift();
+  saveProject(pid); renderPlanejar();
+  return true;
+}
+function plDesfazer(){
+  const e = plUndo.pop(); if(!e){ toast('Nada para desfazer'); return; }
+  if(_readOnly){ toast('Modo leitura', 'warn'); return; }
+  const t = plTask(e.pid, e.tid); if(!t){ toast('A task não existe mais', 'warn'); return; }
+  t.alocacao = plClone(e.antes);
+  // a sigla que o chip desfeito havia posto em who sai junto, se não sobrou chip dela
+  const resta = PlannerCarga.esforcoAlocado(t);
+  t.who = whoArr(t).filter(function(s){ return e.quemAntes.indexOf(s) >= 0 || resta[s]; });
+  saveProject(e.pid); renderPlanejar(); toast('Desfeito');
+}
+function plChip(pid, tid, iso, sigla, fr){ return plAplicar(pid, tid, function(t){ PlannerCarga.setChip(t, iso, sigla, fr); }); }
+
+function plNovaTask(pid){
+  if(_readOnly) return;
+  currentProjectId = pid; _taskEditorStandalone = true; addTask();
+}
+
+// ── mini-picker (6.5) ──
+function plPickerHtml(t, p, iso){
+  const quem = whoArr(t), team = (p.team || []).filter(function(s){ return quem.indexOf(s) < 0; });
+  const resto = TEAM_OPTIONS.filter(function(s){ return quem.indexOf(s) < 0 && team.indexOf(s) < 0; });
+  const atual = plChipsDe(t, iso), mine = minhaSigla();
+  const btn = function(s){ return '<button class="person-option' + (atual.indexOf(s) >= 0 ? ' selected' : '') + '" onclick="plPickerEscolhe(\'' + s + '\')" title="' + (atual.indexOf(s) >= 0 ? 'Remover ' : 'Alocar 1,0 a ') + escHtml(s) + '">' + escHtml(s) + (s === mine ? '<span class="person-option-tag">Você</span>' : '') + '</button>'; };
+  const grupo = function(arr){ return arr.length ? '<div class="pl-picker-grupo">' + arr.map(btn).join('') + '</div>' : ''; };
+  const blocos = [grupo(quem), grupo(team), grupo(resto)].filter(Boolean);
+  return '<div class="pl-picker-titulo">' + escHtml(formatDateShort(iso) + ' · ' + plDiaNome(iso)) + '</div>' + blocos.join('<div class="pl-picker-sep"></div>');
+}
+function plAbrePicker(cell, pid, tid, iso){
+  if(_readOnly) return;
+  const p = findProject(pid), t = plTask(pid, tid); if(!p || !t) return;
+  plFechaPicker();
+  plPicker = { pid: pid, tid: tid, iso: iso };
+  const el = document.createElement('div');
+  el.id = 'plPickerEl'; el.className = 'pl-picker person-picker-dropdown open';
+  el.innerHTML = plPickerHtml(t, p, iso);
+  document.body.appendChild(el);
+  const r = cell.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight;
+  let left = Math.min(r.left, window.innerWidth - w - 8), top = r.bottom + 4;
+  if(top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 4);
+  el.style.left = Math.max(8, left) + 'px'; el.style.top = top + 'px';
+}
+function plFechaPicker(){ const el = document.getElementById('plPickerEl'); if(el) el.remove(); plPicker = null; }
+function plPickerEscolhe(sigla){
+  const pk = plPicker; if(!pk) return;
+  const t = plTask(pk.pid, pk.tid); if(!t){ plFechaPicker(); return; }
+  const tem = plChipsDe(t, pk.iso).indexOf(sigla) >= 0;
+  if(!tem && !plPassadoConfirma([pk.iso])){ plFechaPicker(); return; }
+  plFechaPicker();
+  plChip(pk.pid, pk.tid, pk.iso, sigla, tem ? null : 1);
+}
+
+// ── eventos (delegados na raiz, ligados uma vez) ──
+function plAlvosDoArrasto(row, e){
+  // Células da mesma linha entre a origem e a célula sob o ponteiro; fim de semana só com Ctrl.
+  const d = plDrag; if(!d) return [];
+  const celulas = [].slice.call(row.querySelectorAll('td.pl-cell')), isos = celulas.map(function(c){ return c.dataset.iso; });
+  const a = isos.indexOf(d.iso), b = isos.indexOf(d.hover); if(a < 0 || b < 0 || a === b) return [];
+  const t = plTask(d.pid, d.tid); if(!t) return [];
+  const lo = Math.min(a, b), hi = Math.max(a, b);
+  return isos.slice(lo, hi + 1).filter(function(iso){
+    if(iso === d.iso) return false;
+    if(plFdsIso(iso) && !d.ctrl) return false;
+    return plChipsDe(t, iso).indexOf(d.sigla) < 0;     // copia só onde a sigla ainda não está
+  });
+}
+function plMarcaPrev(row){
+  row.querySelectorAll('td.pl-prev').forEach(function(c){ c.classList.remove('pl-prev'); });
+  if(!plDrag) return;
+  plDrag.alvos = plAlvosDoArrasto(row, null);
+  plDrag.alvos.forEach(function(iso){ const c = row.querySelector('td.pl-cell[data-iso="' + iso + '"]'); if(c) c.classList.add('pl-prev'); });
+}
+function plCancelaArrasto(){
+  if(!plDrag) return;
+  document.querySelectorAll('td.pl-prev').forEach(function(c){ c.classList.remove('pl-prev'); });
+  plDrag = null;
+}
+function plLigaEventos(){
+  const root = document.getElementById('planejarRoot'); if(!root || root._plLigado) return;
+  root._plLigado = true;
+
+  root.addEventListener('mousedown', function(e){
+    if(_readOnly || e.button !== 0) return;
+    const chip = e.target.closest('.pl-chip[data-sigla]'); if(!chip) return;
+    const cell = chip.closest('td.pl-cell'); if(!cell) return;
+    const t = plTask(cell.dataset.pid, cell.dataset.tid); if(!t) return;
+    const fr = t.alocacao && t.alocacao[cell.dataset.iso] ? t.alocacao[cell.dataset.iso][chip.dataset.sigla] : null; if(!fr) return;
+    plDrag = { pid: cell.dataset.pid, tid: cell.dataset.tid, iso: cell.dataset.iso, hover: cell.dataset.iso, sigla: chip.dataset.sigla, fr: fr, alt: e.altKey, ctrl: e.ctrlKey, alvos: [] };
+    e.preventDefault();   // sem isto o arrasto vira seleção de texto
+  });
+  root.addEventListener('mouseover', function(e){
+    if(!plDrag) return;
+    const cell = e.target.closest('td.pl-cell'); if(!cell || cell.dataset.tid !== plDrag.tid) return;
+    plDrag.hover = cell.dataset.iso; plDrag.alt = e.altKey; plDrag.ctrl = e.ctrlKey;
+    plMarcaPrev(cell.closest('tr'));
+  });
+  document.addEventListener('mouseup', function(e){
+    if(!plDrag) return;
+    const d = plDrag; d.alt = e.altKey || d.alt; plDrag = null;
+    document.querySelectorAll('td.pl-prev').forEach(function(c){ c.classList.remove('pl-prev'); });
+    if(!d.alvos.length) return;     // soltou na origem: o clique no chip trata
+    plSuprimeClick = true; setTimeout(function(){ plSuprimeClick = false; }, 0);
+    if(!plPassadoConfirma(d.alvos)) return;
+    plAplicar(d.pid, d.tid, function(t){
+      d.alvos.forEach(function(iso){ PlannerCarga.setChip(t, iso, d.sigla, d.fr); });
+      if(d.alt) PlannerCarga.setChip(t, d.iso, d.sigla, null);     // Alt = mover
+    });
+  });
+
+  root.addEventListener('click', function(e){
+    if(plSuprimeClick) return;
+    const cell = e.target.closest('td.pl-cell'); if(!cell) return;
+    if(_readOnly) return;
+    const pid = cell.dataset.pid, tid = cell.dataset.tid, iso = cell.dataset.iso, t = plTask(pid, tid); if(!t) return;
+    const chip = e.target.closest('.pl-chip[data-sigla]');
+    if(chip && !e.shiftKey){
+      const s = chip.dataset.sigla, fr = t.alocacao && t.alocacao[iso] ? t.alocacao[iso][s] : null;
+      plChip(pid, tid, iso, s, fr === 1 ? 0.5 : (fr === 0.5 ? null : 1));     // 1,0 → 0,5 → remove
+      return;
+    }
+    const quem = whoArr(t), ja = plChipsDe(t, iso);
+    if(!e.shiftKey && quem.length === 1 && ja.length === 0){
+      if(!plPassadoConfirma([iso])) return;
+      plChip(pid, tid, iso, quem[0], 1); return;
+    }
+    plAbrePicker(cell, pid, tid, iso); e.plAbriu = true;
+  });
+  root.addEventListener('contextmenu', function(e){
+    if(_readOnly) return;
+    const chip = e.target.closest('.pl-chip[data-sigla]'), cell = chip && chip.closest('td.pl-cell'); if(!cell) return;
+    e.preventDefault();
+    plChip(cell.dataset.pid, cell.dataset.tid, cell.dataset.iso, chip.dataset.sigla, null);
+  });
+  // clique na soma do rodapé: destaca as células da coluna com chip daquela sigla
+  root.addEventListener('click', function(e){
+    const s = e.target.closest('td.pl-sum'); if(!s) return;
+    const sigla = s.dataset.sigla, iso = s.dataset.iso;
+    plHl = (plHl && plHl.sigla === sigla && plHl.iso === iso) ? null : { sigla: sigla, iso: iso };
+    renderPlanejar();
+  });
+
+  // gaveta → grade (HTML5 drag and drop)
+  root.addEventListener('dragstart', function(e){
+    const it = e.target.closest && e.target.closest('.pl-gaveta-item'); if(!it || _readOnly){ return; }
+    e.dataTransfer.setData('text/plain', it.dataset.pid + '|' + it.dataset.tid); e.dataTransfer.effectAllowed = 'copy';
+    root._plGav = { pid: it.dataset.pid, tid: it.dataset.tid };
+  });
+  root.addEventListener('dragend', function(){ root._plGav = null; root.querySelectorAll('.pl-drop').forEach(function(c){ c.classList.remove('pl-drop'); }); });
+  const alvoDrop = function(e){
+    const g = root._plGav; if(!g || _readOnly) return null;
+    const c = e.target.closest('td.pl-cell, td.pl-cell-ro'); if(!c || c.dataset.pid !== g.pid) return null;
+    return c;
+  };
+  root.addEventListener('dragover', function(e){
+    const c = alvoDrop(e); root.querySelectorAll('.pl-drop').forEach(function(x){ if(x !== c) x.classList.remove('pl-drop'); });
+    if(!c) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; c.classList.add('pl-drop');
+  });
+  root.addEventListener('drop', function(e){
+    const c = alvoDrop(e); if(!c) return; e.preventDefault();
+    const g = root._plGav; root._plGav = null; c.classList.remove('pl-drop');
+    const t = plTask(g.pid, g.tid); if(!t) return;
+    const iso = c.dataset.iso, quem = whoArr(t);
+    if(quem.length === 0){ plAbrePicker(c, g.pid, g.tid, iso); return; }
+    if(!plPassadoConfirma([iso])) return;
+    plChip(g.pid, g.tid, iso, quem[0], 1);
+  });
+}
+// teclado e clique fora (uma vez, no documento)
+if(!window._plDocLigado){
+  window._plDocLigado = true;
+  document.addEventListener('keydown', function(e){
+    if(currentView !== 'planejar') return;
+    if(e.key === 'Escape'){ plFechaPicker(); plCancelaArrasto(); return; }
+    if((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && String(e.key).toLowerCase() === 'z'){
+      const a = document.activeElement, tag = a && a.tagName;
+      if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (a && a.isContentEditable)) return;
+      if(document.querySelector('.overlay.open')) return;
+      e.preventDefault(); plDesfazer();
+    }
+  });
+  document.addEventListener('click', function(e){
+    if(!plPicker || e.plAbriu) return;
+    if(e.target.closest && e.target.closest('#plPickerEl')) return;
+    plFechaPicker();
+  });
 }
 // ══ PERSON PICKER SYSTEM ══
 // Drilldown "Você primeiro": o botão grande com a sua sigla vem no topo; as outras pessoas
@@ -3514,8 +4242,10 @@ function closeLogModal(e){ if(!e || e.target === document.getElementById('logOve
 //   effort      = esforço TOTAL em DIAS ÚTEIS (opcional; sem default: task sem estimativa é "não estimada")
 //   effortBy    = {sigla: dias} — só quando a divisão entre os responsáveis NÃO é igual
 //   doneAt      = data em que virou concluída (para velocidade/histórico)
+//   alocacao    = {iso: {sigla: 1|0.5}} — alocação explícita por dia (Modo Planejar). Com ao menos
+//                 um dia, a carga vem só dela; null/ausente = regra da janela start→date.
 function novaTask(campos){
-  const t = { id: uid(), desc: '', who: [], date: '', start: '', dateClient: '', effort: null, effortBy: null, status: STATUS_TASK[0].id, subtasks: [], doneAt: null };
+  const t = { id: uid(), desc: '', who: [], date: '', start: '', dateClient: '', effort: null, effortBy: null, status: STATUS_TASK[0].id, subtasks: [], doneAt: null, alocacao: null };
   Object.keys(campos || {}).forEach(function(k){ t[k] = campos[k]; });
   if(t.effort !== null && t.effort !== undefined && (isNaN(t.effort) || t.effort < 0)) t.effort = null;
   if(t.status === TASK_DONE_ID && !t.doneAt) t.doneAt = hojeISO();
@@ -3524,8 +4254,16 @@ function novaTask(campos){
 function applyTaskStatus(t, novo){
   if(t.status === novo) return;
   t.status = novo;
-  if(novo === TASK_DONE_ID){ if(!t.doneAt) t.doneAt = hojeISO(); }
+  if(novo === TASK_DONE_ID){ if(!t.doneAt) t.doneAt = hojeISO(); podaAlocacaoFutura(t); }
   else t.doneAt = null;
+}
+// Ao concluir, os chips depois de hoje saem; os passados ficam como histórico de carga
+// (equivalente à janela [start, doneAt] de quem não tem alocação). Objeto novo, não mutação.
+function podaAlocacaoFutura(t){
+  if(!t.alocacao || typeof t.alocacao !== 'object') return;
+  const hoje = hojeISO(), nova = {};
+  Object.keys(t.alocacao).forEach(function(iso){ if(iso <= hoje) nova[iso] = t.alocacao[iso]; });
+  t.alocacao = Object.keys(nova).length ? nova : null;
 }
 // Editor standalone: abre o modal de task a partir de qualquer visão (Planner, Carga...) sem
 // passar pelo modal do projeto. Ao salvar/cancelar, volta para a visão onde estava.
@@ -3593,28 +4331,79 @@ function populateTaskDealOptions(selectedDealId){
 let tempTaskEffort = {};
 // Uma linha por responsável: avatar + sigla | dias | remover. Sem responsável, uma linha
 // "sem responsável" mantém a estimativa possível. .esforco-item e #taskEffort são usados pelo selftest.
+// Task em edição no modal (null para task nova). Usada pela coluna "alocado" e pelo botão "Abrir na grade".
+function taskEmEdicao(){
+  if(editingTaskIdx === null || editingTaskIdx === undefined) return null;
+  const p = findProject(currentProjectId); return p && p.tasks ? (p.tasks[editingTaskIdx] || null) : null;
+}
 function renderTaskEffortFields(foco){
   const wrap = document.getElementById('taskEffortFields'); if(!wrap) return;
   const pessoas = tempTaskWho.slice();
+  // coluna "alocado" (só para task com alocação por dia): vem dos chips da grade Planejar, não é editável aqui
+  const tk = taskEmEdicao(), comAloc = !!(tk && typeof PlannerCarga !== 'undefined' && PlannerCarga.temAlocacao(tk));
+  const tab = wrap.closest('.esforco-tabela'); if(tab) tab.classList.toggle('com-aloc', comAloc);
+  const gradeWrap = document.getElementById('taskGradeWrap'); if(gradeWrap) gradeWrap.style.display = (tk && moduleEnabled('planejar')) ? '' : 'none';
   const campo = function(chave, v){ return '<span class="esforco-valor"><input class="form-input esforco-input" type="number" min="0" step="0.5" placeholder="—" value="' + (v == null ? '' : v) + '" oninput="onEffortInput(\'' + chave + '\',this.value)"/><span class="esforco-un">d</span></span>'; };
   if(!pessoas.length){
-    wrap.innerHTML = '<div class="esforco-item vazio"><span class="esforco-quem"><span class="esforco-sigla">—</span><span class="esforco-nome">sem responsável</span></span>' + campo('', tempTaskEffort['']) + '<span></span></div>';
+    wrap.innerHTML = '<div class="esforco-item vazio"><span class="esforco-quem"><span class="esforco-sigla">—</span><span class="esforco-nome">sem responsável</span></span>' + campo('', tempTaskEffort['']) + (comAloc ? '<span></span>' : '') + '<span></span></div>';
   }else{
     wrap.innerHTML = pessoas.map(function(w){
       return '<div class="esforco-item" data-sigla="' + escHtml(w) + '"><span class="esforco-quem"><span class="esforco-sigla" style="' + avatarStyle(w) + '">' + escHtml(w.slice(0, 2)) + '</span><span class="esforco-nome">' + escHtml(w) + '</span></span>'
         + campo(w, tempTaskEffort[w])
+        + (comAloc ? '<span class="esforco-aloc" data-aloc="' + escHtml(w) + '"></span>' : '')
         + '<button class="esforco-remover" type="button" title="Remover ' + escHtml(w) + '" onclick="removePerson(\'' + w + '\',\'task\')">✕</button></div>';
     }).join('');
   }
   // id estável para quem tem 0 ou 1 responsável (e para os testes)
   if(pessoas.length <= 1) wrap.querySelector('input').id = 'taskEffort';
   if(foco){ const inp = wrap.querySelector('.esforco-item[data-sigla="' + foco + '"] input'); if(inp) inp.focus(); }
-  atualizaTotalEsforco();
+  atualizaTotalEsforco(); atualizaAlocadoEsforco();
+}
+// Texto "alocado X d · saldo ±Y" por pessoa (verde = 0, azul = falta alocar, vermelho = alocado a mais) e
+// rodapé com o total. Chamado a cada digitação no esforço: o saldo acompanha o valor do formulário.
+function atualizaAlocadoEsforco(){
+  const rod = document.getElementById('taskAlocRodape'), tk = taskEmEdicao();
+  const com = !!(tk && typeof PlannerCarga !== 'undefined' && PlannerCarga.temAlocacao(tk));
+  if(rod) rod.style.display = com ? '' : 'none';
+  if(!com) return;
+  const aloc = PlannerCarga.esforcoAlocado(tk), r2 = function(n){ return Math.round(n * 100) / 100; };
+  const cls = function(sd){ return sd === 0 ? 'aloc-ok' : (sd > 0 ? 'aloc-mais' : 'aloc-neg'); };
+  const txt = function(sd){ return sd === 0 ? 'saldo 0' : 'saldo ' + (sd > 0 ? '+' : '−') + fmtDias(Math.abs(sd)); };
+  let totAloc = 0;
+  document.querySelectorAll('#taskEffortFields .esforco-aloc[data-aloc]').forEach(function(el){
+    const w = el.getAttribute('data-aloc'), a = aloc[w] || 0, est = tempTaskEffort[w];
+    totAloc += a;
+    el.innerHTML = '<span>alocado <b>' + fmtDias(a) + ' d</b></span>' + (est != null ? '<small class="' + cls(r2(est - a)) + '">' + txt(r2(est - a)) + '</small>' : '<small style="color:var(--color-gray)">sem estimativa</small>');
+  });
+  const tot = totalEsforcoForm();
+  if(rod){
+    const sd = tot == null ? null : r2(tot - totAloc);
+    rod.innerHTML = '<span>Total alocado na grade</span><span><b>' + fmtDias(totAloc) + ' d</b>' + (tot != null ? ' / ' + fmtDias(tot) + ' d estimados · <b class="' + cls(sd) + '">' + txt(sd) + '</b>' : ' · sem estimativa') + '</span>';
+  }
+}
+// "Abrir na grade": fecha o editor e leva à visão Planejar com o período cobrindo a task
+// ([min(início, 1º chip), max(prazo, último chip)]) e a linha dela destacada por 2 s.
+function taskAbrirNaGrade(){
+  const p = findProject(currentProjectId), t = taskEmEdicao(); if(!p || !t) return;
+  const pid = p.id, tid = t.id, C = PlannerCarga, dias = C.diasAlocacao(t);
+  const pontos = [t.start, t.date, dias[0], dias[dias.length - 1]].filter(Boolean).sort();
+  if(!document.getElementById('projectOverlay').classList.contains('open')) closeTaskModal();
+  else{ document.getElementById('taskOverlay').classList.remove('open'); closeProjectModal(); }
+  if(pontos.length){ plPreset = 'custom'; plDe = pontos[0]; plAte = pontos[pontos.length - 1]; }
+  if(t.status === TASK_DONE_ID) plDone = true;
+  plExpand[pid] = true;
+  // um filtro de pessoa que esconderia a task faria o destaque sumir: limpa-o
+  if(filtroPessoaAtivo() && !algumaNoFiltro(whoArr(t).concat(Object.keys(C.esforcoAlocado(t))))) setPersonFilter('all');
+  plFocoTid = tid;
+  setView('planejar');
+  const row = document.querySelector('#planejarRoot tr.pl-task[data-tid="' + tid + '"]');
+  if(row && row.scrollIntoView) row.scrollIntoView({ block: 'center', inline: 'nearest' });
+  setTimeout(function(){ if(plFocoTid === tid){ plFocoTid = null; document.querySelectorAll('#planejarRoot tr.pl-focus').forEach(function(r){ r.classList.remove('pl-focus'); }); } }, 2000);
 }
 function onEffortInput(sigla, val){
   const n = parseFloat(String(val).replace(',', '.'));
   tempTaskEffort[sigla] = (val === '' || isNaN(n) || n < 0) ? null : n;
-  atualizaTotalEsforco();
+  atualizaTotalEsforco(); atualizaAlocadoEsforco();
 }
 function totalEsforcoForm(){
   const chaves = tempTaskWho.length ? tempTaskWho : [''];
@@ -3693,6 +4482,25 @@ function saveTask(){
   const dealId = dealSel && dealSel.value ? dealSel.value : (prev ? (prev.dealId || null) : null);
   const start = document.getElementById('taskStart').value, date = document.getElementById('taskDate').value;
   if(start && date && start > date){ toast('O início não pode ser depois do prazo interno'); return; }
+  // Quem saiu dos responsáveis e tinha dias alocados: os dias só saem junto com confirmação.
+  // Cancelar mantém a pessoa (na posição e com a estimativa que tinha) — alocação nunca some
+  // em silêncio.
+  const tiraAloc = [];
+  if(prev && typeof PlannerCarga !== 'undefined' && PlannerCarga.temAlocacao(prev)){
+    const whoPrev = whoArr(prev), porPrev = esforcoPessoa(prev), mantidos = [];
+    whoPrev.forEach(function(w){
+      if(tempTaskWho.indexOf(w) >= 0) return;
+      const dias = PlannerCarga.diasAlocacao(prev).filter(function(iso){ return prev.alocacao[iso][w] != null; });
+      if(!dias.length) return;
+      const n = dias.length;
+      if(confirm('Remover também ' + (n === 1 ? 'o 1 dia alocado' : 'os ' + n + ' dias alocados') + ' de ' + w + '?')) tiraAloc.push({ sigla: w, dias: dias });
+      else{ mantidos.push(w); if(tempTaskEffort[w] == null) tempTaskEffort[w] = (porPrev[w] != null) ? porPrev[w] : null; }
+    });
+    if(mantidos.length){
+      tempTaskWho = whoPrev.filter(function(w){ return tempTaskWho.indexOf(w) >= 0 || mantidos.indexOf(w) >= 0; })
+        .concat(tempTaskWho.filter(function(w){ return whoPrev.indexOf(w) < 0; }));
+    }
+  }
   const task = prev ? Object.assign({}, prev) : novaTask({});
   task.desc = desc; task.who = tempTaskWho.slice();
   task.start = start; task.date = date; task.dateClient = document.getElementById('taskDateClient').value;
@@ -3706,6 +4514,7 @@ function saveTask(){
     if(desigual){ task.effortBy = {}; tempTaskWho.forEach(function(w){ task.effortBy[w] = tempTaskEffort[w] || 0; }); }
   }
   task.subtasks = subtasks; task.dealId = dealId || null; task.origem = prev ? (prev.origem || null) : null;
+  tiraAloc.forEach(function(x){ x.dias.forEach(function(iso){ PlannerCarga.setChip(task, iso, x.sigla, null); }); });
   applyTaskStatus(task, document.getElementById('taskStatus').value);
   if(!p.tasks) p.tasks = [];
   if(prev) p.tasks[editingTaskIdx] = task; else p.tasks.push(task);
