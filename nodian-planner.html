@@ -167,10 +167,12 @@ body{font-family:var(--font);background:var(--page-bg);color:var(--color-black);
 
 /* ══ VIEW 3: SEMANA (estilo Planner agregador) ══ */
 .week-view{padding:0 28px 40px;overflow-x:auto}
-.week-grid{display:flex;flex-direction:row;gap:16px;min-width:max-content;padding-bottom:8px}
-.week-person-col{display:flex;flex-direction:column;gap:8px;width:280px;flex-shrink:0}
-.week-person-header{display:flex;align-items:center;gap:10px;padding-bottom:10px;border-bottom:2px solid var(--color-black)}
-.week-person-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.week-grid{display:grid;grid-auto-flow:column;grid-auto-columns:280px;grid-template-rows:auto auto;align-content:start;column-gap:16px;row-gap:8px;min-width:max-content;padding-bottom:8px}
+.week-person-col{display:grid;grid-row:span 2;grid-template-rows:subgrid;min-width:0}
+.week-person-body{display:flex;flex-direction:column;gap:8px;align-content:start}
+.week-person-header{display:flex;align-items:stretch;gap:10px;padding-bottom:10px;border-bottom:2px solid var(--color-black)}
+.week-person-header>div:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column}
+.week-person-avatar{align-self:center;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
 .week-person-name{font-size:14px;font-weight:700;letter-spacing:-.2px}
 .week-person-count{font-size:11px;color:var(--color-gray)}
 .week-backlog-header{display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:2px dashed var(--border-c);opacity:.7}
@@ -482,7 +484,9 @@ body.tem-aviso-topo #logout-btn{top:41px}
 /* planner: backlog em dois blocos */
 .week-backlog-sub{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--color-gray);padding:8px 2px 2px}
 .week-task-status.wts-overdue{background:var(--color-red-25);color:var(--color-red)}
-.week-person-cap{font-size:10px;color:var(--color-gray);margin-top:2px}
+.week-person-cap{font-size:10px;color:var(--color-gray);margin-top:2px;flex:1;display:flex;flex-direction:column}
+.week-person-cap .carga-bar.mini{margin-top:auto;flex-shrink:0}
+.week-person-cap-txt{margin-bottom:4px}
 .week-task-card.is-done{opacity:.55}
 .week-task-card.is-done .week-task-desc{text-decoration:line-through}
 
@@ -3257,16 +3261,16 @@ function renderPlanner(){
     const av = '<div class="week-person-avatar" style="' + avatarStyle(person) + '">' + escHtml(person.slice(0, 2)) + '</div>';
     const cap = (typeof plannerCapacidadeHtml === 'function') ? plannerCapacidadeHtml(person) : '';
     return '<div class="week-person-col"><div class="week-person-header">' + av + '<div><div class="week-person-name">' + escHtml(person) + '</div><div class="week-person-count">' + (parts.join(' · ') || 'Nada aberto') + '</div>' + cap + '</div></div>'
-      + (myItems.length === 0 ? '<div class="week-empty">Nada no período</div>' : myItems.map(renderPlannerCard).join(''))
-      + '</div>';
+      + '<div class="week-person-body">' + (myItems.length === 0 ? '<div class="week-empty">Nada no período</div>' : myItems.map(renderPlannerCard).join(''))
+      + '</div></div>';
   });
 
   let backlogCol = '';
   if(!filtroPessoaAtivo() && (semDono.length || semPrazo.length)){
-    backlogCol = '<div class="week-person-col"><div class="week-backlog-header"><div class="week-backlog-label">Backlog</div><div class="week-backlog-count">' + (semDono.length + semPrazo.length) + ' ite' + (semDono.length + semPrazo.length === 1 ? 'm' : 'ns') + '</div></div>'
+    backlogCol = '<div class="week-person-col"><div class="week-backlog-header"><div class="week-backlog-label">Backlog</div><div class="week-backlog-count">' + (semDono.length + semPrazo.length) + ' ite' + (semDono.length + semPrazo.length === 1 ? 'm' : 'ns') + '</div></div><div class="week-person-body">'
       + (semDono.length ? '<div class="week-backlog-sub">Sem responsável · ' + semDono.length + '</div>' + semDono.map(renderPlannerCard).join('') : '')
       + (semPrazo.length ? '<div class="week-backlog-sub">Sem prazo · ' + semPrazo.length + '</div>' + semPrazo.map(renderPlannerCard).join('') : '')
-      + '</div>';
+      + '</div></div>';
   }
   grid.innerHTML = personCols.join('') + backlogCol;
 }
@@ -3501,7 +3505,7 @@ function plannerCapacidadeHtml(person){
     const esc = C.alocar(cargaTasks(true).filter(function(t){ return t.who.indexOf(person) >= 0; }), { hoje: hoje, de: ini, ate: fim });
     parcial = fmtD((esc.porPessoa[person] || { alocadoPeriodo: 0 }).alocadoPeriodo) + ' d nesta frente · ';
   }
-  return '<div class="week-person-cap" title="Semana atual, todas as frentes">' + parcial + '<b class="cl-txt-' + nv + '">' + fmtD(s.alocadoPeriodo) + '</b> / ' + fmtD(cap) + ' d na semana' + (s.naoEstimadas ? ' · <span class="ne-chip">' + s.naoEstimadas + ' não est.</span>' : '') + (pct > 1 ? ' ⚠️' : '') + '<div class="carga-bar mini"><div class="carga-bar-fill cl-' + nv + '" style="width:' + Math.min(100, Math.round(pct * 100)) + '%"></div></div></div>';
+  return '<div class="week-person-cap" title="Semana atual, todas as frentes"><div class="week-person-cap-txt">' + parcial + '<b class="cl-txt-' + nv + '">' + fmtD(s.alocadoPeriodo) + '</b> / ' + fmtD(cap) + ' d na semana' + (s.naoEstimadas ? ' · <span class="ne-chip">' + s.naoEstimadas + ' não est.</span>' : '') + (pct > 1 ? ' ⚠️' : '') + '</div><div class="carga-bar mini"><div class="carga-bar-fill cl-' + nv + '" style="width:' + Math.min(100, Math.round(pct * 100)) + '%"></div></div></div>';
 }
 // ══════════════════════════════
 //  VIEW: TIMELINE (Gantt) — barras início → nosso prazo, extensão hachurada até o prazo
