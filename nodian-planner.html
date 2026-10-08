@@ -2329,7 +2329,7 @@ const PROJ_FID = {};   // projectId -> fid
 const _st = {};        // fid -> { docVer, baseline, booted, saving, pending }
 // filterPessoas: siglas selecionadas no filtro de TIME (vazio = Todos). Seleção múltipla para
 // o líder ver só os seus analistas.
-let filterPessoas = [], filterStatus = 'all', currentView = 'board';
+let filterPessoas = [], filterStatus = 'all', currentView = 'list';
 let currentProjectId = null, editingMilestoneIdx = null, editingTaskIdx = null, milestoneType = 'milestone';
 let tempModalTeam = [], tempMilestoneWho = [], tempTaskWho = [];
 let _readOnly = false;
@@ -2763,13 +2763,13 @@ document.addEventListener('DOMContentLoaded', function(){
 // barra de abas NUNCA muda quando você troca de frente. (Antes, "Projetos" só aparecia
 // dentro de uma frente e "Carga" só no consolidado — o menu mudava debaixo do usuário.)
 const VIEWS = [
-  { id: 'board',    tab: 'Kanban',          mod: 'projetos',     el: 'boardView',    title: 'Kanban de projetos' },
   { id: 'list',     tab: 'Projetos',        mod: 'planning',     el: 'listView',     title: 'Projetos' },
   { id: 'planner',  tab: 'Responsáveis',    mod: 'planner',      el: 'plannerView',  title: 'Responsáveis' },
   { id: 'carga',    tab: 'Carga',           mod: 'carga',        el: 'cargaView',    title: 'Carga de trabalho' },
   { id: 'planejar', tab: 'Planejar',        mod: 'planejar',     el: 'planejarView', title: 'Planejar sprint' },
   { id: 'timeline', tab: 'Timeline',        mod: 'timeline',     el: 'timelineView', title: 'Timeline' },
   { id: 'cal',      tab: 'Calendário',      mod: 'calendario',   el: 'calView',      title: 'Calendário' },
+  { id: 'board',    tab: 'Kanban',          mod: 'projetos',     el: 'boardView',    title: 'Kanban de projetos' },
   { id: 'week',     tab: 'Kanban de Tasks', mod: 'kanban_tasks', el: 'weekView',     title: 'Kanban de tasks' },
   { id: 'summary',  tab: 'Resumo',          mod: 'resumo',       el: 'summaryView',  title: 'Resumo' },
   { id: 'crm',      tab: 'CRM',             mod: 'crm',          el: 'crmView',      title: 'CRM' },
