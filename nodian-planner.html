@@ -870,6 +870,11 @@ body.tem-aviso-topo #logout-btn{top:41px}
 .tl-bar.tl-seg.tl-seg-cont .tl-bar-label{display:none}
 .cal-chip.cal-alocado{border-left-style:solid;font-weight:500}
 .cal-aloc-sig{display:inline-block;font-weight:800;font-size:9px;letter-spacing:.04em;padding:0 4px;margin-right:3px;border-radius:3px;background:var(--c);color:#fff}
+.task-context{display:flex;align-items:center;gap:8px;margin:-12px 0 14px;font-size:12px;color:var(--color-gray)}
+.task-context:empty{display:none}
+.task-context-proj{font-weight:600;color:var(--color-black)}
+a.task-context-proj{text-decoration:underline;text-decoration-style:dotted;cursor:pointer}
+a.task-context-proj:hover{color:var(--color-gray)}
 
 /* ══ PLANEJAR (grade task × dia) — só variáveis de tema; reaproveita .cl-* da Carga ══ */
 /* a grade rola dentro de .pl-wrap (cabeçalho e rodapé grudam nela), não a visão inteira */
@@ -946,7 +951,11 @@ tr.pl-focus td{box-shadow:inset 0 0 0 2px var(--color-blue)}
 .pl-chip{display:inline-flex;align-items:center;justify-content:center;height:18px;min-width:20px;padding:0 5px;margin:1px;border-radius:99px;font-size:10px;font-weight:700;line-height:1;cursor:pointer;user-select:none;vertical-align:top}
 .pl-chip.meio{box-shadow:inset 0 0 0 1.5px var(--color-white);opacity:.85}
 .pl-cell.pl-ro .pl-chip{cursor:default}
-.pl-ghost{display:inline-flex;align-items:center;justify-content:center;height:18px;min-width:20px;padding:0 5px;margin:1px;border-radius:99px;font-size:10px;font-weight:600;line-height:1;vertical-align:top;background:transparent !important;color:var(--color-gray) !important;border:1px dashed var(--color-gray);opacity:.7;cursor:inherit;user-select:none}
+/* badge "segue as datas" (task sem alocacao): mesmo chip sólido, com leve transparência e um ponto no canto; sem tracejado */
+.pl-chip.auto{position:relative;opacity:.78}
+.pl-chip.auto::after{content:'';position:absolute;top:2px;right:2px;width:3px;height:3px;border-radius:50%;background:currentColor;opacity:.75}
+.pl-chip.auto .pl-frac{font-size:8px;font-weight:600;margin-left:1px}
+.pl-cell.passado .pl-chip.auto{opacity:.55}
 .pl-legenda .pl-chip{cursor:default;background:var(--color-coral);color:var(--on-accent)}
 
 /* rodapé de carga */
@@ -993,8 +1002,6 @@ tr.pl-carga .avatar{display:inline-flex;vertical-align:middle}
   .pl-c-quem{display:none}
   .pl-gaveta{position:fixed;right:8px;top:80px;bottom:8px;width:min(300px,90vw);flex:none;z-index:200}
 }
-.pl-ghost.pl-ghost-conv{cursor:pointer}
-.pl-ghost.pl-ghost-conv:hover{opacity:1;border-style:solid}
 </style>
 </head>
 <body>
@@ -1057,7 +1064,7 @@ tr.pl-carga .avatar{display:inline-flex;vertical-align:middle}
 </div>
 <!-- DASH HEADER -->
 <div class="dash-header">
-  <div class="dash-title" id="viewTitle">Planner</div>
+  <div class="dash-title" id="viewTitle">Responsáveis</div>
   <div style="display:flex;align-items:center;gap:10px">
     <div class="dash-meta" id="projectCount"></div>
     <button class="btn btn-secondary btn-sm" id="btnCapturePng" onclick="captureCurrentViewPng()">↓ PNG</button>
@@ -1378,6 +1385,7 @@ tr.pl-carga .avatar{display:inline-flex;vertical-align:middle}
 <div class="overlay" id="taskOverlay" onclick="closeTaskModal(event)">
   <div class="small-modal modal-wide">
     <div class="small-modal-title" id="taskModalTitle">Nova Task</div>
+    <div class="task-context" id="taskContext"></div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <div class="form-row"><label class="form-label">Descrição</label><textarea class="form-textarea" id="taskDesc" placeholder="O que precisa ser feito?" style="min-height:50px"></textarea></div>
 
@@ -1428,7 +1436,7 @@ tr.pl-carga .avatar{display:inline-flex;vertical-align:middle}
             <span class="campo-legenda-inline" id="taskEffortTotal"></span>
           </div>
           <div class="esforco-aloc-rodape" id="taskAlocRodape" style="display:none"></div>
-          <div class="esforco-grade" id="taskGradeWrap" style="display:none"><button class="btn btn-sm btn-secondary" type="button" onclick="taskAbrirNaGrade()" title="Fecha este editor e abre a grade Planejar no período da task, com a linha dela destacada">Abrir na grade</button></div>
+          <div class="esforco-grade" id="taskGradeWrap" style="display:none"><button class="btn btn-sm btn-secondary" type="button" onclick="taskAbrirNaGrade()" title="Fecha este editor e abre a grade Planejar no período da task, com a linha dela destacada">Abrir na grade</button> <button class="btn btn-sm btn-ghost" type="button" id="taskVoltaDatas" style="display:none" onclick="taskVoltarASeguirDatas()" title="Apaga os dias ajustados à mão na grade Planejar; ao salvar, a carga volta a ser distribuída pelo início, prazo e esforço">Voltar a seguir as datas</button></div>
         </div>
       </div>
 
@@ -1823,31 +1831,48 @@ window.CONFIG = CONFIG;
     return { parouEm: null, inseridos: inseridos };
   }
 
-  // Converte a estimativa (esforço + janela) de uma task SEM chips em chips reais (1,0 / 0,5),
-  // sem mutar a task. Devolve {alocacao|null, sobra:{sigla: dias}}. Só vale para task aberta,
-  // com esforço, responsáveis e alguma data. Para cada sigla preenche dia útil a dia útil, do
-  // início ao fim da janela (a mesma de `janela`), com 1,0 enquanto o restante ≥ 1 e depois 0,5
-  // se o restante ≥ 0,5; o que não cabe em frações de 0,5 ou não cabe na janela vai para `sobra`.
-  // Task atrasada (prazo no passado) começa em `hoje` e não tem fim: preenche os dias úteis
-  // seguintes até esgotar. Nunca grava em sáb/dom nem passa de 1,0 por sigla/dia.
-  function chipsDaEstimativa(t, hoje, feriados){
+  // MATERIALIZAÇÃO do plano por datas (07/10/2026): devolve, sem mutar a task, os chips
+  // (1,0 / 0,5) que reproduzem o mais de perto possível a carga que `alocar` espalha pela
+  // janela de uma task SEM alocação. Usada quando o usuário ajusta à mão, na grade Planejar,
+  // uma linha que até ali seguia as datas. {alocacao|null, sobra:{sigla: dias}}.
+  //  - Dias: exatamente os de `alocar` (listaDiasUteis da `janela`, com o fallback [fim];
+  //    task atrasada → só hoje; concluída → [início, doneAt]); sáb/dom nunca recebem chip.
+  //  - Por sigla (esforcoPorPessoa): valor/dia = esforço ÷ nº de dias; cada dia arredonda para
+  //    o 0,5 mais próximo, com mínimo 0,5 e máximo 1,0.
+  //  - Passou do esforço por mais de 0,25: tira 0,5 dos ÚLTIMOS dias (1,0 → 0,5; 0,5 → sai),
+  //    sem nunca deixar a pessoa sem nenhum chip.
+  //  - Faltou 0,25 ou mais: põe +0,5 nos PRIMEIROS dias que estão em 0,5 (nunca passa de 1,0).
+  //    (Empate de 0,25 fica para cima: prefere sobrar a perder carga.)
+  //  - O que ainda faltar (não cabe a 1,0/dia, ou resto < 0,25) vai para `sobra`.
+  //  - Sem esforço, sem responsável, sem janela ou já com alocação → {alocacao:null}.
+  function chipsDaJanela(t, hoje, feriados){
     const vazio = { alocacao: null, sobra: {} };
-    if(!t || t.done || !temEsforco(t) || !pessoasDe(t).length || temAlocacao(t)) return vazio;
-    const j = janela(t, hoje, feriados); if(!j) return vazio;
+    if(!t || !temEsforco(t) || !pessoasDe(t).length || temAlocacao(t)) return vazio;
+    const j = janela(t, hoje || fmt(new Date()), feriados); if(!j) return vazio;
+    let dias = listaDiasUteis(j.inicio, j.fim, feriados);
+    if(!dias.length) dias = [j.fim];
+    const n = dias.length, uteis = dias.filter(function(d){ return ehDiaUtil(d, feriados); });
     const por = esforcoPorPessoa(t), alocacao = {}, sobra = {};
-    const r2 = function(n){ return Math.round(n * 1000) / 1000; };
+    const r3 = function(x){ return Math.round(x * 1000) / 1000; };
     Object.keys(por).forEach(function(s){
-      let rest = r2(por[s]); if(!(rest > 0)) return;
-      const fim = j.atrasada ? addDias(j.inicio, Math.ceil(rest * 2) * 2 + 7) : j.fim;
-      const dias = listaDiasUteis(j.inicio, fim, feriados);
-      for(let i = 0; i < dias.length && rest >= 0.5; i++){
-        const v = rest >= 1 ? 1 : 0.5;
-        if(!alocacao[dias[i]]) alocacao[dias[i]] = {};
-        alocacao[dias[i]][s] = v; rest = r2(rest - v);
+      const e = r3(Number(por[s]) || 0); if(!(e > 0)) return;
+      const base = Math.min(1, Math.max(0.5, Math.round(e / n * 2) / 2));
+      const v = uteis.map(function(){ return base; });
+      let S = r3(base * v.length);
+      const vivos = function(){ return v.filter(function(x){ return x > 0; }).length; };
+      for(let i = v.length - 1; i >= 0 && r3(S - e) > 0.25; i--){
+        if(v[i] === 0.5 && vivos() <= 1) break;
+        v[i] = r3(v[i] - 0.5); S = r3(S - 0.5);
       }
-      if(rest > 0) sobra[s] = rest;
+      for(let i = 0; i < v.length && r3(e - S) >= 0.25; i++){
+        if(v[i] === 0.5){ v[i] = 1; S = r3(S + 0.5); }
+      }
+      uteis.forEach(function(d, i){ if(v[i] > 0){ if(!alocacao[d]) alocacao[d] = {}; alocacao[d][s] = v[i]; } });
+      if(r3(e - S) > 0) sobra[s] = r3(e - S);
     });
-    return { alocacao: Object.keys(alocacao).length ? alocacao : null, sobra: sobra };
+    const ordenada = {};
+    Object.keys(alocacao).sort().forEach(function(d){ ordenada[d] = alocacao[d]; });
+    return { alocacao: Object.keys(ordenada).length ? ordenada : null, sobra: sobra };
   }
 
   // tasks: [{id, who, effort, effortBy?, start, date, status, done(bool), alocacao?, projectName?, frente?}]
@@ -1966,7 +1991,7 @@ window.CONFIG = CONFIG;
 
   const api = { parse: parse, fmt: fmt, addDias: addDias, ehDiaUtil: ehDiaUtil, listaDiasUteis: listaDiasUteis, diasUteisEntre: diasUteisEntre, addDiasUteis: addDiasUteis, subDiasUteis: subDiasUteis,
     inicioSemana: inicioSemana, fimSemana: fimSemana, janela: janela, temEsforco: temEsforco, esforcoPorPessoa: esforcoPorPessoa, alocar: alocar,
-    temAlocacao: temAlocacao, diasAlocacao: diasAlocacao, esforcoAlocado: esforcoAlocado, saldoAlocacao: saldoAlocacao, setChip: setChip, segmentos: segmentos, preencherAte: preencherAte, chipsDaEstimativa: chipsDaEstimativa, agregarSemanas: agregarSemanas, nivel: nivel, arred: arred };
+    temAlocacao: temAlocacao, diasAlocacao: diasAlocacao, esforcoAlocado: esforcoAlocado, saldoAlocacao: saldoAlocacao, setChip: setChip, segmentos: segmentos, preencherAte: preencherAte, chipsDaJanela: chipsDaJanela, agregarSemanas: agregarSemanas, nivel: nivel, arred: arred };
   if(typeof module !== 'undefined' && module.exports) module.exports = api;
   root.PlannerCarga = api;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2721,7 +2746,7 @@ document.addEventListener('DOMContentLoaded', function(){
   updateViewTabs();
   setView(currentView);
 
-  ['milestoneDate', 'logDate', 'taskDate', 'quickTaskDate'].forEach(function(id){ const el = document.getElementById(id); if(el) el.value = hojeISO(); });
+  ['milestoneDate', 'logDate'].forEach(function(id){ const el = document.getElementById(id); if(el) el.value = hojeISO(); });
   document.getElementById('modalName').addEventListener('input', saveCurrentProject);
   document.addEventListener('click', handleGlobalClick);
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeTopOverlay(); });
@@ -2740,7 +2765,7 @@ document.addEventListener('DOMContentLoaded', function(){
 const VIEWS = [
   { id: 'board',    tab: 'Kanban',          mod: 'projetos',     el: 'boardView',    title: 'Kanban de projetos' },
   { id: 'list',     tab: 'Projetos',        mod: 'planning',     el: 'listView',     title: 'Projetos' },
-  { id: 'planner',  tab: 'Planner',         mod: 'planner',      el: 'plannerView',  title: 'Planner' },
+  { id: 'planner',  tab: 'Responsáveis',    mod: 'planner',      el: 'plannerView',  title: 'Responsáveis' },
   { id: 'carga',    tab: 'Carga',           mod: 'carga',        el: 'cargaView',    title: 'Carga de trabalho' },
   { id: 'planejar', tab: 'Planejar',        mod: 'planejar',     el: 'planejarView', title: 'Planejar sprint' },
   { id: 'timeline', tab: 'Timeline',        mod: 'timeline',     el: 'timelineView', title: 'Timeline' },
@@ -3030,7 +3055,7 @@ function renderPlanningRow(p, cols){
     + '<div class="quick-row-base quick-task-row" id="qr-' + p.id + '" onclick="event.stopPropagation()">'
     + '<input class="quick-task-input" id="qt-desc-' + p.id + '" placeholder="Descrição da task..." onkeydown="handleListQuickKey(event,\'' + p.id + '\')"/>'
     + '<select class="quick-who-select" id="qt-who-' + p.id + '">' + whoOpts('Quem?') + '</select>'
-    + '<input class="quick-date-input" id="qt-date-' + p.id + '" type="date" value="' + hojeISO() + '" title="Nosso prazo"/>'
+    + '<input class="quick-date-input" id="qt-date-' + p.id + '" type="date" value="" title="Nosso prazo"/>'
     + '<input class="quick-date-input quick-effort-input" id="qt-effort-' + p.id + '" type="number" min="0" step="0.5" placeholder="dias" title="Esforço (dias úteis)"/>'
     + '<button class="btn btn-sm btn-primary" onclick="submitListQuickTask(\'' + p.id + '\')">Adicionar ↵</button></div>'
     + '</div>';
@@ -3458,9 +3483,8 @@ function cargaEditTask(pid, tid, campo, val){
   const p = findProject(pid); if(!p) return; const t = (p.tasks || []).find(function(x){ return x.id === tid; }); if(!t) return;
   if(campo === 'effort'){ const n = parseFloat(val); t.effort = (val === '' || isNaN(n) || n < 0) ? null : n; }
   else t[campo] = val;
-  // esforço ou prazo que fecham esforço + responsáveis + data numa task sem chips: a estimativa vira chips
-  const sobra = (campo === 'effort' || campo === 'date') ? aplicaChipsDaEstimativa(t) : {};
-  saveProject(pid); renderCarga(); toast('Task atualizada', 'success'); avisaSobraEstimativa(sobra);
+  // não gera alocacao: task sem chips segue as datas, e a grade Planejar recalcula os badges ao renderizar
+  saveProject(pid); renderCarga(); toast('Task atualizada', 'success');
 }
 
 // Badge de capacidade no cabeçalho de pessoa do Planner: SEMPRE sobre todas as frentes,
@@ -3672,9 +3696,9 @@ function renderCalendar(){
         const ico = it.tipo === 'marco' ? '◆' : it.tipo === 'cliente' ? '◇' : '▸';
         const dc = it.done ? '' : deadlineClass(iso);
         if(it.tipo === 'alocado'){
-          return '<div class="cal-chip cal-alocado' + (it.done ? ' done' : '') + '" style="--c:' + it.cor + ';--c-bg:' + hexToRgba(it.cor, .16) + '" title="' + escHtml('Alocado · ' + it.p.name + ' · ' + it.label + ' · ' + it.who.join(', ')) + '" onclick="openTaskEditor(\'' + it.p.id + '\',\'' + it.tid + '\')"><span class="cal-aloc-sig">' + escHtml(it.who.join(' ')) + '</span>' + escHtml(it.label) + '</div>';
+          return '<div class="cal-chip cal-alocado' + (it.done ? ' done' : '') + '" style="--c:' + it.cor + ';--c-bg:' + hexToRgba(it.cor, .16) + '" title="' + escHtml('Alocado · ' + (it.frente && isMulti() ? it.frente.nome + ' · ' : '') + it.p.name + ' · ' + it.label + ' · ' + it.who.join(', ')) + '" onclick="openTaskEditor(\'' + it.p.id + '\',\'' + it.tid + '\')"><span class="cal-aloc-sig">' + escHtml(it.who.join(' ')) + '</span><span class="cal-chip-proj">' + escHtml(it.p.name) + '</span> ' + escHtml(it.label) + '</div>';
         }
-        return '<div class="cal-chip cal-' + it.tipo + (it.done ? ' done' : '') + (dc === 'overdue' ? ' overdue' : '') + '" style="--c:' + it.cor + ';--c-bg:' + hexToRgba(it.cor, .16) + '" title="' + escHtml(it.p.name + ' · ' + it.label + (it.who.length ? ' · ' + it.who.join(', ') : '')) + '" onclick="openProject(\'' + it.p.id + '\')">' + ico + ' <span class="cal-chip-proj">' + escHtml(it.p.name) + '</span> ' + escHtml(it.label) + '</div>';
+        return '<div class="cal-chip cal-' + it.tipo + (it.done ? ' done' : '') + (dc === 'overdue' ? ' overdue' : '') + '" style="--c:' + it.cor + ';--c-bg:' + hexToRgba(it.cor, .16) + '" title="' + escHtml((it.frente && isMulti() ? it.frente.nome + ' · ' : '') + it.p.name + ' · ' + it.label + (it.who.length ? ' · ' + it.who.join(', ') : '')) + '" onclick="openProject(\'' + it.p.id + '\')">' + ico + ' <span class="cal-chip-proj">' + escHtml(it.p.name) + '</span> ' + escHtml(it.label) + '</div>';
       }).join('')
       + (over > 0 ? '<div class="cal-more" onclick="calShowDay(\'' + iso + '\')">+' + over + '</div>' : '') + '</div>';
   });
@@ -3693,9 +3717,16 @@ function calShowDay(iso){
 //  Decisões travadas: chip só em task (a linha do projeto é só leitura); frações 1,0 e 0,5;
 //  nunca dividir automaticamente; fim de semana só com toggle (e conta como carga extra);
 //  candidatas do mini-picker priorizadas pelo dono (who → team → demais).
+//  DOIS MODOS por task, sem passo de conversão (07/10/2026):
+//   - plano por datas (sem alocacao): a carga é a do motor (janela início→prazo, espalhamento
+//     uniforme); cada dia útil da janela mostra um badge .pl-chip.auto por responsável, calculado
+//     ao renderizar — mudou data/esforço (editor, prazo inline, Carga), os badges acompanham.
+//   - manual (com alocacao): chips 1,0 / 0,5.
+//  Qualquer gesto de chip numa linha em plano por datas primeiro MATERIALIZA o plano
+//  (PlannerCarga.chipsDaJanela) e então aplica o gesto: uma entrada só de Ctrl+Z, que volta a
+//  alocacao a null (plano por datas).
 // ══════════════════════════════
 let plPreset = '2sem', plDe = '', plAte = '', plFds = false, plDone = false, plExpand = {}, plUndo = [], plDrag = null, plPicker = null;
-let plConvertiveis = [];   // [{pid, tid}] das tasks com fantasma que viram chips (recalculado a cada render)
 let plGaveta = false, plHl = null, plPassadoOk = false, plSuprimeClick = false, plFocoTid = null;
 
 function plPeriodo(){
@@ -3725,6 +3756,17 @@ function plDiaNome(iso){ return ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb
 function plFdsIso(iso){ return !PlannerCarga.ehDiaUtil(iso); }
 function plChipsDe(t, iso){ const d = t.alocacao && t.alocacao[iso]; return d ? Object.keys(d).filter(function(s){ return d[s]; }) : []; }
 function plFracTxt(v){ return v === 0.5 ? '0,5' : '1,0'; }
+function plFeita(t){ return t.status === TASK_DONE_ID; }
+// Plano por datas materializado (o que a task teria se virasse manual agora); null se não há.
+// A task é vista como concluída ou não pelo status, como em cargaTasks.
+function plMaterial(t){
+  if(!t || PlannerCarga.temAlocacao(t)) return null;
+  return PlannerCarga.chipsDaJanela(Object.assign({}, t, { done: plFeita(t) }), hojeISO());
+}
+// Alocação "vista" pelos gestos: a manual, ou a que a materialização daria.
+function plAlocVista(t){ if(PlannerCarga.temAlocacao(t)) return t.alocacao; const m = plMaterial(t); return (m && m.alocacao) || null; }
+function plChipsVista(t, iso){ const a = plAlocVista(t), d = a && a[iso]; return d ? Object.keys(d).filter(function(s){ return d[s]; }) : []; }
+function plFracVista(t, iso, s){ const a = plAlocVista(t); return a && a[iso] && a[iso][s] != null ? a[iso][s] : null; }
 
 // Tasks que entram na grade, gaveta e projetos vazios (6.3).
 function plColeta(per){
@@ -3782,7 +3824,8 @@ function renderPlanejar(){
   const sc = antes ? { x: antes.scrollLeft, y: antes.scrollTop } : null, scG = antesG ? antesG.scrollTop : 0;
 
   const dados = plColeta(per);
-  // carga do rodapé (todas as frentes); dela sai também a carga implícita (janela início→prazo) das tasks sem chip
+  // carga do rodapé (todas as frentes); dela sai também o plano por datas (janela início→prazo) das
+  // tasks sem chip, que vira os badges .auto — o rodapé e a Carga somam exatamente esses valores
   const R = C.alocar(cargaTasks(false), { hoje: hoje, de: per.de, ate: per.ate });
   const implicita = {};
   Object.keys(R.detalhe).forEach(function(s){ Object.keys(R.detalhe[s]).forEach(function(d){ R.detalhe[s][d].forEach(function(it){
@@ -3790,12 +3833,6 @@ function renderPlanejar(){
     const m = implicita[it.id] || (implicita[it.id] = {}), dm = m[d] || (m[d] = {});
     dm[s] = (dm[s] || 0) + it.dias;
   }); }); });
-  // tasks da grade com fantasma que a conversão consegue transformar em chips
-  const conv = {}; plConvertiveis = [];
-  dados.com.forEach(function(x){ x.tasks.forEach(function(t){
-    if(!implicita[t.id] || C.temAlocacao(t) || !plEstimativa(t, hoje).alocacao) return;
-    conv[t.id] = true; plConvertiveis.push({ pid: x.p.id, tid: t.id });
-  }); });
   const dias = plFds ? (function(){ const o = []; let d = per.de, g = 0; while(d <= per.ate && g++ < 400){ o.push(d); d = C.addDias(d, 1); } return o; })() : C.listaDiasUteis(per.de, per.ate);
   const nCol = dias.length;
   _plProjsAbertos = {}; dados.com.forEach(function(x){ _plProjsAbertos[x.p.id] = true; });
@@ -3811,9 +3848,8 @@ function renderPlanejar(){
     + '<div class="filter-sep"></div><button class="filter-chip' + (plFds ? ' active' : '') + '" onclick="togglePlFds()" title="Chip em sábado ou domingo conta como carga extra; a capacidade não muda">' + (plFds ? '☑' : '☐') + ' Mostrar fim de semana</button>'
     + '<button class="filter-chip' + (plDone ? ' active' : '') + '" onclick="togglePlDone()">' + (plDone ? '☑' : '☐') + ' Mostrar concluídas</button>'
     + '<button class="filter-chip' + (plGaveta && dados.gaveta.length ? ' active' : '') + '" onclick="togglePlGaveta()"' + (dados.gaveta.length ? '' : ' disabled') + ' title="Tasks abertas sem data e sem chip">Fora da sprint (' + dados.gaveta.length + ')</button>'
-    + (ro ? '' : '<button class="filter-chip" id="plConverter" onclick="plConverterTodas()"' + (plConvertiveis.length ? '' : ' disabled') + ' title="Transforma a carga estimada (fantasmas) das tasks da grade em chips de 1,0 e 0,5">Converter estimativas em chips (' + plConvertiveis.length + ')</button>')
     + (fdsOcultos ? '<button class="filter-chip pl-aviso" onclick="togglePlFds()">' + fdsOcultos + ' chip' + (fdsOcultos !== 1 ? 's' : '') + ' em fim de semana oculto' + (fdsOcultos !== 1 ? 's' : '') + ' · mostrar</button>' : '')
-    + '<div class="pl-legenda"><span class="pl-chip">AC</span>1,0 <span class="pl-chip meio">AC½</span>0,5 <span class="pl-ghost" title="Carga calculada pela janela início→prazo de tasks sem chip; clique no fantasma para converter a estimativa em chips">AC 0,8</span>estimado (sem chip) <span class="pl-lg-prazo"></span>prazo <span>⚑</span>cliente <span class="pl-lg-estouro"></span>depois do prazo</div>'
+    + '<div class="pl-legenda"><span class="pl-chip">AM</span>1,0 · <span class="pl-chip meio">AM½</span>0,5 · <span class="pl-chip auto" title="Task sem ajuste manual: a carga segue início, prazo e esforço e acompanha qualquer mudança neles. Clicar ou arrastar um badge desses passa a linha para ajuste manual">AM<small class="pl-frac">·0,8</small></span>segue as datas <span class="pl-lg-prazo"></span>prazo <span>⚑</span>cliente <span class="pl-lg-estouro"></span>depois do prazo</div>'
     + '</div>';
 
   // ── tabela ──
@@ -3829,7 +3865,10 @@ function renderPlanejar(){
       + (isMulti() && x.f ? ' <span class="frente-badge" style="' + frenteStyle(x.f.cor) + '">' + escHtml(x.f.curto) + '</span>' : '')
       + (ro ? '' : ' <button class="pl-nova" onclick="event.stopPropagation();plNovaTask(\'' + p.id + '\')" title="Criar task neste projeto">+ nova task</button>') + '</td>';
     const cel = dias.map(function(iso){
-      const u = []; x.tasks.forEach(function(t){ plChipsDe(t, iso).forEach(function(s){ if(u.indexOf(s) < 0) u.push(s); }); });
+      const u = []; x.tasks.forEach(function(t){
+        const auto = C.temAlocacao(t) ? null : implicita[t.id];
+        plChipsDe(t, iso).concat(auto && auto[iso] ? Object.keys(auto[iso]).sort() : []).forEach(function(s){ if(u.indexOf(s) < 0) u.push(s); });
+      });
       return '<td class="pl-cell-ro' + cls(iso) + '" data-pid="' + escHtml(p.id) + '" data-iso="' + iso + '">' + escHtml(u.join(' ')) + '</td>';
     }).join('');
     return '<tr class="pl-proj' + (vazio ? ' vazio' : '') + '" data-pid="' + escHtml(p.id) + '" onclick="plToggleProj(\'' + p.id + '\')">' + nome
@@ -3838,23 +3877,31 @@ function renderPlanejar(){
   const linhaTask = function(p, t){
     const quem = whoArr(t), chipsQuem = {};
     C.diasAlocacao(t).forEach(function(d){ plChipsDe(t, d).forEach(function(s){ chipsQuem[s] = true; }); });
-    const imp = C.temAlocacao(t) ? null : implicita[t.id], temImp = !!imp;
+    const imp = C.temAlocacao(t) ? null : implicita[t.id], autoQuem = {};
+    if(imp) Object.keys(imp).forEach(function(d){ Object.keys(imp[d]).forEach(function(s){ autoQuem[s] = true; }); });
+    // título dos badges auto: a janela que o motor usa (atrasada = hoje)
+    const jn = imp ? C.janela(Object.assign({}, t, { done: plFeita(t) }), hoje) : null;
+    const jTxt = jn ? formatDateShort(jn.inicio) + ' → ' + formatDateShort(jn.fim) : 'início → prazo';
+    const manualComDatas = C.temAlocacao(t) && C.temEsforco(t) && !!(t.start || t.date);
     const feita = t.status === TASK_DONE_ID, atrasada = !feita && !!t.date && t.date < hoje, ed = ro ? '' : ' pl-edit';
     const cel = dias.map(function(iso){
       const dia = (t.alocacao && t.alocacao[iso]) || {}, sig = Object.keys(dia).filter(function(s){ return dia[s]; });
-      let c = 'pl-cell' + cls(iso) + (t.date && iso === t.date ? ' prazo' : '') + (t.dateClient && iso === t.dateClient ? ' cliente' : '') + (t.date && iso > t.date && sig.length ? ' estouro' : '')
-        + (plHl && plHl.iso === iso && sig.indexOf(plHl.sigla) >= 0 ? ' pl-hl' : '') + (ro ? ' pl-ro' : '');
+      let c = 'pl-cell' + cls(iso) + (t.date && iso === t.date ? ' prazo' : '') + (t.dateClient && iso === t.dateClient ? ' cliente' : '') + (t.date && iso > t.date && sig.length ? ' estouro' : '');
       const gh = imp && imp[iso] ? Object.keys(imp[iso]).sort() : [];
+      c += (plHl && plHl.iso === iso && (sig.indexOf(plHl.sigla) >= 0 || gh.indexOf(plHl.sigla) >= 0) ? ' pl-hl' : '') + (ro ? ' pl-ro' : '');
       const tt = p.name + ' · ' + (t.desc || '') + ' · ' + formatDateShort(iso) + (sig.length ? ' · ' + sig.map(function(s){ return s + ' ' + plFracTxt(dia[s]); }).join(' · ') : '')
-        + (gh.length ? ' · estimado pela janela início→prazo: ' + gh.map(function(s){ return s + ' ' + plFmt(imp[iso][s]); }).join(', ') : '');
+        + (gh.length ? ' · segue as datas da task: ' + gh.map(function(s){ return s + ' ' + plFmt(imp[iso][s]); }).join(', ') + ' d' : '');
       return '<td class="' + c + '" data-pid="' + escHtml(p.id) + '" data-tid="' + escHtml(t.id) + '" data-iso="' + iso + '" title="' + escHtml(tt) + '">'
         + sig.map(function(s){ const meio = dia[s] === 0.5; return '<span class="pl-chip' + (meio ? ' meio' : '') + '" data-sigla="' + escHtml(s) + '" style="' + avatarStyle(s) + '">' + escHtml(s) + (meio ? '½' : '') + '</span>'; }).join('')
-        + gh.map(function(s){ return '<span class="pl-ghost' + (conv[t.id] && !ro ? ' pl-ghost-conv' : '') + '" data-sigla="' + escHtml(s) + '"' + (conv[t.id] && !ro ? ' title="clique para converter a estimativa em chips"' : '') + ' style="' + avatarStyle(s) + '">' + escHtml(s) + ' ' + plFmt(imp[iso][s]) + '</span>'; }).join('') + '</td>';
+        + gh.map(function(s){
+          const v = imp[iso][s], frac = plFmt(v) === plFmt(1) ? '' : '<small class="pl-frac">·' + plFmt(v) + '</small>';
+          return '<span class="pl-chip auto" data-sigla="' + escHtml(s) + '" data-v="' + C.arred(v, 3) + '" style="' + avatarStyle(s) + '" title="' + escHtml('segue as datas da task: ' + jTxt + ', ' + s + ' ' + plFmt(v) + ' d/dia' + (ro ? '' : ' · ajustar aqui passa a linha para manual')) + '">' + escHtml(s) + frac + '</span>';
+        }).join('') + '</td>';
     }).join('');
     return '<tr class="pl-task' + (feita ? ' feita' : '') + (atrasada ? ' pl-atrasada' : '') + (plFocoTid === t.id ? ' pl-focus' : '') + '" data-pid="' + escHtml(p.id) + '" data-tid="' + escHtml(t.id) + '">'
       + '<td class="pl-c-nome pl-desc" title="Editar task" onclick="openTaskEditor(\'' + p.id + '\',\'' + t.id + '\')">' + escHtml(t.desc || '(sem descrição)') + '</td>'
       + '<td class="pl-c-prazo' + ed + (t.date ? ' ' + deadlineClass(t.date, feita) : '') + '"' + (ro ? '' : ' title="Editar o prazo"') + '>' + (t.date ? formatDateShort(t.date) : '—') + (t.dateClient ? ' <span class="pl-cli" title="Prazo do cliente: ' + escHtml(formatDateShort(t.dateClient)) + '">⚑</span>' : '') + '</td>'
-      + '<td class="pl-c-quem' + ed + '"' + (ro ? '' : ' title="Editar responsáveis"') + '>' + (quem.length ? quem.map(function(s){ return '<span class="pl-q' + (chipsQuem[s] ? '' : ' sem') + '" style="' + avatarStyle(s) + '" title="' + (chipsQuem[s] ? '' : (temImp ? 'sem chip; carga estimada pela janela' : 'sem dias alocados')) + '">' + escHtml(s) + '</span>'; }).join('') : '<span class="pl-n">—</span>') + '</td>'
+      + '<td class="pl-c-quem' + ed + '"' + (ro ? '' : ' title="Editar responsáveis' + (manualComDatas ? ' · linha ajustada à mão: para voltar a seguir as datas, abra a task (Voltar a seguir as datas)' : '') + '"') + '>' + (quem.length ? quem.map(function(s){ const tem = chipsQuem[s] || autoQuem[s]; return '<span class="pl-q' + (tem ? '' : ' sem') + '" style="' + avatarStyle(s) + '" title="' + (chipsQuem[s] ? '' : (autoQuem[s] ? 'segue as datas da task' : 'sem dias no período')) + '">' + escHtml(s) + '</span>'; }).join('') : '<span class="pl-n">—</span>') + '</td>'
       + cel + '</tr>';
   };
   dados.com.forEach(function(x){
@@ -3909,16 +3956,24 @@ function plPassadoConfirma(isos){
 }
 // Aplica fn(task) (uma ou mais chamadas a PlannerCarga.setChip), registra undo e grava.
 // exato: edição direta de responsáveis/prazo; o undo restaura who/date/effortBy como estavam (sem dedução).
+// Gesto de chip (não exato) numa task em plano por datas: antes de fn, materializa o plano em chips
+// (chipsDaJanela), tudo na MESMA entrada de undo — Ctrl+Z volta a alocacao a null.
 function plAplicar(pid, tid, fn, exato){
   if(_readOnly){ toast('Modo leitura', 'warn'); return false; }
   const t = plTask(pid, tid); if(!t) return false;
   const antes = plClone(t.alocacao), quemAntes = whoArr(t).slice(), dateAntes = t.date || '', efAntes = plClone(t.effortBy);
-  try{ fn(t); }catch(e){ toast('Não foi possível alocar: ' + e.message, 'error'); console.error('[planejar]', e); return false; }
+  let sobra = null;
+  try{
+    if(!exato){ const m = plMaterial(t); if(m && m.alocacao){ t.alocacao = m.alocacao; sobra = m.sobra; } }
+    fn(t);
+  }catch(e){ t.alocacao = antes; toast('Não foi possível alocar: ' + e.message, 'error'); console.error('[planejar]', e); return false; }
   const depois = plClone(t.alocacao), quemDepois = whoArr(t).slice(), dateDepois = t.date || '';
   if(plIgual(antes, depois) && plIgual(quemAntes, quemDepois) && dateAntes === dateDepois){ renderPlanejar(); return false; }
   plUndo.push({ pid: pid, tid: tid, antes: antes, depois: depois, quemAntes: quemAntes, quemDepois: quemDepois, dateAntes: dateAntes, dateDepois: dateDepois, efAntes: efAntes, exato: !!exato });
   if(plUndo.length > 20) plUndo.shift();
   saveProject(pid); renderPlanejar();
+  const ks = Object.keys(sobra || {});
+  if(ks.length) toast('A linha passou para ajuste manual; ' + ks.map(function(k){ return fmtDias(sobra[k]) + ' d de ' + k; }).join(', ') + ' não couberam nos dias da janela (máx. 1,0 por dia)', 'warn');
   return true;
 }
 function plDesfazer(){
@@ -3935,24 +3990,6 @@ function plDesfazer(){
   }
   saveProject(e.pid); renderPlanejar(); toast('Desfeito');
 }
-// Estimativa → chips: a task é vista como aberta (status → done) para o motor; ver aplicaChipsDaEstimativa.
-function plEstimativa(t, hoje){ return PlannerCarga.chipsDaEstimativa(Object.assign({}, t, { done: t.status === TASK_DONE_ID }), hoje); }
-// Converte UMA task (uma entrada de Ctrl+Z). Devolve a sobra {sigla: dias} ou null se nada mudou.
-function plConverter(pid, tid, quieto){
-  let sobra = {};
-  const ok = plAplicar(pid, tid, function(t){ const r = plEstimativa(t, hojeISO()); if(r.alocacao){ t.alocacao = r.alocacao; sobra = r.sobra; } });
-  if(!ok) return null;
-  if(!quieto) avisaSobraEstimativa(sobra);
-  return sobra;
-}
-function plConverterTodas(){
-  if(_readOnly) return;
-  const lista = plConvertiveis.slice(), n = lista.length; if(!n) return;
-  if(!confirm('Converter ' + n + ' task' + (n !== 1 ? 's' : '') + '? Cada uma vira uma entrada de Ctrl+Z.')) return;
-  let feitas = 0, comSobra = 0;
-  lista.forEach(function(x){ const r = plConverter(x.pid, x.tid, true); if(r){ feitas++; if(Object.keys(r).length) comSobra++; } });
-  toast(feitas + ' convertida' + (feitas !== 1 ? 's' : '') + (comSobra ? ' · ' + comSobra + ' com esforço que não coube na janela; confira na grade' : ''), comSobra ? 'warn' : 'success');
-}
 function plChip(pid, tid, iso, sigla, fr){ return plAplicar(pid, tid, function(t){ PlannerCarga.setChip(t, iso, sigla, fr); }); }
 
 function plNovaTask(pid){
@@ -3964,7 +4001,7 @@ function plNovaTask(pid){
 function plPickerHtml(t, p, iso){
   const quem = whoArr(t), team = (p.team || []).filter(function(s){ return quem.indexOf(s) < 0; });
   const resto = TEAM_OPTIONS.filter(function(s){ return quem.indexOf(s) < 0 && team.indexOf(s) < 0; });
-  const atual = plChipsDe(t, iso), mine = minhaSigla();
+  const atual = plChipsVista(t, iso), mine = minhaSigla();
   const btn = function(s){ return '<button class="person-option' + (atual.indexOf(s) >= 0 ? ' selected' : '') + '" onclick="plPickerEscolhe(\'' + s + '\')" title="' + (atual.indexOf(s) >= 0 ? 'Remover ' : 'Alocar 1,0 a ') + escHtml(s) + '">' + escHtml(s) + (s === mine ? '<span class="person-option-tag">Você</span>' : '') + '</button>'; };
   const grupo = function(arr){ return arr.length ? '<div class="pl-picker-grupo">' + arr.map(btn).join('') + '</div>' : ''; };
   const blocos = [grupo(quem), grupo(team), grupo(resto)].filter(Boolean);
@@ -4039,7 +4076,7 @@ function plFechaPicker(){ const el = document.getElementById('plPickerEl'); if(e
 function plPickerEscolhe(sigla){
   const pk = plPicker; if(!pk || pk.modo) return;
   const t = plTask(pk.pid, pk.tid); if(!t){ plFechaPicker(); return; }
-  const tem = plChipsDe(t, pk.iso).indexOf(sigla) >= 0;
+  const tem = plChipsVista(t, pk.iso).indexOf(sigla) >= 0;
   if(!tem && !plPassadoConfirma([pk.iso])){ plFechaPicker(); return; }
   plFechaPicker();
   plChip(pk.pid, pk.tid, pk.iso, sigla, tem ? null : 1);
@@ -4056,7 +4093,7 @@ function plAlvosDoArrasto(row, e){
   return isos.slice(lo, hi + 1).filter(function(iso){
     if(iso === d.iso) return false;
     if(plFdsIso(iso) && !d.ctrl) return false;
-    return plChipsDe(t, iso).indexOf(d.sigla) < 0;     // copia só onde a sigla ainda não está
+    return plChipsVista(t, iso).indexOf(d.sigla) < 0;     // copia só onde a sigla ainda não está
   });
 }
 function plMarcaPrev(row){
@@ -4079,7 +4116,8 @@ function plLigaEventos(){
     const chip = e.target.closest('.pl-chip[data-sigla]'); if(!chip) return;
     const cell = chip.closest('td.pl-cell'); if(!cell) return;
     const t = plTask(cell.dataset.pid, cell.dataset.tid); if(!t) return;
-    const fr = t.alocacao && t.alocacao[cell.dataset.iso] ? t.alocacao[cell.dataset.iso][chip.dataset.sigla] : null; if(!fr) return;
+    // badge auto: arrasta o valor que ele terá depois de materializado (sem chip lá, não arrasta)
+    const fr = plFracVista(t, cell.dataset.iso, chip.dataset.sigla); if(!fr) return;
     plDrag = { pid: cell.dataset.pid, tid: cell.dataset.tid, iso: cell.dataset.iso, hover: cell.dataset.iso, sigla: chip.dataset.sigla, fr: fr, alt: e.altKey, ctrl: e.ctrlKey, alvos: [] };
     e.preventDefault();   // sem isto o arrasto vira seleção de texto
   });
@@ -4112,16 +4150,15 @@ function plLigaEventos(){
     }
     const cell = e.target.closest('td.pl-cell'); if(!cell) return;
     if(_readOnly) return;
-    const gh = e.target.closest('.pl-ghost');
-    if(gh){ plConverter(cell.dataset.pid, cell.dataset.tid); return; }
     const pid = cell.dataset.pid, tid = cell.dataset.tid, iso = cell.dataset.iso, t = plTask(pid, tid); if(!t) return;
     const chip = e.target.closest('.pl-chip[data-sigla]');
     if(chip && !e.shiftKey){
-      const s = chip.dataset.sigla, fr = t.alocacao && t.alocacao[iso] ? t.alocacao[iso][s] : null;
-      plChip(pid, tid, iso, s, fr === 1 ? 0.5 : (fr === 0.5 ? null : 1));     // 1,0 → 0,5 → remove
+      // 1,0 → 0,5 → remove; num badge auto a fração é lida DEPOIS de materializar (dentro do plAplicar)
+      const s = chip.dataset.sigla;
+      plAplicar(pid, tid, function(x){ const fr = x.alocacao && x.alocacao[iso] ? x.alocacao[iso][s] : null; PlannerCarga.setChip(x, iso, s, fr === 1 ? 0.5 : (fr === 0.5 ? null : 1)); });
       return;
     }
-    const quem = whoArr(t), ja = plChipsDe(t, iso);
+    const quem = whoArr(t), ja = plChipsVista(t, iso);
     if(!e.shiftKey && quem.length === 1 && ja.length === 0){
       if(!plPassadoConfirma([iso])) return;
       plChip(pid, tid, iso, quem[0], 1); return;
@@ -4317,7 +4354,7 @@ function openProject(id){
   renderPickerGrid('modalPickerGrid', tempModalTeam);
   const fld = document.getElementById('modalTeamField'); const pk = document.getElementById('modalTeamPicker');
   fld.innerHTML = ''; fld.insertAdjacentHTML('beforeend', pillsHtml(tempModalTeam, 'modal')); fld.appendChild(pk);
-  document.getElementById('quickTaskDate').value = hojeISO();
+  document.getElementById('quickTaskDate').value = '';
   presetQuickTaskWho();
   renderColorPicker(p);
   renderMilestones(p); renderLog(p); renderTasks(p);
@@ -4428,7 +4465,10 @@ function closeLogModal(e){ if(!e || e.target === document.getElementById('logOve
 //   effortBy    = {sigla: dias} — só quando a divisão entre os responsáveis NÃO é igual
 //   doneAt      = data em que virou concluída (para velocidade/histórico)
 //   alocacao    = {iso: {sigla: 1|0.5}} — alocação explícita por dia (Modo Planejar). Com ao menos
-//                 um dia, a carga vem só dela; null/ausente = regra da janela start→date.
+//                 um dia, a carga vem só dela ("manual"); null/ausente = "plano por datas": a
+//                 carga segue a janela start→date e a grade Planejar a mostra como badges .auto.
+//                 O editor NUNCA gera alocacao a partir da estimativa; só a grade (ajuste fino) a
+//                 cria, e "Voltar a seguir as datas" (abaixo) a apaga.
 function novaTask(campos){
   const t = { id: uid(), desc: '', who: [], date: '', start: '', dateClient: '', effort: null, effortBy: null, status: STATUS_TASK[0].id, subtasks: [], doneAt: null, alocacao: null };
   Object.keys(campos || {}).forEach(function(k){ t[k] = campos[k]; });
@@ -4441,20 +4481,6 @@ function applyTaskStatus(t, novo){
   t.status = novo;
   if(novo === TASK_DONE_ID){ if(!t.doneAt) t.doneAt = hojeISO(); podaAlocacaoFutura(t); }
   else t.doneAt = null;
-}
-// Estimativa → chips reais (SPEC: a carga lançada no editor aparece como chips na grade Planejar).
-// Se a task aberta tem esforço, responsáveis, alguma data e ainda NÃO tem alocação, grava
-// t.alocacao a partir de PlannerCarga.chipsDaEstimativa (muta t). Quem já tem chips não é
-// tocado: os chips são a fonte e o esforço vira estimativa. Devolve a sobra {sigla: dias}.
-function aplicaChipsDaEstimativa(t){
-  if(typeof PlannerCarga === 'undefined' || t.status === TASK_DONE_ID) return {};
-  const r = PlannerCarga.chipsDaEstimativa(Object.assign({}, t, { done: false }), hojeISO());
-  if(r.alocacao) t.alocacao = r.alocacao;
-  return r.sobra;
-}
-function avisaSobraEstimativa(sobra){
-  const ks = Object.keys(sobra || {}); if(!ks.length) return;
-  toast(ks.map(function(k){ return fmtDias(sobra[k]) + ' d de ' + k; }).join(', ') + ' não couberam na janela; ajuste na grade', 'warn');
 }
 // Ao concluir, os chips depois de hoje saem; os passados ficam como histórico de carga
 // (equivalente à janela [start, doneAt] de quem não tem alocação). Objeto novo, não mutação.
@@ -4528,6 +4554,8 @@ function populateTaskDealOptions(selectedDealId){
 }
 // Valores do formulário de esforço, por sigla. Chave '' = task sem responsável.
 let tempTaskEffort = {};
+// "Voltar a seguir as datas": marcado no editor, aplicado só no saveTask (Cancelar descarta).
+let tempTaskVoltaDatas = false;
 // Uma linha por responsável: avatar + sigla | dias | remover. Sem responsável, uma linha
 // "sem responsável" mantém a estimativa possível. .esforco-item e #taskEffort são usados pelo selftest.
 // Task em edição no modal (null para task nova). Usada pela coluna "alocado" e pelo botão "Abrir na grade".
@@ -4539,7 +4567,7 @@ function renderTaskEffortFields(foco){
   const wrap = document.getElementById('taskEffortFields'); if(!wrap) return;
   const pessoas = tempTaskWho.slice();
   // coluna "alocado" (só para task com alocação por dia): vem dos chips da grade Planejar, não é editável aqui
-  const tk = taskEmEdicao(), comAloc = !!(tk && typeof PlannerCarga !== 'undefined' && PlannerCarga.temAlocacao(tk));
+  const tk = taskEmEdicao(), comAloc = !tempTaskVoltaDatas && !!(tk && typeof PlannerCarga !== 'undefined' && PlannerCarga.temAlocacao(tk));
   const tab = wrap.closest('.esforco-tabela'); if(tab) tab.classList.toggle('com-aloc', comAloc);
   const gradeWrap = document.getElementById('taskGradeWrap'); if(gradeWrap) gradeWrap.style.display = (tk && moduleEnabled('planejar')) ? '' : 'none';
   const campo = function(chave, v){ return '<span class="esforco-valor"><input class="form-input esforco-input" type="number" min="0" step="0.5" placeholder="—" value="' + (v == null ? '' : v) + '" oninput="onEffortInput(\'' + chave + '\',this.value)"/><span class="esforco-un">d</span></span>'; };
@@ -4561,9 +4589,15 @@ function renderTaskEffortFields(foco){
 // Texto "alocado X d · saldo ±Y" por pessoa (verde = 0, azul = falta alocar, vermelho = alocado a mais) e
 // rodapé com o total. Chamado a cada digitação no esforço: o saldo acompanha o valor do formulário.
 function atualizaAlocadoEsforco(){
-  const rod = document.getElementById('taskAlocRodape'), tk = taskEmEdicao();
-  const com = !!(tk && typeof PlannerCarga !== 'undefined' && PlannerCarga.temAlocacao(tk));
-  if(rod) rod.style.display = com ? '' : 'none';
+  const rod = document.getElementById('taskAlocRodape'), tk = taskEmEdicao(), volta = document.getElementById('taskVoltaDatas');
+  const temAloc = !!(tk && typeof PlannerCarga !== 'undefined' && PlannerCarga.temAlocacao(tk)), com = temAloc && !tempTaskVoltaDatas;
+  if(volta) volta.style.display = com && !_readOnly ? '' : 'none';
+  if(rod) rod.style.display = temAloc ? '' : 'none';
+  if(temAloc && tempTaskVoltaDatas){
+    const n = PlannerCarga.diasAlocacao(tk).length;
+    if(rod) rod.innerHTML = '<span>Ao salvar, os ' + n + ' dia' + (n !== 1 ? 's' : '') + ' ajustados à mão saem e a carga volta a seguir as datas</span><button class="btn btn-ghost btn-sm" type="button" onclick="taskManterAjustes()">Manter ajustes</button>';
+    return;
+  }
   if(!com) return;
   const aloc = PlannerCarga.esforcoAlocado(tk), r2 = function(n){ return Math.round(n * 100) / 100; };
   const cls = function(sd){ return sd === 0 ? 'aloc-ok' : (sd > 0 ? 'aloc-mais' : 'aloc-neg'); };
@@ -4599,6 +4633,15 @@ function taskAbrirNaGrade(){
   if(row && row.scrollIntoView) row.scrollIntoView({ block: 'center', inline: 'nearest' });
   setTimeout(function(){ if(plFocoTid === tid){ plFocoTid = null; document.querySelectorAll('#planejarRoot tr.pl-focus').forEach(function(r){ r.classList.remove('pl-focus'); }); } }, 2000);
 }
+// Task ajustada à mão (com alocacao) volta ao plano por datas: confirma e marca; o saveTask grava
+// alocacao = null. Fica no estado temporário do editor para Cancelar desfazer, como os outros campos.
+function taskVoltarASeguirDatas(){
+  const tk = taskEmEdicao(); if(!tk || !PlannerCarga.temAlocacao(tk)) return;
+  const n = PlannerCarga.diasAlocacao(tk).length;
+  if(!confirm('Apagar os ' + n + ' dias ajustados à mão e voltar a distribuir pelas datas?')) return;
+  tempTaskVoltaDatas = true; renderTaskEffortFields();
+}
+function taskManterAjustes(){ tempTaskVoltaDatas = false; renderTaskEffortFields(); }
 function onEffortInput(sigla, val){
   const n = parseFloat(String(val).replace(',', '.'));
   tempTaskEffort[sigla] = (val === '' || isNaN(n) || n < 0) ? null : n;
@@ -4628,6 +4671,7 @@ function sincronizaEsforcoComResponsaveis(){
   renderTaskEffortFields(novo);
 }
 function _fillTaskForm(t){
+  tempTaskVoltaDatas = false;
   document.getElementById('taskDesc').value = t.desc || '';
   document.getElementById('taskStart').value = t.start || '';
   document.getElementById('taskDate').value = t.date || '';
@@ -4654,17 +4698,34 @@ function atualizaFolgaTask(){
   const n = (typeof PlannerCarga !== 'undefined') ? PlannerCarga.diasUteisEntre(alvo, cli) : Math.round((parseISO(cli) - parseISO(alvo)) / 86400000);
   el.innerHTML = n < 0 ? '<span style="color:var(--color-red);font-weight:600">⚠ O prazo interno é ' + (-n) + ' dia' + (n !== -1 ? 's' : '') + ' úteis DEPOIS do prazo do cliente</span>' : '<span style="color:var(--color-gray)">Folga de ' + n + ' dia' + (n !== 1 ? 's' : '') + ' úteis entre o prazo interno e o do cliente</span>';
 }
+// Linha de contexto do editor: frente (só no multi-frente) + projeto. O nome vira link quando o
+// editor foi aberto avulso (de uma visão); com o modal do projeto por baixo, já é o projeto aberto.
+function renderTaskContext(){
+  const el = document.getElementById('taskContext'); if(!el) return;
+  const p = findProject(currentProjectId);
+  if(!p){ el.innerHTML = ''; return; }
+  const nome = escHtml(p.name);
+  el.innerHTML = frenteBadge(p) + (_taskEditorStandalone
+    ? '<a class="task-context-proj" href="#" onclick="abrirProjetoDaTask(event)" title="Abrir o projeto">' + nome + '</a>'
+    : '<span class="task-context-proj">' + nome + '</span>');
+}
+function abrirProjetoDaTask(e){
+  if(e) e.preventDefault();
+  const pid = currentProjectId; if(!pid) return;
+  closeTaskModal();
+  openProject(pid);
+}
 function addTask(defaultStatus){
   editingTaskIdx = null; tempTaskWho = minhaSigla() ? [minhaSigla()] : [];
-  document.getElementById('taskModalTitle').textContent = 'Nova Task';
-  _fillTaskForm({ desc: '', start: '', date: hojeISO(), dateClient: '', effort: null, status: defaultStatus || STATUS_TASK[0].id, subtasks: [] });
+  document.getElementById('taskModalTitle').textContent = 'Nova Task'; renderTaskContext();
+  _fillTaskForm({ desc: '', start: '', date: '', dateClient: '', effort: null, status: defaultStatus || STATUS_TASK[0].id, subtasks: [] });
   populateTaskDealOptions(null); renderTaskWhoPills(); renderPickerGrid('taskPickerGrid', tempTaskWho);
   document.getElementById('taskOverlay').classList.add('open'); setTimeout(function(){ document.getElementById('taskDesc').focus(); }, 50);
 }
 function editTask(idx){
   editingTaskIdx = idx; const p = findProject(currentProjectId); const t = p.tasks[idx];
   tempTaskWho = whoArr(t).slice();
-  document.getElementById('taskModalTitle').textContent = 'Editar Task';
+  document.getElementById('taskModalTitle').textContent = 'Editar Task'; renderTaskContext();
   _fillTaskForm(t);
   populateTaskDealOptions(t.dealId || null); renderTaskWhoPills(); renderPickerGrid('taskPickerGrid', tempTaskWho);
   document.getElementById('taskOverlay').classList.add('open');
@@ -4685,7 +4746,7 @@ function saveTask(){
   // Cancelar mantém a pessoa (na posição e com a estimativa que tinha) — alocação nunca some
   // em silêncio.
   const tiraAloc = [];
-  if(prev && typeof PlannerCarga !== 'undefined' && PlannerCarga.temAlocacao(prev)){
+  if(prev && !tempTaskVoltaDatas && typeof PlannerCarga !== 'undefined' && PlannerCarga.temAlocacao(prev)){
     const whoPrev = whoArr(prev), porPrev = esforcoPessoa(prev), mantidos = [];
     whoPrev.forEach(function(w){
       if(tempTaskWho.indexOf(w) >= 0) return;
@@ -4714,12 +4775,12 @@ function saveTask(){
   }
   task.subtasks = subtasks; task.dealId = dealId || null; task.origem = prev ? (prev.origem || null) : null;
   tiraAloc.forEach(function(x){ x.dias.forEach(function(iso){ PlannerCarga.setChip(task, iso, x.sigla, null); }); });
+  // a estimativa NÃO vira chips: sem alocacao, a carga segue as datas (badges .auto na grade)
+  if(tempTaskVoltaDatas) task.alocacao = null;
   applyTaskStatus(task, document.getElementById('taskStatus').value);
-  // task que já tinha chips não é tocada (nem se a edição os esvaziou); sem chips, a estimativa vira chips
-  const sobra = (prev && PlannerCarga.temAlocacao(prev)) ? {} : aplicaChipsDaEstimativa(task);
   if(!p.tasks) p.tasks = [];
   if(prev) p.tasks[editingTaskIdx] = task; else p.tasks.push(task);
-  saveProject(p.id); if(!_taskEditorStandalone) renderTasks(p); closeTaskModal(); toast('Task salva'); avisaSobraEstimativa(sobra);
+  saveProject(p.id); if(!_taskEditorStandalone) renderTasks(p); closeTaskModal(); toast(tempTaskVoltaDatas ? 'Task salva · voltou a seguir as datas' : 'Task salva'); tempTaskVoltaDatas = false;
 }
 function removeTask(idx){ const p = findProject(currentProjectId); p.tasks.splice(idx, 1); saveProject(p.id); renderTasks(p); }
 function toggleSubtask(ti, si){ const p = findProject(currentProjectId); p.tasks[ti].subtasks[si].done = !p.tasks[ti].subtasks[si].done; saveProject(p.id); renderTasks(p); }
@@ -5108,7 +5169,7 @@ async function saveThemeConfig(){
 
 // ── MÓDULOS (habilitador de navegação) ──
 const MODULE_LIST = [
-  ['projetos', 'Kanban de projetos'], ['planning', 'Projetos (lista)'], ['planner', 'Planner (por pessoa)'],
+  ['projetos', 'Kanban de projetos'], ['planning', 'Projetos (lista)'], ['planner', 'Responsáveis (por pessoa)'],
   ['carga', 'Carga de trabalho'], ['timeline', 'Timeline'], ['calendario', 'Calendário'],
   ['kanban_tasks', 'Kanban de Tasks'], ['resumo', 'Resumo'], ['crm', 'CRM'], ['admin', 'Admin (painel de administração)']
 ];
