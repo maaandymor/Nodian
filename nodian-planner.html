@@ -344,7 +344,7 @@ body{font-family:var(--font);background:var(--page-bg);color:var(--color-black);
   .summary-card{box-shadow:none;border:1px solid var(--border-c)}
 }
 
-body.viewer-mode .btn:not(.btn-ghost):not([onclick*='setView']):not([onclick*='exportMarkdown']):not([onclick*='captureCurrentViewPng']):not([onclick*='exportData']):not([onclick*='openProject']):not([onclick*='closeProjectModal']),
+body.viewer-mode .btn:not(.btn-ghost):not(#logout-btn):not([onclick*='setView']):not([onclick*='exportMarkdown']):not([onclick*='captureCurrentViewPng']):not([onclick*='exportData']):not([onclick*='openProject']):not([onclick*='closeProjectModal']),
 body.viewer-mode .team-add-btn,
 body.viewer-mode .milestone-status-btn,
 body.viewer-mode .quick-inbox-input,
@@ -1467,7 +1467,7 @@ tr.pl-carga .avatar{display:inline-flex;vertical-align:middle}
       <div class="form-row"><label class="form-label">Email</label><input class="form-input" id="userEmail" type="email"/></div>
       <div class="form-row" id="userPasswordRow"><label class="form-label">Senha inicial</label><input class="form-input" id="userPassword" type="text" placeholder="mín. 6 caracteres"/></div>
       <div class="form-row"><label class="form-label">Papel</label>
-        <select class="form-select" id="userRole"><option value="leitor">Leitor</option><option value="editor">Editor</option><option value="admin">Admin</option></select>
+        <select class="form-select" id="userRole"><option value="editor">Editor</option><option value="admin">Admin</option></select>
       </div>
       <div class="form-actions" id="userModalExtraActions" style="justify-content:flex-start"></div>
       <div class="form-actions">
@@ -2527,20 +2527,13 @@ async function loadProfiles(){
   PROFILES = r.data || [];
 }
 let _currentProfile = null;
-// Papéis: admin | editor | leitor. 'viewer' (legado Nodian) é sinônimo de leitor.
-// Papel AUSENTE ≠ leitor deliberado: avisamos, porque a pessoa vai editar e nada será salvo.
+// Papéis: admin | editor. O modo leitor foi desligado (13/10/2026): o time inteiro usa a versão
+// completa, e leitor/viewer/papel ausente no cadastro viram editor. Só 'admin' ainda distingue alguém.
 function resolveCurrentUserRole(){
   const mine = PROFILES.find(function(p){ return p.user_id === _currentUser.id; });
   _currentProfile = mine || null;
-  if(mine && mine.ativo === false){ _userRole = 'leitor'; return; }
-  let papel = mine ? mine.role : (_currentUser.user_metadata && _currentUser.user_metadata.role);
-  if(papel === 'viewer') papel = 'leitor';
-  if(!papel){
-    papel = 'leitor';
-    avisoTopo('Seu papel de acesso não está configurado — você está em modo somente-leitura e nada que editar será salvo. Peça ao admin para definir role=editor.');
-    console.error('role ausente para', _currentUser.email, '— assumindo leitor');
-  }
-  _userRole = papel;
+  const papel = mine ? mine.role : (_currentUser.user_metadata && _currentUser.user_metadata.role);
+  _userRole = papel === 'admin' ? 'admin' : 'editor';
 }
 // Aviso persistente no topo (config incompleta, sessão, ambiente de teste etc.)
 function avisoTopo(msg, tipo){
@@ -5015,7 +5008,7 @@ function openUserModal(userId){
   document.getElementById('userEmail').disabled = !!u;
   document.getElementById('userPassword').value = '';
   document.getElementById('userPasswordRow').style.display = u ? 'none' : 'flex';
-  document.getElementById('userRole').value = u ? u.role : 'leitor';
+  document.getElementById('userRole').value = u && u.role === 'admin' ? 'admin' : 'editor';
   const extra = document.getElementById('userModalExtraActions');
   extra.innerHTML = u ? '<button class="btn btn-sm btn-secondary" onclick="promptResetPassword(\'' + u.user_id + '\')">Redefinir senha</button>' : '';
   document.getElementById('userOverlay').classList.add('open');
