@@ -700,7 +700,8 @@ body.tem-aviso-topo #logout-btn{top:41px}
 .carga-totais b{color:var(--color-black)}
 .carga-tot-ne{color:var(--color-gray)}
 .carga-tot-atr{color:var(--color-red);font-weight:600}
-.carga-table{width:100%;border-collapse:collapse;font-size:12px}
+.carga-table-scroll{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+.carga-table{width:100%;min-width:720px;border-collapse:collapse;font-size:12px}
 .carga-table th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--color-gray);padding:6px 8px;border-bottom:1px solid var(--border-c)}
 .carga-table td{padding:7px 8px;border-bottom:1px solid var(--border-c);vertical-align:middle}
 .carga-table tr:last-child td{border-bottom:none}
@@ -1006,6 +1007,78 @@ tr.pl-carga .avatar{display:inline-flex;vertical-align:middle}
   .pl-c-quem{display:none}
   .pl-gaveta{position:fixed;right:8px;top:80px;bottom:8px;width:min(300px,90vw);flex:none;z-index:200}
 }
+/* Responsividade das visões e navegação em painéis estreitos. */
+/* Grade por pessoa em fluxo de linhas: cada coluna ocupa sua própria largura. */
+.week-grid{
+  grid-auto-flow:row;
+  grid-auto-columns:auto;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));
+  grid-template-rows:none;
+  min-width:0;
+  width:100%;
+}
+.week-person-col{display:flex;flex-direction:column;grid-row:auto;min-width:0;gap:8px}
+.cal-more{
+  border:0;
+  border-radius:5px;
+  background:rgba(var(--ink-rgb),.06);
+  font:inherit;
+  font-size:9px;
+  color:var(--color-gray);
+  cursor:pointer;
+  text-align:left;
+}
+.cal-more:focus-visible{outline:2px solid var(--color-coral);outline-offset:2px}
+
+@media (max-width: 760px){
+  .topbar{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"logo" "tabs" "search" "actions";
+    gap:8px;
+    padding:8px 14px;
+    align-items:center;
+  }
+  .topbar-logo{grid-area:logo}
+  .view-tabs{grid-area:tabs;max-width:100%;overflow-x:auto;justify-self:stretch;border-radius:12px;scrollbar-width:thin}
+  .view-tab{flex:0 0 auto}
+  .topbar-search{grid-area:search;width:100%;max-width:none;min-width:0;flex:initial}
+  .topbar-sep{display:none}
+  .topbar-right{grid-area:actions;margin-left:0;justify-content:flex-start;flex-wrap:wrap;min-width:0}
+  .filter-bar{padding-left:14px;padding-right:14px}
+  .dash-header{padding:14px 14px 12px;gap:8px;flex-wrap:wrap}
+  .list-view,.board-view,.week-view,.carga-view,.timeline-view,.cal-view,.summary-view{padding-left:14px;padding-right:14px}
+
+  /* Cada pessoa conserva seu próprio espaço e flui para a linha seguinte. */
+  .week-grid{
+    grid-auto-flow:row;
+    grid-auto-columns:auto;
+    grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));
+    grid-template-rows:none;
+    min-width:0;
+    width:100%;
+    column-gap:12px;
+    row-gap:16px;
+  }
+  .week-person-col{display:flex;flex-direction:column;grid-row:auto;min-width:0;gap:8px}
+  .week-person-body{min-width:0}
+
+  /* A lista preserva a leitura das colunas; a rolagem fica na própria visão. */
+  .planning-row{min-width:680px}
+  .cal{overflow-x:auto}
+  .cal-dow-row,.cal-grid{min-width:560px}
+  .cal-day{min-height:76px}
+  .cal-more{align-self:flex-start;min-height:24px;padding:4px 7px}
+}
+
+@media (max-width:480px){
+  .topbar{padding:8px 10px}
+  .topbar-right{gap:5px}
+  .topbar-right .btn{padding-left:9px;padding-right:9px}
+  .dash-title{font-size:18px}
+  .cal-count{width:100%;margin-left:0}
+}
+
 </style>
 </head>
 <body>
@@ -3376,7 +3449,7 @@ function renderCarga(){
     + '<div class="carga-card"><div class="carga-card-head"><div><div class="carga-card-title">Painel de sprint</div><div class="carga-card-sub">' + formatDateShort(per.de) + ' → ' + formatDateShort(per.ate) + ' · ' + diasUteis.length + ' dias úteis · capacidade ' + fmtD(capPeriodo) + ' d/pessoa'
     + (fAtiva ? ' · <b>a ocupação considera as ' + FRENTES.length + ' frentes</b> (é o que diz se a pessoa cabe); a coluna ' + escHtml(fAtiva.curto) + ' é a parcela desta frente' : '') + '</div></div>'
     + '<div class="carga-totais"><span><b>' + fmtD(totAloc) + '</b> / ' + fmtD(totCap) + ' d alocados</span>' + (totFeito > .05 ? '<span class="carga-tot-ok" title="Já concluído dentro do período">' + fmtD(totFeito) + ' d concluídos</span>' : '') + '<span class="carga-tot-ne">' + R.naoEstimadas.length + ' não estimadas</span><span class="carga-tot-atr">' + R.atrasadas.length + ' atrasadas</span></div></div>'
-    + '<table class="carga-table"><thead><tr><th>Pessoa</th><th>Ocupação</th>'
+    + '<div class="carga-table-scroll" role="region" aria-label="Tabela de ocupação por pessoa" tabindex="0"><table class="carga-table"><thead><tr><th>Pessoa</th><th>Ocupação</th>'
     + (fAtiva ? '<th class="num col-frente" title="Parcela vinda da frente filtrada">' + escHtml(fAtiva.curto) + '</th>' : '')
     + '<th class="num">Alocado</th><th class="num">Capacidade</th><th class="num">Saldo</th><th class="num" title="Tasks abertas sem estimativa de esforço">Não est.</th><th class="num">Atrasadas</th><th class="num">Tasks</th></tr></thead><tbody>'
     + linhas.map(function(l){
@@ -3387,7 +3460,7 @@ function renderCarga(){
         // inteira escorrega para a esquerda (a coluna da frente mostrava o total)
         + (fAtiva ? '<td class="num col-frente" title="Parcela desta frente no total alocado">' + fmtD(l.naFrente || 0) + '</td>' : '')
         + '<td class="num">' + fmtD(l.s.alocadoPeriodo) + (l.fds > .001 ? '<span class="carga-fds-sub" title="Carga em sábado/domingo (alocação explícita): já está no alocado; a capacidade não muda">(+' + fmtD(l.fds) + ' fds)</span>' : '') + (l.s.concluidoPeriodo > .05 ? '<span class="carga-done-sub" title="Destes, já concluídos">' + fmtD(l.s.concluidoPeriodo) + '✓</span>' : '') + '</td><td class="num">' + fmtD(capPeriodo) + '</td><td class="num ' + (l.saldo < 0 ? 'neg' : '') + '">' + (l.saldo < 0 ? '−' : '') + fmtD(Math.abs(l.saldo)) + '</td><td class="num">' + (l.s.naoEstimadas ? '<span class="ne-chip">' + l.s.naoEstimadas + '</span>' : '—') + '</td><td class="num">' + (l.s.atrasadas ? '<span class="atr-chip">' + l.s.atrasadas + '</span>' : '—') + '</td><td class="num">' + l.s.tasks + '</td></tr>';
-    }).join('') + '</tbody></table></div>';
+    }).join('') + '</tbody></table></div></div>';
 
   // ── heatmap ──
   let cols, capCel;
@@ -3697,7 +3770,7 @@ function renderCalendar(){
         }
         return '<div class="cal-chip cal-' + it.tipo + (it.done ? ' done' : '') + (dc === 'overdue' ? ' overdue' : '') + '" style="--c:' + it.cor + ';--c-bg:' + hexToRgba(it.cor, .16) + '" title="' + escHtml((it.frente && isMulti() ? it.frente.nome + ' · ' : '') + it.p.name + ' · ' + it.label + (it.who.length ? ' · ' + it.who.join(', ') : '')) + '" onclick="openProject(\'' + it.p.id + '\')">' + ico + ' <span class="cal-chip-proj">' + escHtml(it.p.name) + '</span> ' + escHtml(it.label) + '</div>';
       }).join('')
-      + (over > 0 ? '<div class="cal-more" onclick="calShowDay(\'' + iso + '\')">+' + over + '</div>' : '') + '</div>';
+      + (over > 0 ? '<button type="button" class="cal-more" onclick="calShowDay(\'' + iso + '\')" aria-label="Ver mais ' + over + ' itens em ' + formatDateShort(iso) + '">+' + over + ' · ver itens</button>' : '') + '</div>';
   });
   html += '</div></div><div id="calDayDetail"></div>';
   root.className = ''; root.innerHTML = html;
